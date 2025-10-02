@@ -19,6 +19,10 @@ class DatePrecision(models.TextChoices):
     MILLENNIUM = 'millennium', 'Millennium'
     UNKNOWN = 'unknown', 'Unknown'
 
+class Visibility(models.TextChoices):
+    PUBLIC = 'public', 'Public'
+    PRIVATE = 'private', 'Private'
+
 class DateEstimate(models.Model):
     date_known = models.BooleanField(default=True)
     date = models.DateField(null=True, blank=True)
@@ -57,9 +61,16 @@ class AbstractUserTrackingModel(TimestampedModel):
         validators=[MinValueValidator(1), MaxValueValidator(10)]
     )
     notes = models.TextField(blank=True)
+    visibility = models.CharField(
+        max_length=20,
+        choices=Visibility.choices,
+        default=Visibility.PRIVATE
+    )
 
     def clean(self):
-        # Ensure all associated cultures belong to the user
+        # Guard against unsaved instance
+        if self.pk is None:
+            return
         for culture in self.cultures.all():
             if culture.user != self.user:
                 raise ValidationError(f"Culture {culture.name} does not belong to user {self.user.username}")
@@ -71,7 +82,7 @@ class AbstractMedia(TimestampedModel):
     title = models.CharField(max_length=200)
     creator = models.ForeignKey('Person', on_delete=models.SET_NULL, null=True, blank=True)
     date = models.ForeignKey('DateEstimate', on_delete=models.SET_NULL, null=True, blank=True)
-    external_links = models.URLField(blank=True, null=True)
+    external_links = models.JSONField(default=list, blank=True)  # [ {"label": "Wikipedia", "url": "..."} ]
     tags = TaggableManager(blank=True)
 
     class Meta:
@@ -80,6 +91,22 @@ class AbstractMedia(TimestampedModel):
 # -------------------------------------------------
 # USER-SPECIFIC MODELS
 # -------------------------------------------------
+class Profile(TimestampedModel):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
+    bio = models.TextField(blank=True)
+    avatar = models.URLField(blank=True, null=True)
+    location = models.CharField(max_length=100, blank=True)
+    website = models.URLField(blank=True, null=True)
+    preferred_cultures = models.ManyToManyField('Culture', blank=True, related_name="preferred_by")
+    display_reviews_publicly = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"Profile of {self.user.username}"
+
+    class Meta:
+        verbose_name_plural = "Profiles"
+        indexes = [models.Index(fields=['user'])]
+
 class Culture(TimestampedModel):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="cultures")
     name = models.CharField(max_length=100)
@@ -201,7 +228,7 @@ class Person(TimestampedModel):
     middle_name = models.CharField(max_length=100, blank=True)
     bio = models.TextField(blank=True)
     photo = models.URLField(blank=True, null=True)
-    external_links = models.URLField(blank=True, null=True)
+    external_links = models.JSONField(default=list, blank=True)
     profession = models.CharField(max_length=100, blank=True)
     nationality = models.CharField(max_length=100, blank=True)
     birthplace = models.CharField(max_length=100, blank=True)
@@ -211,6 +238,7 @@ class Person(TimestampedModel):
     epithets = models.CharField(max_length=255, blank=True)
     resting_place = models.CharField(max_length=255, blank=True)
     notable_works = models.JSONField(default=list, blank=True)
+    wikidata_id = models.CharField(max_length=20, blank=True, unique=True)
 
     def full_name(self):
         return f"{self.given_name} {self.middle_name} {self.family_name}".strip()
@@ -220,7 +248,7 @@ class Person(TimestampedModel):
 
     class Meta:
         verbose_name_plural = "People"
-        indexes = [models.Index(fields=['family_name', 'given_name'])]
+        indexes = [models.Index(fields=['family_name', 'given_name'], name='person_name_idx'), models.Index(fields=['wikidata_id'], name='person_wikidata_idx')]
 
 class MapBorder(TimestampedModel):
     culture = models.ForeignKey(Culture, on_delete=models.CASCADE, related_name="map_borders")
@@ -238,7 +266,7 @@ class MapPin(TimestampedModel):
     period = models.ForeignKey(Period, on_delete=models.CASCADE, related_name="map_pins")
     type = models.CharField(max_length=50)
     loc = models.JSONField()
-    external_links = models.URLField(blank=True, null=True)
+    external_links = models.JSONField(default=list, blank=True)
 
     def __str__(self):
         return f"{self.type} Pin ({self.culture.name})"
@@ -269,7 +297,9 @@ class UniversalItem(TimestampedModel):
     type = models.CharField(max_length=50)
 
     def clean(self):
-        # Ensure all associated cultures belong to the same user
+        # Guard against unsaved instance
+        if self.pk is None:
+            return
         users = {culture.user for culture in self.cultures.all()}
         if len(users) > 1:
             raise ValidationError("All cultures must belong to the same user.")
@@ -280,15 +310,16 @@ class UniversalItem(TimestampedModel):
 
     class Meta:
         verbose_name_plural = "Universal Items"
-        indexes = [models.Index(fields=['content_type', 'object_id'])]
+        indexes = [models.Index(fields=['content_type', 'object_id'], name='universal_item_idx')]
 
 # ---- BOOK ----
 class Book(AbstractMedia):
-    isbn = models.CharField(max_length=20, blank=True)
+    isbn = models.CharField(max_length=20, null=True, blank=True, unique=True)
     universal_item = GenericRelation(UniversalItem, related_query_name="book")
 
     class Meta:
         verbose_name_plural = "Books"
+        indexes = [models.Index(fields=['isbn'], name='book_isbn_idx')]
 
 class UserBook(AbstractUserTrackingModel):
     universal_item = models.ForeignKey(UniversalItem, on_delete=models.CASCADE, related_name="user_books")
@@ -310,21 +341,23 @@ class UserBook(AbstractUserTrackingModel):
 
     class Meta:
         verbose_name_plural = "User Books"
-        indexes = [models.Index(fields=['user', 'universal_item'])]
+        indexes = [models.Index(fields=['user', 'universal_item'], name='user_book_idx')]
 
 # ---- FILM ----
 class Film(AbstractMedia):
     runtime = models.PositiveIntegerField(null=True, blank=True)
     genre = models.CharField(max_length=100, blank=True)
+    tmdb_id = models.CharField(max_length=20, null=True, blank=True, unique=True)
     universal_item = GenericRelation(UniversalItem, related_query_name="film")
 
     class Meta:
         verbose_name_plural = "Films"
+        indexes = [models.Index(fields=['tmdb_id'], name='film_tmdb_idx')]
 
 class UserFilm(AbstractUserTrackingModel):
     universal_item = models.ForeignKey(UniversalItem, on_delete=models.CASCADE, related_name="user_films")
-    cast = models.ManyToManyField(Person, related_name="films_cast", blank=True)
-    crew = models.ManyToManyField(Person, related_name="films_crew", blank=True)
+    cast = models.JSONField(default=list)
+    crew = models.JSONField(default=list)
     rewatch_count = models.PositiveIntegerField(default=0)
     watch_location = models.CharField(max_length=200, blank=True)
     medium = models.CharField(max_length=100, blank=True)
@@ -341,17 +374,19 @@ class UserFilm(AbstractUserTrackingModel):
 
     class Meta:
         verbose_name_plural = "User Films"
-        indexes = [models.Index(fields=['user', 'universal_item'])]
+        indexes = [models.Index(fields=['user', 'universal_item'], name='user_film_idx')]
 
 # ---- MUSIC PIECE ----
 class MusicPiece(AbstractMedia):
     instrument = models.CharField(max_length=100, blank=True)
     recording = models.URLField(blank=True, null=True)
     sheet_music = models.URLField(blank=True, null=True)
+    musicbrainz_id = models.CharField(max_length=36, null=True, blank=True, unique=True)
     universal_item = GenericRelation(UniversalItem, related_query_name="music")
 
     class Meta:
         verbose_name_plural = "Music Pieces"
+        indexes = [models.Index(fields=['musicbrainz_id'], name='music_musicbrainz_idx')]
 
 class UserMusicPiece(AbstractUserTrackingModel):
     universal_item = models.ForeignKey(UniversalItem, on_delete=models.CASCADE, related_name="user_music_pieces")
@@ -362,7 +397,7 @@ class UserMusicPiece(AbstractUserTrackingModel):
 
     class Meta:
         verbose_name_plural = "User Music Pieces"
-        indexes = [models.Index(fields=['user', 'universal_item'])]
+        indexes = [models.Index(fields=['user', 'universal_item'], name='user_music_idx')]
 
 # ---- ARTWORK ----
 class Artwork(AbstractMedia):
@@ -373,10 +408,12 @@ class Artwork(AbstractMedia):
     photo = models.URLField(blank=True, null=True)
     model_3d = models.URLField(blank=True, null=True)
     type = models.CharField(max_length=100, blank=True)
+    wikidata_id = models.CharField(max_length=20, null=True, blank=True, unique=True)
     universal_item = GenericRelation(UniversalItem, related_query_name="artwork")
 
     class Meta:
         verbose_name_plural = "Artworks"
+        indexes = [models.Index(fields=['wikidata_id'], name='artwork_wikidata_idx')]
 
 class UserArtwork(AbstractUserTrackingModel):
     universal_item = models.ForeignKey(UniversalItem, on_delete=models.CASCADE, related_name="user_artworks")
@@ -387,7 +424,7 @@ class UserArtwork(AbstractUserTrackingModel):
 
     class Meta:
         verbose_name_plural = "User Artworks"
-        indexes = [models.Index(fields=['user', 'universal_item'])]
+        indexes = [models.Index(fields=['user', 'universal_item'], name='user_artwork_idx')]
 
 # ---- HISTORY EVENT ----
 class HistoryEvent(AbstractMedia):
@@ -396,11 +433,12 @@ class HistoryEvent(AbstractMedia):
     location = models.CharField(max_length=200, blank=True)
     sources = models.TextField(blank=True)
     significance_level = models.PositiveSmallIntegerField(default=0)
+    wikidata_id = models.CharField(max_length=20, null=True, blank=True, unique=True)
     universal_item = GenericRelation(UniversalItem, related_query_name="event")
 
     class Meta:
         verbose_name_plural = "History Events"
-
+        indexes = [models.Index(fields=['wikidata_id'], name='event_wikidata_idx')]
 class UserHistoryEvent(AbstractUserTrackingModel):
     universal_item = models.ForeignKey(UniversalItem, on_delete=models.CASCADE, related_name="user_history_events")
     importance_rank = models.PositiveSmallIntegerField(null=True, blank=True)
@@ -411,4 +449,4 @@ class UserHistoryEvent(AbstractUserTrackingModel):
 
     class Meta:
         verbose_name_plural = "User History Events"
-        indexes = [models.Index(fields=['user', 'universal_item'])]
+        indexes = [models.Index(fields=['user', 'universal_item'], name='user_event_idx')]
