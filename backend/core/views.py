@@ -1,5 +1,5 @@
-from rest_framework import viewsets, status
-from rest_framework.permissions import IsAuthenticatedOrReadOnly, SAFE_METHODS, BasePermission, AllowAny
+from rest_framework import viewsets, status, generics
+from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly, SAFE_METHODS, BasePermission, AllowAny
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -17,27 +17,37 @@ from .serializers import (
     PersonSerializer, MapBorderSerializer, MapPinSerializer, LanguageTableSerializer,
     UniversalItemSerializer, BookSerializer, FilmSerializer, MusicPieceSerializer,
     ArtworkSerializer, HistoryEventSerializer, UserBookSerializer, UserFilmSerializer,
-    UserMusicPieceSerializer, UserArtworkSerializer, UserHistoryEventSerializer, RegisterSerializer
+    UserMusicPieceSerializer, UserArtworkSerializer, UserHistoryEventSerializer, RegisterSerializer, UserSerializer
 )
 
-class RegisterView(APIView):
+class RegisterView(generics.CreateAPIView):
+    queryset = User.objects.all()
     permission_classes = [AllowAny]
+    serializer_class = RegisterSerializer
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+
+        refresh = RefreshToken.for_user(user)
+        token_data = {
+            'access': str(refresh.access_token),
+            'refresh': str(refresh),
+        }
+
+        return Response(
+            {**serializer.data, **token_data},
+            status=status.HTTP_201_CREATED
+        )
+
+class CurrentUserView(APIView):
+    permission_classes = [IsAuthenticated]
     
-    def post(self, request):
-        serializer = RegisterSerializer(data=request.data)
-        if serializer.is_valid():
-            user = serializer.save()
-            refresh = RefreshToken.for_user(user)
-            return Response({
-                "user": {
-                    "id": user.id,
-                    "username": user.username,
-                    "email": user.email,
-                },
-                "access": str(refresh.access_token),
-                "refresh": str(refresh),
-            }, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)    
+    def get(self, request):
+        serializer = UserSerializer(request.user)
+        return Response(serializer.data)
+           
 
 class IsOwnerOrPublic(BasePermission):
     def has_permission(self, request, view):
@@ -67,9 +77,17 @@ class CultureViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        if user.is_authenticated:
-            return Culture.objects.filter(user=user).select_related('user')
-        return Culture.objects.none()
+        code = self.request.query_params.get('code', None)
+        qs = Culture.objects.select_related('user')
+        
+        if not user.is_authenticated:
+            return Culture.objects.none()
+        
+        if code:
+            qs = qs.filter(user=user, code=code)
+        else: 
+            qs = qs.filter(user=user)
+        return qs
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
@@ -80,11 +98,22 @@ class CategoryViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        if user.is_authenticated:
-            return Category.objects.filter(culture__user=user).select_related('culture')
-        return Category.objects.none()
-
+        code = self.request.query_params.get('code', None)
+        qs = Category.objects.select_related('culture')
+        
+        if not user.is_authenticated:
+            return Category.objects.none()
+        
+        if code:
+            qs = qs.filter(culture__code=code, culture__user=user)
+        else:
+            qs = qs.filter(culture__user=user)
+        return qs
+    
     def perform_create(self, serializer):
+        culture = serializer.validated_data.get('culture')
+        if culture.user != self.request.user:
+            raise PermissionError("You can only add categories to your own cultures.")
         serializer.save()
 
 class PeriodViewSet(viewsets.ModelViewSet):

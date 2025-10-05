@@ -39,6 +39,21 @@ class CultureSerializer(serializers.ModelSerializer):
     class Meta:
         model = Culture
         fields = ['id', 'user', 'name', 'code', 'colour', 'picture', 'created_at', 'updated_at']
+        
+    def create(self, validated_data):
+        culture = super().create(validated_data)
+        
+        default_category = ["Literature", "Film", "Music", "Art", "Cuisine", "History", "Language", "Calendar"]
+        
+        Category.objects.bulk_create([
+            Category(
+                culture=culture,
+                key=cat.lower(),
+                display_name=cat
+            ) for cat in default_category
+        ])
+        
+        return culture
 
 class ProfileSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
@@ -396,16 +411,10 @@ class UserHistoryEventSerializer(serializers.ModelSerializer):
     
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
-    password2 = serializers.CharField(write_only=True, required=True)
 
     class Meta:
         model = User
-        fields = ('username', 'email', 'password', 'password2')
-
-    def validate(self, attrs):
-        if attrs['password'] != attrs['password2']:
-            raise serializers.ValidationError({"password": "Passwords do not match."})
-        return attrs
+        fields = ('username', 'email', 'password')
 
     def create(self, validated_data):
         user = User.objects.create_user(
