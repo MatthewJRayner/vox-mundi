@@ -113,13 +113,24 @@ class Culture(TimestampedModel):
     code = models.SlugField(max_length=3)
     colour = ColorField(default='#FFFFFF')
     picture = models.URLField(blank=True, null=True)
+    shared_group_key = models.SlugField(
+        max_length=50,
+        blank=True,
+        default="",
+        help_text="Canonical key linking related cultures across users"
+    )
+    
+    def save(self, *args, **kwargs):
+        if not self.shared_group_key:
+            self.shared_group_key = self.code.lower()
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.name} ({self.user.username})"
 
     class Meta:
         unique_together = [('user', 'code')]
-        indexes = [models.Index(fields=['user', 'code'])]
+        indexes = [models.Index(fields=['user', 'code', 'shared_group_key'])]
         verbose_name_plural = "Cultures"
 
 class Category(TimestampedModel):
@@ -136,9 +147,10 @@ class Category(TimestampedModel):
 
 class Period(TimestampedModel):
     culture = models.ForeignKey(Culture, on_delete=models.CASCADE, related_name="periods")
-    section = models.CharField(max_length=100)
+    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name="periods")
     start_year = models.IntegerField()
     end_year = models.IntegerField()
+    title = models.CharField(max_length=200)
     desc = models.TextField(blank=True)
     short_intro = models.CharField(max_length=255, blank=True)
 
@@ -147,11 +159,11 @@ class Period(TimestampedModel):
             raise ValidationError("Start year must be less than or equal to end year.")
 
     def __str__(self):
-        return f"{self.section}: {self.start_year}-{self.end_year} ({self.culture.name})"
+        return f"{self.category.display_name}: {self.start_year}-{self.end_year} ({self.culture.name})"
 
     class Meta:
         verbose_name_plural = "Periods"
-        indexes = [models.Index(fields=['culture', 'section'])]
+        indexes = [models.Index(fields=["culture", "category"])]
 
 class PageContent(TimestampedModel):
     culture = models.ForeignKey(Culture, on_delete=models.CASCADE, related_name="pages")

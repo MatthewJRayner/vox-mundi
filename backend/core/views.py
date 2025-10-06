@@ -122,11 +122,23 @@ class PeriodViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        if user.is_authenticated:
-            return Period.objects.filter(culture__user=user).select_related('culture')
-        return Period.objects.none()
+        code = self.request.query_params.get('code', None)
+        key = self.request.query_params.get('key', None)
+        if not user.is_authenticated:
+            return Period.objects.none()
+        
+        qs = (Period.objects
+            .select_related('culture', 'category')
+            .filter(culture__user=user)
+        )
+        if code: qs = qs.filter(culture__code=code)
+        if key: qs = qs.filter(category__key=key)
+        return qs
 
     def perform_create(self, serializer):
+        culture = serializer.validated_data.get('culture')
+        if culture.user != self.request.user:
+            raise PermissionError("You do not own this culture.")
         serializer.save()
 
 class PageContentViewSet(viewsets.ModelViewSet):
@@ -135,11 +147,23 @@ class PageContentViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        if user.is_authenticated:
-            return PageContent.objects.filter(culture__user=user).select_related('culture', 'category')
-        return PageContent.objects.none()
+        code = self.request.query_params.get('code', None)
+        key = self.request.query_params.get('key', None)
+        if not user.is_authenticated:
+            return PageContent.objects.none()
+            
+        qs = (PageContent.objects
+            .select_related('culture', 'category')
+            .filter(culture__user=user)
+        )
+        if code: qs = qs.filter(culture__code=code)
+        if key: qs = qs.filter(category__key=key)
+        return qs
 
     def perform_create(self, serializer):
+        culture = serializer.validated_data.get('culture')
+        if culture.user != self.request.user:
+            raise PermissionError("You do not own this culture.")
         serializer.save()
 
 class RecipeViewSet(viewsets.ModelViewSet):
@@ -148,9 +172,30 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        if user.is_authenticated:
-            return Recipe.objects.filter(Q(user=user) | Q(visibility='public')).select_related('user').prefetch_related('cultures')
-        return Recipe.objects.filter(visibility='public').select_related('user').prefetch_related('cultures')
+        code = self.request.query_params.get('code', None)
+        shared = self.request.query_params.get('shared') == 'true'
+        
+        qs = Recipe.objects.select_related('user').prefetch_related('cultures')
+        
+        if not user.is_authenticated:
+            return qs.filter(visibility=Visibility.PUBLIC)
+        
+        if not shared:
+            return qs.filter(user=user)
+        
+        if code:
+            try:
+                user_culture = Culture.objects.get(user=user, code=code)
+            except Culture.DoesNotExist:
+                return qs.none()
+            
+            group_key = user_culture.shared_group_key
+            return qs.filter(
+                visibility=Visibility.PUBLIC,
+                cultures__shared_group_key=group_key
+            ).exclude(user=user).distinct()
+            
+        return qs.filter(visibility=Visibility.PUBLIC).exclude(user=user).distinct()
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
@@ -161,9 +206,30 @@ class LangLessonViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        if user.is_authenticated:
-            return LangLesson.objects.filter(Q(user=user) | Q(visibility='public')).select_related('user').prefetch_related('cultures')
-        return LangLesson.objects.filter(visibility='public').select_related('user').prefetch_related('cultures')
+        code = self.request.query_params.get('code', None)
+        shared = self.request.query_params.get('shared') == 'true'
+        
+        qs = LangLesson.objects.select_related('user').prefetch_related('cultures')
+        
+        if not user.is_authenticated:
+            return qs.filter(visibility=Visibility.PUBLIC)
+        
+        if not shared:
+            return qs.filter(user=user)
+        
+        if code:
+            try:
+                user_culture = Culture.objects.get(user=user, code=code)
+            except Culture.DoesNotExist:
+                return qs.none()
+            
+            group_key = user_culture.shared_group_key
+            return qs.filter(
+                visibility=Visibility.PUBLIC,
+                cultures__shared_group_key=group_key
+            ).exclude(user=user).distinct()
+            
+        return qs.filter(visibility=Visibility.PUBLIC).exclude(user=user).distinct()
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
@@ -174,9 +240,30 @@ class CalendarDateViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        if user.is_authenticated:
-            return CalendarDate.objects.filter(Q(user=user) | Q(visibility='public')).select_related('user', 'person').prefetch_related('cultures')
-        return CalendarDate.objects.filter(visibility='public').select_related('user', 'person').prefetch_related('cultures')
+        code = self.request.query_params.get('code', None)
+        shared = self.request.query_params.get('shared') == 'true'
+        
+        qs = CalendarDate.objects.select_related('user').prefetch_related('cultures')
+        
+        if not user.is_authenticated:
+            return qs.filter(visibility=Visibility.PUBLIC)
+        
+        if not shared:
+            return qs.filter(user=user)
+        
+        if code:
+            try:
+                user_culture = Culture.objects.get(user=user, code=code)
+            except Culture.DoesNotExist:
+                return qs.none()
+            
+            group_key = user_culture.shared_group_key
+            return qs.filter(
+                visibility=Visibility.PUBLIC,
+                cultures__shared_group_key=group_key
+            ).exclude(user=user).distinct()
+            
+        return qs.filter(visibility=Visibility.PUBLIC).exclude(user=user).distinct()
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
@@ -186,7 +273,9 @@ class PersonViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticatedOrReadOnly]
 
     def get_queryset(self):
-        return Person.objects.select_related('birth_date', 'death_date')
+        query = self.request.query_params.get('q', None)
+        nationality = self.request.query_params.get('nationality', None)
+        qs = Person.objects.select_related('birth_date', 'death_date')
 
 class MapBorderViewSet(viewsets.ModelViewSet):
     serializer_class = MapBorderSerializer
@@ -194,6 +283,7 @@ class MapBorderViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
+        code = self.request.query_params.get('code', None)
         if user.is_authenticated:
             return MapBorder.objects.filter(culture__user=user).select_related('culture', 'period')
         return MapBorder.objects.none()

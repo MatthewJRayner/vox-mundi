@@ -75,11 +75,21 @@ class CategorySerializer(serializers.ModelSerializer):
 
 class PeriodSerializer(serializers.ModelSerializer):
     culture = CultureSerializer(read_only=True)
-    culture_id = serializers.PrimaryKeyRelatedField(queryset=Culture.objects.all(), source='culture', write_only=True, required=False)
+    culture_id = serializers.PrimaryKeyRelatedField(
+        queryset=Culture.objects.all(), source='culture', write_only=True
+    )
+    category = CategorySerializer(read_only=True)
+    category_id = serializers.PrimaryKeyRelatedField(
+        queryset=Category.objects.all(), source='category', write_only=True
+    )
 
     class Meta:
         model = Period
-        fields = ['id', 'culture', 'culture_id', 'section', 'start_year', 'end_year', 'desc', 'short_intro', 'created_at', 'updated_at']
+        fields = [
+            'id', 'culture', 'culture_id', 'category', 'category_id',
+            'start_year', 'end_year', 'desc', 'short_intro',
+            'created_at', 'updated_at'
+        ]
 
 class PageContentSerializer(serializers.ModelSerializer):
     culture = CultureSerializer(read_only=True)

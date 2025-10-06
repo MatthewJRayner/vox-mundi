@@ -83,7 +83,7 @@ export default function CreateCulturePage() {
         <button
           onClick={handleCreateCulture}
           disabled={loading}
-          className="bg-primary text-white py-2 px-1 rounded hover:bg-primary/80 disabled:opacity-50 cursor-pointer transition-all duration-300 hover:scale-105 active:scale-90"
+          className="bg-foreground w-1/3 mt-4 text-background py-2 px-1 rounded hover:bg-foreground/80 disabled:opacity-50 cursor-pointer transition-all duration-300 hover:scale-105 active:scale-90"
         >
           {loading ? "Creating..." : "Create Culture"}
         </button>
