@@ -1,7 +1,7 @@
-"use client";
-
 export default function CulturePage() {
-    return (
-        <div className="text-main"></div>
-    )
+  return (
+    <main className="min-h-screen p-4 w-full">
+      Hello!
+    </main>
+  );
 }

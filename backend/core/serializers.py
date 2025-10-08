@@ -76,7 +76,7 @@ class CategorySerializer(serializers.ModelSerializer):
 class PeriodSerializer(serializers.ModelSerializer):
     culture = CultureSerializer(read_only=True)
     culture_id = serializers.PrimaryKeyRelatedField(
-        queryset=Culture.objects.all(), source='culture', write_only=True
+        queryset=Culture.objects.all(), source='culture', write_only=True, required=False
     )
     category = CategorySerializer(read_only=True)
     category_id = serializers.PrimaryKeyRelatedField(
@@ -214,12 +214,24 @@ class MapBorderSerializer(serializers.ModelSerializer):
 class MapPinSerializer(serializers.ModelSerializer):
     culture = CultureSerializer(read_only=True)
     period = PeriodSerializer(read_only=True)
+    date = DateEstimateSerializer(read_only=True)
+    date_id = serializers.PrimaryKeyRelatedField(queryset=DateEstimate.objects.all(), source='date', write_only=True, required=False)
     culture_id = serializers.PrimaryKeyRelatedField(queryset=Culture.objects.all(), source='culture', write_only=True, required=False)
     period_id = serializers.PrimaryKeyRelatedField(queryset=Period.objects.all(), source='period', write_only=True, required=False)
 
     class Meta:
         model = MapPin
-        fields = ['id', 'culture', 'culture_id', 'period', 'period_id', 'type', 'loc', 'external_links', 'created_at', 'updated_at']
+        fields = ['id', 'culture', 'culture_id', 'period', 'period_id', 'date', 'date_id', 'type', 'loc', 'external_links', 'created_at', 'updated_at', 'title', 'photo', 'location', 'happened', 'significance']
+    
+    def validate_loc(self, value): 
+        if not isinstance(value, dict): 
+            raise serializers.ValidationError("loc must be a GeoJSON object") 
+        if value.get("type") != "Point": 
+            raise serializers.ValidationError("loc.type must be 'Point'") 
+        coords = value.get("coordinates") 
+        if not (isinstance(coords, (list, tuple)) and len(coords) == 2): 
+            raise serializers.ValidationError("loc.coordinates must be [lng, lat]") 
+        return value
 
 class LanguageTableSerializer(serializers.ModelSerializer):
     culture = CultureSerializer(read_only=True)
@@ -354,7 +366,7 @@ class ArtworkSerializer(serializers.ModelSerializer):
     class Meta:
         model = Artwork
         fields = ['id', 'title', 'alt_title', 'creator', 'creator_id', 'creator_string', 'alt_creator_name', 'date', 'date_id', 'external_links', 'tags',
-                  'group', 'location', 'associated_culture', 'themes', 'photo', 'model_3d',
+                  'group', 'location', 'associated_culture', 'photo', 'model_3d',
                   'type', 'wikidata_id', 'created_at', 'updated_at']
 
     def validate_wikidata_id(self, value):
@@ -367,14 +379,12 @@ class HistoryEventSerializer(serializers.ModelSerializer):
     creator_id = serializers.PrimaryKeyRelatedField(queryset=Person.objects.all(), source='creator', write_only=True, required=False)
     date = DateEstimateSerializer(read_only=True)
     date_id = serializers.PrimaryKeyRelatedField(queryset=DateEstimate.objects.all(), source='date', write_only=True, required=False)
-    period = PeriodSerializer(read_only=True)
-    period_id = serializers.PrimaryKeyRelatedField(queryset=Period.objects.all(), source='period', write_only=True, required=False)
     tags = TagListSerializerField(required=False)
 
     class Meta:
         model = HistoryEvent
-        fields = ['id', 'title', 'alt_title', 'creator', 'creator_id', 'creator_string', 'alt_creator_name', 'date', 'date_id', 'period', 'period_id', 'external_links', 'tags',
-                  'type', 'location', 'sources', 'significance_level', 'wikidata_id', 'created_at', 'updated_at']
+        fields = ['id', 'title', 'alt_title', 'creator', 'creator_id', 'creator_string', 'alt_creator_name', 'date', 'date_id', 'external_links', 'tags',
+                  'type', 'location', 'wikidata_id', 'created_at', 'updated_at']
 
     def validate_wikidata_id(self, value):
         if value and HistoryEvent.objects.filter(wikidata_id=value).exists():
@@ -496,7 +506,7 @@ class UserArtworkSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserArtwork
         fields = ['id', 'user', 'universal_item', 'universal_item_id', 'cultures', 'culture_ids', 'rating', 'notes', 'visibility',
-                  'owned', 'created_at', 'updated_at']
+                  'owned', 'created_at', 'updated_at', 'themes']
 
     def validate_culture_ids(self, value):
         user = self.context['request'].user
@@ -526,11 +536,13 @@ class UserHistoryEventSerializer(serializers.ModelSerializer):
     universal_item_id = serializers.PrimaryKeyRelatedField(queryset=UniversalItem.objects.all(), source='universal_item', write_only=True, required=False)
     cultures = CultureSerializer(many=True, read_only=True)
     culture_ids = serializers.PrimaryKeyRelatedField(queryset=Culture.objects.all(), many=True, source='cultures', write_only=True, required=False)
+    period = PeriodSerializer(read_only=True)
+    period_id = serializers.PrimaryKeyRelatedField(queryset=Period.objects.all(), source='period', write_only=True, required=False)
 
     class Meta:
         model = UserHistoryEvent
         fields = ['id', 'user', 'universal_item', 'universal_item_id', 'cultures', 'culture_ids', 'rating', 'notes', 'visibility',
-                  'importance_rank', 'created_at', 'updated_at']
+                  'importance_rank', 'created_at', 'sources', 'significance_level', 'period', 'period_id', 'updated_at']
 
     def validate_culture_ids(self, value):
         user = self.context['request'].user

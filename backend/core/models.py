@@ -292,6 +292,12 @@ class MapPin(TimestampedModel):
         choices=Visibility.choices,
         default=Visibility.PRIVATE
     )
+    title = models.CharField(max_length=200, null=True, blank=True)
+    photo = models.URLField(null=True, blank=True)
+    date = models.ForeignKey('DateEstimate', on_delete=models.SET_NULL, null=True, blank=True)
+    location = models.CharField(max_length=200, null=True, blank=True)
+    happened = models.TextField(blank=True, null=True)
+    significance = models.TextField(blank=True, null=True)
 
     def __str__(self):
         return f"{self.type} Pin ({self.culture.name})"
@@ -462,7 +468,6 @@ class Artwork(AbstractMedia):
     group = models.CharField(max_length=100, choices=[("artwork", "Artwork"), ("artifact", "Artifact")])
     location = models.CharField(max_length=200, blank=True)
     associated_culture = models.CharField(max_length=200, blank=True)
-    themes = models.TextField(blank=True)
     photo = models.URLField(blank=True, null=True)
     model_3d = models.URLField(blank=True, null=True)
     type = models.CharField(max_length=100, blank=True)
@@ -475,6 +480,8 @@ class Artwork(AbstractMedia):
 
 class UserArtwork(AbstractUserTrackingModel):
     universal_item = models.ForeignKey(UniversalItem, on_delete=models.CASCADE, related_name="user_artworks")
+    photo = models.URLField(blank=True, null=True)
+    themes = models.TextField(blank=True)
     owned = models.BooleanField(default=False)
     
     def __str__(self):
@@ -488,10 +495,7 @@ class UserArtwork(AbstractUserTrackingModel):
 # ---- HISTORY EVENT ----
 class HistoryEvent(AbstractMedia):
     type = models.CharField(max_length=100)
-    period = models.ForeignKey(Period, on_delete=models.SET_NULL, null=True, blank=True, related_name="events")
     location = models.CharField(max_length=200, blank=True)
-    sources = models.TextField(blank=True)
-    significance_level = models.PositiveSmallIntegerField(default=0)
     wikidata_id = models.CharField(max_length=20, null=True, blank=True, unique=True)
     universal_item = GenericRelation(UniversalItem, related_query_name="event")
 
@@ -501,6 +505,9 @@ class HistoryEvent(AbstractMedia):
         
 class UserHistoryEvent(AbstractUserTrackingModel):
     universal_item = models.ForeignKey(UniversalItem, on_delete=models.CASCADE, related_name="user_history_events")
+    period = models.ForeignKey(Period, on_delete=models.SET_NULL, null=True, blank=True, related_name="events")
+    sources = models.TextField(blank=True)
+    significance_level = models.PositiveSmallIntegerField(default=0)
     importance_rank = models.PositiveSmallIntegerField(null=True, blank=True)
 
     def __str__(self):

@@ -2,7 +2,7 @@
 import { useState } from "react";
 import api from "../../lib/api";
 import { useRouter } from "next/navigation";
-import { useUser } from "@/context/UserContext";
+import { useUser } from "@/context/UserProvider";
 
 export default function AuthForm() {
   const [mode, setMode] = useState<"login" | "register">("login");
@@ -50,16 +50,16 @@ export default function AuthForm() {
       <div className="flex space-x-4">
         <button
           onClick={() => setMode("login")}
-          className={`p-2 px-4 rounded hover:bg-primary/50 cursor-pointer ${
-            mode === "login" ? "bg-primary text-white" : "bg-gray-200"
+          className={`p-2 px-4 rounded hover:bg-foreground/50 cursor-pointer font-lora text-xl ${
+            mode === "login" ? "bg-foreground text-background" : "bg-gray-200"
           }`}
         >
           Login
         </button>
         <button
           onClick={() => setMode("register")}
-          className={`p-2 px-4 rounded hover:bg-primary/50 cursor-pointer ${
-            mode === "register" ? "bg-primary text-white" : "bg-gray-200"
+          className={`p-2 px-4 rounded hover:bg-foreground/50 cursor-pointer font-lora text-xl ${
+            mode === "register" ? "bg-foreground text-background" : "bg-gray-200"
           }`}
         >
           Sign Up
@@ -68,9 +68,9 @@ export default function AuthForm() {
 
       <form
         onSubmit={handleSubmit}
-        className="flex flex-col space-y-4 p-4 border rounded w-80"
+        className="flex flex-col space-y-4 p-6 bg-extra rounded w-100"
       >
-        <h2 className="text-xl font-bold text-center">
+        <h2 className="text-xl font-bold font-garamond text-center">
           {mode === "login" ? "Login to your account" : "Create an account"}
         </h2>
 
@@ -81,7 +81,7 @@ export default function AuthForm() {
           onChange={(e) =>
             setFormData({ ...formData, username: e.target.value })
           }
-          className="p-2 border rounded"
+          className="p-2 border-b-2 border-b-foreground rounded-t"
           required
         />
 
@@ -93,7 +93,7 @@ export default function AuthForm() {
             onChange={(e) =>
               setFormData({ ...formData, email: e.target.value })
             }
-            className="p-2 border rounded"
+            className="p-2 border-b-2 border-b-foreground rounded-t"
             required
           />
         )}
@@ -105,13 +105,13 @@ export default function AuthForm() {
           onChange={(e) =>
             setFormData({ ...formData, password: e.target.value })
           }
-          className="p-2 border rounded"
+          className="p-2 border-b-2 border-b-foreground rounded-t"
           required
         />
 
         {error && <p className="text-red-500 text-sm text-center">{error}</p>}
 
-        <button type="submit" className="bg-primary text-white p-2 rounded cursor-pointer hover:bg-primary/80">
+        <button type="submit" className="bg-foreground text-background font-lora text-xl p-2 rounded cursor-pointer hover:bg-foreground/80">
           {mode === "login" ? "Login" : "Sign Up"}
         </button>
       </form>

@@ -3,7 +3,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import ThemeToggle from "./ThemeToggle";
-import { useUser } from "@/context/UserContext";
+import { useUser } from "@/context/UserProvider";
 
 interface Category {
   key: string;
@@ -87,7 +87,7 @@ export default function Navbar({ culture, categories = [] }: NavbarProps) {
             </button>
 
             {dropdownOpen && (
-              <div className="absolute right-0 mt-2 w-40 bg-extra border border-border rounded shadow-md z-50">
+              <div className="absolute right-0 mt-2 w-40 bg-extra rounded shadow-md z-50">
                 <Link
                   href="/profile"
                   className="block px-4 py-2 text-sm hover:bg-background/80 cursor-pointer"
@@ -96,7 +96,7 @@ export default function Navbar({ culture, categories = [] }: NavbarProps) {
                 </Link>
                 <button
                   onClick={logout}
-                  className="block w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-background/80 cursor-pointer"
+                  className="block w-full text-left px-4 py-2 text-sm text-main hover:bg-background/80 cursor-pointer"
                 >
                   Logout
                 </button>

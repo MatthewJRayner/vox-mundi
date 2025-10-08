@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import api from "@/lib/api";
-import { Culture } from "@/types/culture";
+import { Culture } from "@/types";
 import Link from "next/link";
 
 export default function CulturesList() {

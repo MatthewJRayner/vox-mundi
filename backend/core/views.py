@@ -4,8 +4,10 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError
 from django.contrib.auth.models import User
 from django.db.models import Q, Avg, Count
+from django.shortcuts import get_object_or_404
 from .models import (
     Profile, Culture, Category, Period, PageContent, Recipe, LangLesson,
     CalendarDate, Person, MapBorder, MapPin, LanguageTable, UniversalItem,
@@ -143,10 +145,20 @@ class PeriodViewSet(viewsets.ModelViewSet):
         return qs
 
     def perform_create(self, serializer):
-        culture = serializer.validated_data.get('culture')
-        if culture.user != self.request.user:
-            raise PermissionError("You do not own this culture.")
-        serializer.save()
+        user = self.request.user
+        code = self.request.data.get("culture_code")
+        category_id = self.request.data.get("category_id")
+
+        if not code or not category_id:
+            raise ValidationError("Culture code and category ID are required.")
+
+        try:
+            culture = Culture.objects.get(user=user, code=code)
+            category = Category.objects.get(id=category_id, culture=culture)
+        except (Culture.DoesNotExist, Category.DoesNotExist):
+            raise ValidationError("Invalid culture or category.")
+
+        serializer.save(culture=culture, category=category)
 
 class PageContentViewSet(viewsets.ModelViewSet):
     serializer_class = PageContentSerializer
@@ -344,10 +356,23 @@ class MapBorderViewSet(viewsets.ModelViewSet):
                 period__category__key="history"
             )
 
-        return qs
+        return qs.distinct()
 
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+        user = self.request.user
+        culture_id = self.request.data.get("culture_id")
+        period_id = self.request.data.get("period_id")
+
+        try:
+            culture = Culture.objects.get(id=culture_id, user=user)
+        except Culture.DoesNotExist:
+            raise ValidationError({"culture": "Invalid or unauthorized culture."})
+
+        period = None
+        if period_id:
+            period = Period.objects.filter(id=period_id, culture=culture).first()
+
+        serializer.save(culture=culture, period=period)
 
 class MapPinViewSet(viewsets.ModelViewSet):
     serializer_class = MapPinSerializer
@@ -398,7 +423,20 @@ class MapPinViewSet(viewsets.ModelViewSet):
         return qs.distinct()
 
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+        user = self.request.user
+        culture_id = self.request.data.get("culture_id")
+        period_id = self.request.data.get("period_id")
+
+        try:
+            culture = Culture.objects.get(id=culture_id, user=user)
+        except Culture.DoesNotExist:
+            raise ValidationError({"culture": "Invalid or unauthorized culture."})
+
+        period = None
+        if period_id:
+            period = Period.objects.filter(id=period_id, culture=culture).first()
+
+        serializer.save(culture=culture, period=period)
 
 class LanguageTableViewSet(viewsets.ModelViewSet):
     serializer_class = LanguageTableSerializer
