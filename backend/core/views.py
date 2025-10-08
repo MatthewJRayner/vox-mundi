@@ -3,13 +3,14 @@ from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnl
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.decorators import action
 from django.contrib.auth.models import User
-from django.db.models import Q
+from django.db.models import Q, Avg, Count
 from .models import (
     Profile, Culture, Category, Period, PageContent, Recipe, LangLesson,
     CalendarDate, Person, MapBorder, MapPin, LanguageTable, UniversalItem,
     Book, Film, MusicPiece, Artwork, HistoryEvent, UserBook, UserFilm,
-    UserMusicPiece, UserArtwork, UserHistoryEvent, Visibility
+    UserMusicPiece, UserArtwork, UserHistoryEvent, Visibility, List
 )
 from .serializers import (
     ProfileSerializer, CultureSerializer, CategorySerializer, PeriodSerializer,
@@ -17,7 +18,7 @@ from .serializers import (
     PersonSerializer, MapBorderSerializer, MapPinSerializer, LanguageTableSerializer,
     UniversalItemSerializer, BookSerializer, FilmSerializer, MusicPieceSerializer,
     ArtworkSerializer, HistoryEventSerializer, UserBookSerializer, UserFilmSerializer,
-    UserMusicPieceSerializer, UserArtworkSerializer, UserHistoryEventSerializer, RegisterSerializer, UserSerializer
+    UserMusicPieceSerializer, UserArtworkSerializer, UserHistoryEventSerializer, RegisterSerializer, UserSerializer, ListSerializer
 )
 
 class RegisterView(generics.CreateAPIView):
@@ -78,11 +79,17 @@ class CultureViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user
         code = self.request.query_params.get('code', None)
+        shared = self.request.query_params.get('shared') == "true"
         qs = Culture.objects.select_related('user')
         
         if not user.is_authenticated:
             return Culture.objects.none()
         
+        if shared:
+            return qs.filter(
+                visibility=Visibility.PUBLIC    
+            ).exclude(user=user)
+            
         if code:
             qs = qs.filter(user=user, code=code)
         else: 
@@ -183,17 +190,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         if not shared:
             return qs.filter(user=user)
         
-        if code:
-            try:
-                user_culture = Culture.objects.get(user=user, code=code)
-            except Culture.DoesNotExist:
-                return qs.none()
-            
-            group_key = user_culture.shared_group_key
-            return qs.filter(
-                visibility=Visibility.PUBLIC,
-                cultures__shared_group_key=group_key
-            ).exclude(user=user).distinct()
+                                                                                                   
             
         return qs.filter(visibility=Visibility.PUBLIC).exclude(user=user).distinct()
 
@@ -249,7 +246,7 @@ class CalendarDateViewSet(viewsets.ModelViewSet):
             return qs.filter(visibility=Visibility.PUBLIC)
         
         if not shared:
-            return qs.filter(user=user)
+            qs.filter(user=user, culture__code=code)
         
         if code:
             try:
@@ -273,9 +270,34 @@ class PersonViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticatedOrReadOnly]
 
     def get_queryset(self):
+        qs = Person.objects.select_related('birth_date', 'death_date')
+
         query = self.request.query_params.get('q', None)
         nationality = self.request.query_params.get('nationality', None)
-        qs = Person.objects.select_related('birth_date', 'death_date')
+        profession = self.request.query_params.get('profession', None)
+        living = self.request.query_params.get('living', None)
+        wikidata = self.request.query_params.get('wikidata_id', None)
+
+        if query:
+            # Flexible name search (handles partial matches, e.g. “Mozart”, “de Vinci”)
+            qs = qs.filter(
+                Q(given_name__icontains=query) |
+                Q(family_name__icontains=query) |
+                Q(middle_name__icontains=query)
+            )
+        if nationality:
+            qs = qs.filter(nationality__icontains=nationality)
+        if profession:
+            qs = qs.filter(profession__icontains=profession)
+        if living == "true":
+            qs = qs.filter(death_date__isnull=True)
+        if wikidata:
+            qs = qs.filter(wikidata_id=wikidata)
+
+        return qs.order_by("family_name", "given_name")
+    
+    def perform_create(self, serializer):
+        serializer.save()
 
 class MapBorderViewSet(viewsets.ModelViewSet):
     serializer_class = MapBorderSerializer
@@ -283,13 +305,49 @@ class MapBorderViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        code = self.request.query_params.get('code', None)
-        if user.is_authenticated:
-            return MapBorder.objects.filter(culture__user=user).select_related('culture', 'period')
-        return MapBorder.objects.none()
+        code = self.request.query_params.get("code")
+        period_title = self.request.query_params.get("period")
+        shared = self.request.query_params.get("shared") == "true"
+
+        if not user.is_authenticated:
+            return MapBorder.objects.none()
+
+        qs = MapBorder.objects.select_related("culture", "period")
+
+        if shared:
+            if code:
+                try:
+                    user_culture = Culture.objects.get(user=user, code=code)
+                except Culture.DoesNotExist:
+                    return qs.none()
+
+                group_key = user_culture.shared_group_key
+
+                qs = qs.filter(
+                    culture__shared_group_key=group_key,
+                    culture__visibility=Visibility.PUBLIC
+                ).exclude(culture__user=user)
+
+            else:
+                qs = qs.filter(
+                    culture__visibility=Visibility.PUBLIC
+                ).exclude(culture__user=user)
+
+        else:
+            qs = qs.filter(culture__user=user)
+            if code:
+                qs = qs.filter(culture__code=code)
+
+        if period_title:
+            qs = qs.filter(
+                period__title=period_title,
+                period__category__key="history"
+            )
+
+        return qs
 
     def perform_create(self, serializer):
-        serializer.save()
+        serializer.save(user=self.request.user)
 
 class MapPinViewSet(viewsets.ModelViewSet):
     serializer_class = MapPinSerializer
@@ -297,12 +355,50 @@ class MapPinViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        if user.is_authenticated:
-            return MapPin.objects.filter(culture__user=user).select_related('culture', 'period')
-        return MapPin.objects.none()
+        code = self.request.query_params.get('code', None)
+        period_title = self.request.query_params.get('period', None)
+        shared = self.request.query_params.get('shared') == "true"
+        
+        if not user.is_authenticated:
+            return MapPin.objects.none()
+        
+        qs = MapPin.objects.select_related("culture", "period")
+        
+        if shared:
+            if code:
+                try:
+                    user_culture = Culture.objects.get(user=user, code=code)
+                except Culture.DoesNotExist:
+                    return qs.none()
+                group_key = user_culture.shared_group_key
+                
+                qs = qs.filter(
+                    culture__shared_group_key=group_key,
+                    culture__visibility=Visibility.PUBLIC,
+                    visibility=Visibility.PUBLIC
+                ).exclude(culture__user=user)
+            
+            else:
+                qs = qs.filter(
+                    culture__visibility=Visibility.PUBLIC,
+                    visibility=Visibility.PUBLIC    
+                ).exclude(culture__user=user)
+        
+        else:
+            qs = qs.filter(culture__user=user)
+            if code:
+                qs = qs.filter(culture__code=code)
+                
+        if period_title:
+            qs = qs.filter(
+                period__title=period_title,
+                period__category__key="history"
+            )
+            
+        return qs.distinct()
 
     def perform_create(self, serializer):
-        serializer.save()
+        serializer.save(user=self.request.user)
 
 class LanguageTableViewSet(viewsets.ModelViewSet):
     serializer_class = LanguageTableSerializer
@@ -310,60 +406,290 @@ class LanguageTableViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        if user.is_authenticated:
-            return LanguageTable.objects.filter(culture__user=user).select_related('culture')
-        return LanguageTable.objects.none()
+        code = self.request.query_params.get('code', None)
+        qs = LanguageTable.objects.select_related('culture')
+        
+        if not user.is_authenticated:
+            return LanguageTable.objects.none()
+        
+        if code:
+            qs = qs.filter(culture__code=code, culture__user=user)
+        else:
+            qs = qs.filter(culture__user=user)
+        return qs
 
     def perform_create(self, serializer):
         serializer.save()
 
 class UniversalItemViewSet(viewsets.ModelViewSet):
     serializer_class = UniversalItemSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    queryset = (
+        UniversalItem.objects
+        .select_related("content_type")
+        .prefetch_related('cultures')
+        .order_by('title')
+    )
+    
+    def get_permissions(self):
+        if self.action in ["list", "retrieve"]:
+            permission_classes = [AllowAny]
+        else:
+            permission_classes = [IsAuthenticated]
+        return [p() for p in permission_classes]
 
     def get_queryset(self):
-        user = self.request.user
-        if user.is_authenticated:
-            return UniversalItem.objects.filter(cultures__user=user).select_related('content_type').prefetch_related('cultures')
-        return UniversalItem.objects.none()
+        q = self.request.query_params.get("q", None)
+        code = self.request.query_params.get("code", None)
+        type_filter = self.request.query_params.get("type", None)
+        
+        qs = self.queryset
+        
+        if code:
+            qs = qs.filter(cultures__code__iexact=code)
+        if type_filter:
+            qs = qs.filter(type__iexact=type_filter)
+            
+        if q:
+            qs = qs.filter(
+                Q(title__icontains=q)
+                | Q(creator_string__icontains=q)
+            )
+        
+        return qs.distinct()
 
     def perform_create(self, serializer):
         serializer.save()
-
+ 
 class BookViewSet(viewsets.ModelViewSet):
     serializer_class = BookSerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
 
     def get_queryset(self):
-        return Book.objects.select_related('creator', 'date').prefetch_related('universal_item')
+        q = self.request.query_params.get("q", None)
+        isbn = self.request.query_params.get("isbn", None)
+        language = self.request.query_params.get("language", None)
+        genre = self.request.query_params.get("genre", None)
+        
+        qs = (
+            Book.objects
+            .select_related("creator", "date")
+            .prefetch_related("universal_item__cultures")
+            .order_by("title")
+        )
+        
+        if isbn:
+            qs = qs.filter(isbn__iexact=isbn)
+        if language:
+            qs = qs.filter(language__icontains=language)
+        if genre:
+            qs = qs.filter(genre__icontains=genre)
+            
+        if q:
+            qs = qs.filter(
+                Q(title__icontains=q)
+                | Q(alt_title__icontains=q)
+                | Q(creator_string__icontains=q)
+                | Q(alt_creator_name__icontains=q)
+            )
+        
+        return qs.distinct()
+    
+    def perform_create(self, serializer):
+        serializer.save()
 
 class FilmViewSet(viewsets.ModelViewSet):
     serializer_class = FilmSerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
 
     def get_queryset(self):
-        return Film.objects.select_related('creator', 'date').prefetch_related('universal_item')
+        q = self.request.query_params.get("q", None)
+        tmdb_id = self.request.query_params.get("tmdb_id", None)
+        genre = self.request.query_params.get("genre", None)
+        actor = self.request.query_params.get("actor", None)
+        crew = self.request.query_params.get("crew", None)
+        role = self.request.query_params.get("role", None)
+        
+        qs = (
+            Film.objects
+            .select_related("creator", "date")
+            .prefetch_related("universal_item__cultures")
+            .order_by("title")
+        )
+        
+        if tmdb_id:
+            qs = qs.filter(tmdb_id__iexact=tmdb_id)
+        if genre:
+            qs = qs.filter(genre__icontains=genre)
+            
+        if q:
+            qs = qs.filter(
+                Q(title__icontains=q)
+                | Q(alt_title__icontains=q)
+                | Q(creator_string__icontains=q)
+                | Q(alt_creator_name__icontains=q)
+            )
+            
+        if actor:
+            qs = qs.filter(
+                Q(cast__icontains=actor)
+            )
+        if crew:
+            qs = qs.filter(
+                Q(crew__icontains=crew)
+            )
+        if role:
+            qs = qs.filter(
+                Q(crew__icontains=role)
+            )
+            
+        return qs.distinct()
+    
+    def perform_create(self, serializer):
+        serializer.save()
+        
+    @action(detail=True, methods=["get"], url_path="details")
+    def details(self, request, pk=None):
+        film = self.get_object()
+        user_films = film.universal_item.user_films.filter(visibility=Visibility.PUBLIC)
+        
+        avg_rating = user_films.aggregate(avg=Avg("rating"))["avg"]
+        review_count = user_films.aggregate(count=Count("id"))["count"]
+        
+        serializer = self.get_serializer(film)
+        userfilm_data = UserFilmSerializer(user_films[:10], many=True).data
+        
+        return Response({
+            "film": serializer.data,
+            "average_rating": avg_rating,
+            "review_count": review_count,
+            "reviews": userfilm_data,
+        })
 
 class MusicPieceViewSet(viewsets.ModelViewSet):
     serializer_class = MusicPieceSerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
 
     def get_queryset(self):
-        return MusicPiece.objects.select_related('creator', 'date').prefetch_related('universal_item')
+        q = self.request.query_params.get("q", None)
+        code = self.request.query_params.get("code", None)
+        type_filter = self.request.query_params.get("type", None)
+
+        qs = (
+            MusicPiece.objects
+            .select_related("creator", "date")
+            .prefetch_related("universal_item__cultures")
+            .order_by("title")
+        )
+
+        if code:
+            try:
+                user_culture = Culture.objects.get(code=code)
+                qs = qs.filter(universal_item__cultures__shared_group_key=user_culture.shared_group_key)
+            except Culture.DoesNotExist:
+                return MusicPiece.objects.none()
+
+        if type_filter:
+            qs = qs.filter(type__icontains=type_filter)
+
+        if q:
+            qs = qs.filter(
+                Q(title__icontains=q) |
+                Q(creator__given_name__icontains=q) |
+                Q(creator__family_name__icontains=q) |
+                Q(creator_string__icontains=q) |
+                Q(instrument__icontains=q)
+            )
+
+        return qs.distinct()
+    
+    def perform_create(self, serializer):
+        serializer.save()
 
 class ArtworkViewSet(viewsets.ModelViewSet):
     serializer_class = ArtworkSerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
 
     def get_queryset(self):
-        return Artwork.objects.select_related('creator', 'date').prefetch_related('universal_item')
+        q = self.request.query_params.get("q", None)
+        code = self.request.query_params.get("code", None)
+        type_filter = self.request.query_params.get("type", None)
 
+        qs = (
+            Artwork.objects
+            .select_related("creator", "date")
+            .prefetch_related("universal_item__cultures")
+            .order_by("title")
+        )
+
+        if code:
+            try:
+                user_culture = Culture.objects.get(code=code)
+                qs = qs.filter(universal_item__cultures__shared_group_key=user_culture.shared_group_key)
+            except Culture.DoesNotExist:
+                return Artwork.objects.none()
+
+        if type_filter:
+            qs = qs.filter(type__icontains=type_filter)
+
+        if q:
+            qs = qs.filter(
+                Q(title__icontains=q) |
+                Q(creator__given_name__icontains=q) |
+                Q(creator__family_name__icontains=q) |
+                Q(creator_string__icontains=q) |
+                Q(associated_culture__icontains=q) |
+                Q(themes__icontains=q)
+            )
+
+        return qs.distinct()
+
+    def perform_create(self, serializer):
+        serializer.save()
+    
 class HistoryEventViewSet(viewsets.ModelViewSet):
     serializer_class = HistoryEventSerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
 
     def get_queryset(self):
-        return HistoryEvent.objects.select_related('creator', 'date', 'period').prefetch_related('universal_item')
+        q = self.request.query_params.get("q", None)
+        code = self.request.query_params.get("code", None)
+        period_title = self.request.query_params.get("period", None)
+        type_filter = self.request.query_params.get("type", None)
+
+        qs = (
+            HistoryEvent.objects
+            .select_related("creator", "date", "period")
+            .prefetch_related("universal_item__cultures")
+            .order_by("date__earliest_year")
+        )
+
+        if code:
+            try:
+                user_culture = Culture.objects.get(code=code)
+                qs = qs.filter(universal_item__cultures__shared_group_key=user_culture.shared_group_key)
+            except Culture.DoesNotExist:
+                return HistoryEvent.objects.none()
+
+        if period_title:
+            qs = qs.filter(period__title__iexact=period_title)
+
+        if type_filter:
+            qs = qs.filter(type__icontains=type_filter)
+
+        if q:
+            qs = qs.filter(
+                Q(title__icontains=q) |
+                Q(creator__given_name__icontains=q) |
+                Q(creator__family_name__icontains=q) |
+                Q(creator_string__icontains=q) |
+                Q(location__icontains=q) |
+                Q(sources__icontains=q)
+            )
+
+        return qs.distinct()
+
+    def perform_create(self, serializer):
+        serializer.save()
 
 class UserBookViewSet(viewsets.ModelViewSet):
     serializer_class = UserBookSerializer
@@ -371,9 +697,23 @@ class UserBookViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        if user.is_authenticated:
-            return UserBook.objects.filter(Q(user=user) | Q(visibility='public')).select_related('user', 'universal_item').prefetch_related('cultures')
-        return UserBook.objects.filter(visibility='public').select_related('user', 'universal_item').prefetch_related('cultures')
+        shared = self.request.query_params.get("shared") == "true"
+        if not user.is_authenticated:
+            return UserBook.objects.filter(visibility=Visibility.PUBLIC)
+        
+        qs = (
+            UserBook.objects
+            .select_related("user", "universal_item")
+            .prefetch_related("cultures", "universal_item__cultures")
+            .order_by("-updated_at")
+        )
+        
+        if shared:
+            qs = qs.filter(visibility=Visibility.PUBLIC).exclude(user=user)
+        else:
+            qs = qs.filter(user=user)
+            
+        return qs.distinct()
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
@@ -390,6 +730,24 @@ class UserFilmViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
+        
+    @action(detail=False, methods=["get"], url_path="by-film/(?P<film_id>[^/.]+)")
+    def by_film(self, request, film_id=None):
+        user = request.user
+        if not user.is_authenticated:
+            return Response({"detail": "Authentication required."}, status=401)
+
+        try:
+            universal_item = UniversalItem.objects.get(film__id=film_id)
+            user_film = UserFilm.objects.filter(user=user, universal_item=universal_item).first()
+        except UniversalItem.DoesNotExist:
+            return Response({"detail": "Film not found."}, status=404)
+
+        if user_film:
+            serializer = self.get_serializer(user_film)
+            return Response(serializer.data)
+        else:
+            return Response({"detail": "No entry yet."})
 
 class UserMusicPieceViewSet(viewsets.ModelViewSet):
     serializer_class = UserMusicPieceSerializer
@@ -397,9 +755,38 @@ class UserMusicPieceViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        if user.is_authenticated:
-            return UserMusicPiece.objects.filter(Q(user=user) | Q(visibility='public')).select_related('user', 'universal_item').prefetch_related('cultures')
-        return UserMusicPiece.objects.filter(visibility='public').select_related('user', 'universal_item').prefetch_related('cultures')
+        shared = self.request.query_params.get("shared") == "true"
+        code = self.request.query_params.get("code")
+
+        if not user.is_authenticated:
+            return UserMusicPiece.objects.none()
+
+        qs = (
+            UserMusicPiece.objects
+            .select_related("user", "universal_item")
+            .prefetch_related("cultures", "universal_item__cultures")
+            .order_by("-updated_at")
+        )
+
+        if shared:
+            if code:
+                try:
+                    user_culture = Culture.objects.get(user=user, code=code)
+                    group_key = user_culture.shared_group_key
+                    qs = qs.filter(
+                        visibility=Visibility.PUBLIC,
+                        cultures__shared_group_key=group_key
+                    ).exclude(user=user)
+                except Culture.DoesNotExist:
+                    return qs.none()
+            else:
+                qs = qs.filter(visibility=Visibility.PUBLIC).exclude(user=user)
+        else:
+            qs = qs.filter(user=user)
+            if code:
+                qs = qs.filter(cultures__code__iexact=code)
+
+        return qs.distinct()
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
@@ -410,9 +797,38 @@ class UserArtworkViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        if user.is_authenticated:
-            return UserArtwork.objects.filter(Q(user=user) | Q(visibility='public')).select_related('user', 'universal_item').prefetch_related('cultures')
-        return UserArtwork.objects.filter(visibility='public').select_related('user', 'universal_item').prefetch_related('cultures')
+        shared = self.request.query_params.get("shared") == "true"
+        code = self.request.query_params.get("code")
+
+        if not user.is_authenticated:
+            return UserArtwork.objects.none()
+
+        qs = (
+            UserArtwork.objects
+            .select_related("user", "universal_item")
+            .prefetch_related("cultures", "universal_item__cultures")
+            .order_by("-updated_at")
+        )
+
+        if shared:
+            if code:
+                try:
+                    user_culture = Culture.objects.get(user=user, code=code)
+                    group_key = user_culture.shared_group_key
+                    qs = qs.filter(
+                        visibility=Visibility.PUBLIC,
+                        cultures__shared_group_key=group_key
+                    ).exclude(user=user)
+                except Culture.DoesNotExist:
+                    return qs.none()
+            else:
+                qs = qs.filter(visibility=Visibility.PUBLIC).exclude(user=user)
+        else:
+            qs = qs.filter(user=user)
+            if code:
+                qs = qs.filter(cultures__code__iexact=code)
+
+        return qs.distinct()
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
@@ -423,9 +839,92 @@ class UserHistoryEventViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        if user.is_authenticated:
-            return UserHistoryEvent.objects.filter(Q(user=user) | Q(visibility='public')).select_related('user', 'universal_item').prefetch_related('cultures')
-        return UserHistoryEvent.objects.filter(visibility='public').select_related('user', 'universal_item').prefetch_related('cultures')
+        shared = self.request.query_params.get("shared") == "true"
+        code = self.request.query_params.get("code")
+        period_title = self.request.query_params.get("period")
+
+        if not user.is_authenticated:
+            return UserHistoryEvent.objects.none()
+
+        qs = (
+            UserHistoryEvent.objects
+            .select_related("user", "universal_item")
+            .prefetch_related("cultures", "universal_item__cultures")
+            .order_by("-updated_at")
+        )
+
+        if shared:
+            if code:
+                try:
+                    user_culture = Culture.objects.get(user=user, code=code)
+                    group_key = user_culture.shared_group_key
+                    qs = qs.filter(
+                        visibility=Visibility.PUBLIC,
+                        cultures__shared_group_key=group_key
+                    ).exclude(user=user)
+                except Culture.DoesNotExist:
+                    return qs.none()
+            else:
+                qs = qs.filter(visibility=Visibility.PUBLIC).exclude(user=user)
+        else:
+            qs = qs.filter(user=user)
+            if code:
+                qs = qs.filter(cultures__code__iexact=code)
+
+        # Optional: filter by historical period (if linked through UniversalItem)
+        if period_title:
+            qs = qs.filter(
+                universal_item__event__period__title=period_title,
+                universal_item__event__period__category__key="history"
+            )
+
+        return qs.distinct()
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+        
+class ListViewSet(viewsets.ModelViewSet):
+    serializer_class = ListSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly, IsOwnerOrPublic]
+
+    def get_queryset(self):
+        user = self.request.user
+        code = self.request.query_params.get("code")
+        shared = self.request.query_params.get("shared") == "true"
+        type_filter = self.request.query_params.get("type")
+
+        qs = (
+            List.objects
+            .select_related("user")
+            .prefetch_related("cultures", "items")
+            .order_by("-updated_at")
+        )
+
+        if not user.is_authenticated:
+            return qs.filter(visibility=Visibility.PUBLIC)
+
+        if shared:
+            if code:
+                try:
+                    user_culture = Culture.objects.get(user=user, code=code)
+                    group_key = user_culture.shared_group_key
+                    qs = qs.filter(
+                        visibility=Visibility.PUBLIC,
+                        cultures__shared_group_key=group_key
+                    ).exclude(user=user)
+                except Culture.DoesNotExist:
+                    return qs.none()
+            else:
+                qs = qs.filter(visibility=Visibility.PUBLIC).exclude(user=user)
+        else:
+            qs = qs.filter(user=user)
+            if code:
+                qs = qs.filter(cultures__code__iexact=code)
+
+        if type_filter:
+            qs = qs.filter(type__iexact=type_filter)
+
+        return qs.distinct()
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
