@@ -7,7 +7,7 @@ from .models import (
     Profile, Culture, Category, Period, PageContent, Recipe, LangLesson,
     CalendarDate, Person, MapBorder, MapPin, LanguageTable, UniversalItem,
     Book, Film, MusicPiece, Artwork, HistoryEvent, UserBook, UserFilm,
-    UserMusicPiece, UserArtwork, UserHistoryEvent, DateEstimate, Visibility, List
+    UserMusicPiece, UserMusicArtist, UserArtwork, UserHistoryEvent, DateEstimate, Visibility, List
 )
 
 class UserSerializer(serializers.ModelSerializer):
@@ -32,6 +32,11 @@ class PersonSerializer(serializers.ModelSerializer):
                   'external_links', 'profession', 'nationality', 'birthplace',
                   'birth_date', 'birth_date_id', 'death_date', 'death_date_id', 'titles', 'epithets', 'resting_place',
                   'notable_works', 'wikidata_id']
+        
+class PersonSimpleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Person
+        fields = ['given_name', 'family_name', 'photo']
 
 class CultureSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
@@ -54,61 +59,67 @@ class CultureSerializer(serializers.ModelSerializer):
         ])
         
         return culture
+    
+class CultureSimpleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Culture
+        fields = ['name', 'code', 'shared_group_key']
 
 class ProfileSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
-    preferred_cultures = CultureSerializer(many=True, read_only=True)
+    preferred_cultures = CultureSimpleSerializer(many=True, read_only=True)
     preferred_culture_ids = serializers.PrimaryKeyRelatedField(queryset=Culture.objects.all(), source='preferred_cultures', many=True, write_only=True, required=False)
 
     class Meta:
         model = Profile
-        fields = ['id', 'user', 'bio', 'avatar', 'location', 'website',
+        fields = ['user', 'bio', 'avatar', 'location', 'website',
                   'preferred_cultures', 'preferred_culture_ids', 'display_reviews_publicly', 'created_at', 'updated_at']
 
 class CategorySerializer(serializers.ModelSerializer):
-    culture = CultureSerializer(read_only=True)
+    culture = CultureSimpleSerializer(read_only=True)
     culture_id = serializers.PrimaryKeyRelatedField(queryset=Culture.objects.all(), source='culture', write_only=True, required=False)
 
     class Meta:
         model = Category
         fields = ['id', 'culture', 'culture_id', 'key', 'display_name', 'created_at', 'updated_at']
+        
+class CategorySimpleSerializer(serializers.ModelSerializer):
+    culture = CultureSimpleSerializer(read_only=True)
+    class Meta:
+        model = Category
+        fields = ['id', 'key', 'display_name', 'culture']
 
 class PeriodSerializer(serializers.ModelSerializer):
-    culture = CultureSerializer(read_only=True)
     culture_id = serializers.PrimaryKeyRelatedField(
         queryset=Culture.objects.all(), source='culture', write_only=True, required=False
     )
-    category = CategorySerializer(read_only=True)
     category_id = serializers.PrimaryKeyRelatedField(
-        queryset=Category.objects.all(), source='category', write_only=True
+        queryset=Category.objects.all(), source='category', write_only=True, required=False
     )
 
     class Meta:
         model = Period
         fields = [
-            'id', 'culture', 'culture_id', 'category', 'category_id',
-            'start_year', 'end_year', 'desc', 'short_intro',
+            'id', 'culture_id', 'category_id',
+            'start_year', 'end_year', 'desc', 'short_intro', 'title',
             'created_at', 'updated_at'
         ]
 
 class PageContentSerializer(serializers.ModelSerializer):
-    culture = CultureSerializer(read_only=True)
-    category = CategorySerializer(read_only=True)
     culture_id = serializers.PrimaryKeyRelatedField(queryset=Culture.objects.all(), source='culture', write_only=True, required=False)
     category_id = serializers.PrimaryKeyRelatedField(queryset=Category.objects.all(), source='category', write_only=True, required=False)
 
     class Meta:
         model = PageContent
-        fields = ['id', 'culture', 'culture_id', 'category', 'category_id', 'intro_text', 'overview_text', 'extra_text', 'created_at', 'updated_at']
+        fields = ['id', 'culture_id', 'category_id', 'intro_text', 'overview_text', 'extra_text', 'created_at', 'updated_at']
 
 class RecipeSerializer(serializers.ModelSerializer):
-    user = UserSerializer(read_only=True)
-    cultures = CultureSerializer(many=True, read_only=True)
+    cultures = CultureSimpleSerializer(many=True, read_only=True)
     culture_ids = serializers.PrimaryKeyRelatedField(queryset=Culture.objects.all(), many=True, source='cultures', write_only=True, required=False)
 
     class Meta:
         model = Recipe
-        fields = ['id', 'user', 'cultures', 'culture_ids', 'name', 'region', 'cooking_time', 'ingredients',
+        fields = ['id', 'cultures', 'culture_ids', 'name', 'region', 'cooking_time', 'ingredients',
                   'instructions', 'type', 'course', 'rating', 'notes', 'visibility',
                   'serving_size', 'photo', 'created_at', 'updated_at']
 
@@ -135,13 +146,12 @@ class RecipeSerializer(serializers.ModelSerializer):
         return instance
 
 class LangLessonSerializer(serializers.ModelSerializer):
-    user = UserSerializer(read_only=True)
-    cultures = CultureSerializer(many=True, read_only=True)
+    cultures = CultureSimpleSerializer(many=True, read_only=True)
     culture_ids = serializers.PrimaryKeyRelatedField(queryset=Culture.objects.all(), many=True, source='cultures', write_only=True, required=False)
 
     class Meta:
         model = LangLesson
-        fields = ['id', 'user', 'cultures', 'culture_ids', 'topic', 'lesson', 'examples', 'level',
+        fields = ['id', 'cultures', 'culture_ids', 'topic', 'lesson', 'examples', 'level',
                   'rating', 'notes', 'visibility', 'created_at', 'updated_at']
 
     def validate_culture_ids(self, value):
@@ -167,15 +177,14 @@ class LangLessonSerializer(serializers.ModelSerializer):
         return instance
 
 class CalendarDateSerializer(serializers.ModelSerializer):
-    user = UserSerializer(read_only=True)
-    cultures = CultureSerializer(many=True, read_only=True)
-    person = PersonSerializer(read_only=True)
+    cultures = CultureSimpleSerializer(many=True, read_only=True)
+    person = PersonSimpleSerializer(read_only=True)
     culture_ids = serializers.PrimaryKeyRelatedField(queryset=Culture.objects.all(), many=True, source='cultures', write_only=True, required=False)
     person_id = serializers.PrimaryKeyRelatedField(queryset=Person.objects.all(), source='person', write_only=True, required=False)
 
     class Meta:
         model = CalendarDate
-        fields = ['id', 'user', 'cultures', 'culture_ids', 'holiday_name', 'date_text', 'calendar_date',
+        fields = ['id', 'cultures', 'culture_ids', 'holiday_name', 'date_text', 'calendar_date',
                   'traditions', 'meaning', 'photo', 'person', 'person_id', 'rating', 'notes',
                   'visibility', 'created_at', 'updated_at']
 
@@ -202,18 +211,14 @@ class CalendarDateSerializer(serializers.ModelSerializer):
         return instance
 
 class MapBorderSerializer(serializers.ModelSerializer):
-    culture = CultureSerializer(read_only=True)
-    period = PeriodSerializer(read_only=True)
     culture_id = serializers.PrimaryKeyRelatedField(queryset=Culture.objects.all(), source='culture', write_only=True, required=False)
     period_id = serializers.PrimaryKeyRelatedField(queryset=Period.objects.all(), source='period', write_only=True, required=False)
 
     class Meta:
         model = MapBorder
-        fields = ['id', 'culture', 'culture_id', 'period', 'period_id', 'borders', 'created_at', 'updated_at']
+        fields = ['id', 'culture_id', 'period_id', 'borders', 'created_at', 'updated_at']
 
 class MapPinSerializer(serializers.ModelSerializer):
-    culture = CultureSerializer(read_only=True)
-    period = PeriodSerializer(read_only=True)
     date = DateEstimateSerializer(read_only=True)
     date_id = serializers.PrimaryKeyRelatedField(queryset=DateEstimate.objects.all(), source='date', write_only=True, required=False)
     culture_id = serializers.PrimaryKeyRelatedField(queryset=Culture.objects.all(), source='culture', write_only=True, required=False)
@@ -221,7 +226,7 @@ class MapPinSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = MapPin
-        fields = ['id', 'culture', 'culture_id', 'period', 'period_id', 'date', 'date_id', 'type', 'loc', 'external_links', 'created_at', 'updated_at', 'title', 'photo', 'location', 'happened', 'significance']
+        fields = ['id', 'culture_id', 'period_id', 'date', 'date_id', 'type', 'loc', 'external_links', 'created_at', 'updated_at', 'title', 'photo', 'location', 'happened', 'significance']
     
     def validate_loc(self, value): 
         if not isinstance(value, dict): 
@@ -234,15 +239,14 @@ class MapPinSerializer(serializers.ModelSerializer):
         return value
 
 class LanguageTableSerializer(serializers.ModelSerializer):
-    culture = CultureSerializer(read_only=True)
     culture_id = serializers.PrimaryKeyRelatedField(queryset=Culture.objects.all(), source='culture', write_only=True, required=False)
 
     class Meta:
         model = LanguageTable
-        fields = ['id', 'culture', 'culture_id', 'title', 'table_data', 'created_at', 'updated_at']
+        fields = ['id', 'culture_id', 'title', 'table_data', 'created_at', 'updated_at']
 
 class UniversalItemSerializer(serializers.ModelSerializer):
-    cultures = CultureSerializer(many=True, read_only=True)
+    cultures = CultureSimpleSerializer(many=True, read_only=True)
     culture_ids = serializers.PrimaryKeyRelatedField(queryset=Culture.objects.all(), many=True, source='cultures', write_only=True, required=False)
     content_type = serializers.StringRelatedField()
     content_object = serializers.SerializerMethodField()
@@ -290,7 +294,6 @@ class UniversalItemSerializer(serializers.ModelSerializer):
         return instance
 
 class BookSerializer(serializers.ModelSerializer):
-    creator = PersonSerializer(read_only=True)
     creator_id = serializers.PrimaryKeyRelatedField(queryset=Person.objects.all(), source='creator', write_only=True, required=False)
     date = DateEstimateSerializer(read_only=True)
     date_id = serializers.PrimaryKeyRelatedField(queryset=DateEstimate.objects.all(), source='date', write_only=True, required=False)
@@ -298,7 +301,7 @@ class BookSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Book
-        fields = ['id', 'title', 'alt_title', 'creator', 'creator_id', 'creator_string', 'alt_creator_name', 'date', 'date_id', 'external_links', 'tags', 'isbn', 'series', 'volume', 'cover', 'synopsis', 'industry_rating', 'genre', 'language', 'created_at', 'updated_at']
+        fields = ['id', 'title', 'alt_title', 'creator_id', 'creator_string', 'alt_creator_name', 'date', 'date_id', 'external_links', 'tags', 'isbn', 'series', 'volume', 'cover', 'synopsis', 'industry_rating', 'genre', 'language', 'created_at', 'updated_at']
 
     def validate_isbn(self, value):
         if value and Book.objects.filter(isbn=value).exists():
@@ -306,7 +309,6 @@ class BookSerializer(serializers.ModelSerializer):
         return value
 
 class FilmSerializer(serializers.ModelSerializer):
-    creator = PersonSerializer(read_only=True)
     creator_id = serializers.PrimaryKeyRelatedField(queryset=Person.objects.all(), source='creator', write_only=True, required=False)
     date = DateEstimateSerializer(read_only=True)
     date_id = serializers.PrimaryKeyRelatedField(queryset=DateEstimate.objects.all(), source='date', write_only=True, required=False)
@@ -314,7 +316,7 @@ class FilmSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Film
-        fields = ['id', 'title', 'alt_title', 'creator', 'creator_id', 'creator_string', 'alt_creator_name', 'date', 'date_id', 'external_links', 'tags',
+        fields = ['id', 'title', 'alt_title', 'creator_id', 'creator_string', 'alt_creator_name', 'date', 'date_id', 'external_links', 'tags',
                   'runtime', 'genre', 'tmdb_id', 'cast', 'crew', 'blurb', 'synopsis', 'languages', 'countries', 'festival', 'poster', 'background_pic', 
                   'budget', 'box_office', 'series', 'volume', 'release_date', 'created_at', 'updated_at']
 
@@ -340,7 +342,6 @@ class FilmSerializer(serializers.ModelSerializer):
         return value
 
 class MusicPieceSerializer(serializers.ModelSerializer):
-    creator = PersonSerializer(read_only=True)
     creator_id = serializers.PrimaryKeyRelatedField(queryset=Person.objects.all(), source='creator', write_only=True, required=False)
     date = DateEstimateSerializer(read_only=True)
     date_id = serializers.PrimaryKeyRelatedField(queryset=DateEstimate.objects.all(), source='date', write_only=True, required=False)
@@ -348,7 +349,7 @@ class MusicPieceSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = MusicPiece
-        fields = ['id', 'title', 'alt_title', 'creator', 'creator_id', 'creator_string', 'alt_creator_name', 'date', 'date_id', 'external_links', 'tags',
+        fields = ['id', 'title', 'alt_title', 'creator_id', 'creator_string', 'alt_creator_name', 'date', 'date_id', 'external_links', 'tags',
                   'instrument', 'recording', 'sheet_music', 'musicbrainz_id', 'created_at', 'updated_at']
 
     def validate_musicbrainz_id(self, value):
@@ -357,7 +358,6 @@ class MusicPieceSerializer(serializers.ModelSerializer):
         return value
 
 class ArtworkSerializer(serializers.ModelSerializer):
-    creator = PersonSerializer(read_only=True)
     creator_id = serializers.PrimaryKeyRelatedField(queryset=Person.objects.all(), source='creator', write_only=True, required=False)
     date = DateEstimateSerializer(read_only=True)
     date_id = serializers.PrimaryKeyRelatedField(queryset=DateEstimate.objects.all(), source='date', write_only=True, required=False)
@@ -365,7 +365,7 @@ class ArtworkSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Artwork
-        fields = ['id', 'title', 'alt_title', 'creator', 'creator_id', 'creator_string', 'alt_creator_name', 'date', 'date_id', 'external_links', 'tags',
+        fields = ['id', 'title', 'alt_title', 'creator_id', 'creator_string', 'alt_creator_name', 'date', 'date_id', 'external_links', 'tags',
                   'group', 'location', 'associated_culture', 'photo', 'model_3d',
                   'type', 'wikidata_id', 'created_at', 'updated_at']
 
@@ -375,7 +375,6 @@ class ArtworkSerializer(serializers.ModelSerializer):
         return value
 
 class HistoryEventSerializer(serializers.ModelSerializer):
-    creator = PersonSerializer(read_only=True)
     creator_id = serializers.PrimaryKeyRelatedField(queryset=Person.objects.all(), source='creator', write_only=True, required=False)
     date = DateEstimateSerializer(read_only=True)
     date_id = serializers.PrimaryKeyRelatedField(queryset=DateEstimate.objects.all(), source='date', write_only=True, required=False)
@@ -383,7 +382,7 @@ class HistoryEventSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = HistoryEvent
-        fields = ['id', 'title', 'alt_title', 'creator', 'creator_id', 'creator_string', 'alt_creator_name', 'date', 'date_id', 'external_links', 'tags',
+        fields = ['id', 'title', 'alt_title', 'creator_id', 'creator_string', 'alt_creator_name', 'date', 'date_id', 'external_links', 'tags',
                   'type', 'location', 'wikidata_id', 'created_at', 'updated_at']
 
     def validate_wikidata_id(self, value):
@@ -392,15 +391,13 @@ class HistoryEventSerializer(serializers.ModelSerializer):
         return value
 
 class UserBookSerializer(serializers.ModelSerializer):
-    user = UserSerializer(read_only=True)
-    universal_item = UniversalItemSerializer(read_only=True)
     universal_item_id = serializers.PrimaryKeyRelatedField(queryset=UniversalItem.objects.all(), source='universal_item', write_only=True, required=False)
-    cultures = CultureSerializer(many=True, read_only=True)
+    cultures = CultureSimpleSerializer(many=True, read_only=True)
     culture_ids = serializers.PrimaryKeyRelatedField(queryset=Culture.objects.all(), many=True, source='cultures', write_only=True, required=False)
 
     class Meta:
         model = UserBook
-        fields = ['id', 'user', 'universal_item', 'universal_item_id', 'cultures', 'culture_ids', 'rating', 'notes', 'visibility',
+        fields = ['id', 'universal_item_id', 'cultures', 'culture_ids', 'rating', 'notes', 'visibility',
                   'page_count', 'is_history', 'translated', 'format', 'cover', 'publisher', 'edition', 'edition_read_year',
                   'date_started', 'date_finished', 'location', 'read_language',
                   'owned', 'read', 'readlist', 'favourite', 'created_at', 'updated_at']
@@ -428,15 +425,13 @@ class UserBookSerializer(serializers.ModelSerializer):
         return instance
 
 class UserFilmSerializer(serializers.ModelSerializer):
-    user = UserSerializer(read_only=True)
-    universal_item = UniversalItemSerializer(read_only=True)
     universal_item_id = serializers.PrimaryKeyRelatedField(queryset=UniversalItem.objects.all(), source='universal_item', write_only=True, required=False)
-    cultures = CultureSerializer(many=True, read_only=True)
+    cultures = CultureSimpleSerializer(many=True, read_only=True)
     culture_ids = serializers.PrimaryKeyRelatedField(queryset=Culture.objects.all(), many=True, source='cultures', write_only=True, required=False)
 
     class Meta:
         model = UserFilm
-        fields = ['id', 'user', 'universal_item', 'universal_item_id', 'cultures', 'culture_ids', 'rating', 'notes', 'visibility',
+        fields = ['id', 'universal_item_id', 'cultures', 'culture_ids', 'rating', 'notes', 'visibility',
                   'rewatch_count', 'watch_location', 'date_watched', 'poster', 'background_pic', 'awards_won',
                   'seen', 'owned', 'watchlist', 'favourite', 'created_at', 'updated_at']
 
@@ -463,15 +458,13 @@ class UserFilmSerializer(serializers.ModelSerializer):
         return instance
 
 class UserMusicPieceSerializer(serializers.ModelSerializer):
-    user = UserSerializer(read_only=True)
-    universal_item = UniversalItemSerializer(read_only=True)
     universal_item_id = serializers.PrimaryKeyRelatedField(queryset=UniversalItem.objects.all(), source='universal_item', write_only=True, required=False)
-    cultures = CultureSerializer(many=True, read_only=True)
+    cultures = CultureSimpleSerializer(many=True, read_only=True)
     culture_ids = serializers.PrimaryKeyRelatedField(queryset=Culture.objects.all(), many=True, source='cultures', write_only=True, required=False)
 
     class Meta:
         model = UserMusicPiece
-        fields = ['id', 'user', 'universal_item', 'universal_item_id', 'cultures', 'culture_ids', 'rating', 'notes', 'visibility',
+        fields = ['id', 'universal_item_id', 'cultures', 'culture_ids', 'rating', 'notes', 'visibility',
                   'learned', 'created_at', 'updated_at']
 
     def validate_culture_ids(self, value):
@@ -495,17 +488,48 @@ class UserMusicPieceSerializer(serializers.ModelSerializer):
             instance.cultures.set(cultures)
         instance.save()
         return instance
+    
+class UserMusicArtistSerializer(serializers.ModelSerializer):
+    person_id = serializers.PrimaryKeyRelatedField(queryset=Person.objects.all(), source='person', write_only=True, required=False)
+    cultures = CultureSimpleSerializer(many=True, read_only=True)
+    culture_ids = serializers.PrimaryKeyRelatedField(queryset=Culture.objects.all(), many=True, source='cultures', write_only=True, required=False)
+    
+    class Meta:
+        model = UserMusicArtist
+        fields = ['id', 'person_id', 'cultures', 'culture_ids', 'rating', 'notes', 'visibility',
+                  'favourite', 'name', 'bio', 'photo', 'external_links', 'year_active_start', 'year_active_end', 
+                  'notables_works', 'ranking_tier', 'best_albums', 'best_songs', 'created_at', 'updated_at']
+        
+    def validate_culture_ids(self, value):
+        user = self.context['request'].user
+        for culture in value:
+            if culture.user != user:
+                raise serializers.ValidationError("All cultures must belong to the authenticated user.")
+        return value
+    
+    def create(self, validated_data):
+        cultures = validated_data.pop('cultures', [])
+        instance = UserMusicArtist.objects.create(**validated_data)
+        instance.cultures.set(cultures)
+        return instance
+
+    def update(self, instance, validated_data):
+        cultures = validated_data.pop('cultures', None)
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        if cultures is not None:
+            instance.cultures.set(cultures)
+        instance.save()
+        return instance
 
 class UserArtworkSerializer(serializers.ModelSerializer):
-    user = UserSerializer(read_only=True)
-    universal_item = UniversalItemSerializer(read_only=True)
     universal_item_id = serializers.PrimaryKeyRelatedField(queryset=UniversalItem.objects.all(), source='universal_item', write_only=True, required=False)
-    cultures = CultureSerializer(many=True, read_only=True)
+    cultures = CultureSimpleSerializer(many=True, read_only=True)
     culture_ids = serializers.PrimaryKeyRelatedField(queryset=Culture.objects.all(), many=True, source='cultures', write_only=True, required=False)
 
     class Meta:
         model = UserArtwork
-        fields = ['id', 'user', 'universal_item', 'universal_item_id', 'cultures', 'culture_ids', 'rating', 'notes', 'visibility',
+        fields = ['id', 'universal_item_id', 'cultures', 'culture_ids', 'rating', 'notes', 'visibility',
                   'owned', 'created_at', 'updated_at', 'themes']
 
     def validate_culture_ids(self, value):
@@ -531,18 +555,15 @@ class UserArtworkSerializer(serializers.ModelSerializer):
         return instance
 
 class UserHistoryEventSerializer(serializers.ModelSerializer):
-    user = UserSerializer(read_only=True)
-    universal_item = UniversalItemSerializer(read_only=True)
     universal_item_id = serializers.PrimaryKeyRelatedField(queryset=UniversalItem.objects.all(), source='universal_item', write_only=True, required=False)
-    cultures = CultureSerializer(many=True, read_only=True)
+    cultures = CultureSimpleSerializer(many=True, read_only=True)
     culture_ids = serializers.PrimaryKeyRelatedField(queryset=Culture.objects.all(), many=True, source='cultures', write_only=True, required=False)
-    period = PeriodSerializer(read_only=True)
     period_id = serializers.PrimaryKeyRelatedField(queryset=Period.objects.all(), source='period', write_only=True, required=False)
 
     class Meta:
         model = UserHistoryEvent
-        fields = ['id', 'user', 'universal_item', 'universal_item_id', 'cultures', 'culture_ids', 'rating', 'notes', 'visibility',
-                  'importance_rank', 'created_at', 'sources', 'significance_level', 'period', 'period_id', 'updated_at']
+        fields = ['id', 'universal_item_id', 'cultures' 'culture_ids', 'rating', 'notes', 'visibility',
+                  'importance_rank', 'created_at', 'sources', 'significance_level', 'period_id', 'updated_at']
 
     def validate_culture_ids(self, value):
         user = self.context['request'].user
@@ -582,15 +603,13 @@ class RegisterSerializer(serializers.ModelSerializer):
         return user
     
 class ListSerializer(serializers.ModelSerializer):
-    user = UserSerializer(read_only=True)
-    cultures = CultureSerializer(many=True, read_only=True)
     culture_ids = serializers.PrimaryKeyRelatedField(queryset=Culture.objects.all(), many=True, source='cultures', write_only=True, required=False)
     items = UniversalItemSerializer(many=True, read_only=True)
     item_ids = serializers.PrimaryKeyRelatedField(queryset=UniversalItem.objects.all(), many=True, source='items', write_only=True, required=False)
 
     class Meta:
         model = List
-        fields = ['id', 'user', 'cultures', 'culture_ids', 'items', 'item_ids', 'name', 'description', 'visibility', 'created_at', 'updated_at']
+        fields = ['id', 'culture_ids', 'items', 'item_ids', 'name', 'description', 'visibility', 'created_at', 'updated_at']
 
     def validate_culture_ids(self, value):
         user = self.context['request'].user

@@ -12,7 +12,7 @@ from .models import (
     Profile, Culture, Category, Period, PageContent, Recipe, LangLesson,
     CalendarDate, Person, MapBorder, MapPin, LanguageTable, UniversalItem,
     Book, Film, MusicPiece, Artwork, HistoryEvent, UserBook, UserFilm,
-    UserMusicPiece, UserArtwork, UserHistoryEvent, Visibility, List
+    UserMusicPiece, UserMusicArtist, UserArtwork, UserHistoryEvent, Visibility, List
 )
 from .serializers import (
     ProfileSerializer, CultureSerializer, CategorySerializer, PeriodSerializer,
@@ -20,7 +20,7 @@ from .serializers import (
     PersonSerializer, MapBorderSerializer, MapPinSerializer, LanguageTableSerializer,
     UniversalItemSerializer, BookSerializer, FilmSerializer, MusicPieceSerializer,
     ArtworkSerializer, HistoryEventSerializer, UserBookSerializer, UserFilmSerializer,
-    UserMusicPieceSerializer, UserArtworkSerializer, UserHistoryEventSerializer, RegisterSerializer, UserSerializer, ListSerializer
+    UserMusicPieceSerializer, UserMusicArtistSerializer, UserArtworkSerializer, UserHistoryEventSerializer, RegisterSerializer, UserSerializer, ListSerializer
 )
 
 class RegisterView(generics.CreateAPIView):
@@ -696,9 +696,9 @@ class HistoryEventViewSet(viewsets.ModelViewSet):
 
         qs = (
             HistoryEvent.objects
-            .select_related("creator", "date", "period")
+            .select_related("creator", "date")
             .prefetch_related("universal_item__cultures")
-            .order_by("date__earliest_year")
+            .order_by("date__date_estimate_start")
         )
 
         if code:
@@ -741,7 +741,7 @@ class UserBookViewSet(viewsets.ModelViewSet):
         
         qs = (
             UserBook.objects
-            .select_related("user", "universal_item")
+            .select_related("user", "universal_item", "period")
             .prefetch_related("cultures", "universal_item__cultures")
             .order_by("-updated_at")
         )
@@ -801,6 +801,48 @@ class UserMusicPieceViewSet(viewsets.ModelViewSet):
 
         qs = (
             UserMusicPiece.objects
+            .select_related("user", "universal_item")
+            .prefetch_related("cultures", "universal_item__cultures")
+            .order_by("-updated_at")
+        )
+
+        if shared:
+            if code:
+                try:
+                    user_culture = Culture.objects.get(user=user, code=code)
+                    group_key = user_culture.shared_group_key
+                    qs = qs.filter(
+                        visibility=Visibility.PUBLIC,
+                        cultures__shared_group_key=group_key
+                    ).exclude(user=user)
+                except Culture.DoesNotExist:
+                    return qs.none()
+            else:
+                qs = qs.filter(visibility=Visibility.PUBLIC).exclude(user=user)
+        else:
+            qs = qs.filter(user=user)
+            if code:
+                qs = qs.filter(cultures__code__iexact=code)
+
+        return qs.distinct()
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+        
+class UserMusicArtistViewSet(viewsets.ModelViewSet):
+    serializer_class = UserMusicArtistSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly, IsOwnerOrPublic]
+
+    def get_queryset(self):
+        user = self.request.user
+        shared = self.request.query_params.get("shared") == "true"
+        code = self.request.query_params.get("code")
+
+        if not user.is_authenticated:
+            return UserMusicArtist.objects.none()
+
+        qs = (
+            UserMusicArtist.objects
             .select_related("user", "universal_item")
             .prefetch_related("cultures", "universal_item__cultures")
             .order_by("-updated_at")

@@ -158,9 +158,9 @@ class Period(TimestampedModel):
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name="periods")
     start_year = models.IntegerField()
     end_year = models.IntegerField()
-    title = models.CharField(max_length=200)
-    desc = models.TextField(blank=True)
-    short_intro = models.CharField(max_length=255, blank=True)
+    title = models.CharField(max_length=200, blank=True, null=True)
+    desc = models.TextField(blank=True, null=True)
+    short_intro = models.CharField(max_length=255, blank=True, null=True)
 
     def clean(self):
         if self.start_year > self.end_year:
@@ -420,11 +420,11 @@ class Film(AbstractMedia):
 class UserFilm(AbstractUserTrackingModel):
     universal_item = models.ForeignKey(UniversalItem, on_delete=models.CASCADE, related_name="user_films")
     rewatch_count = models.PositiveIntegerField(default=0)
-    watch_location = models.CharField(max_length=200, blank=True)
+    watch_location = models.CharField(max_length=200, blank=True, null=True)
     date_watched = models.DateField(null=True, blank=True)
     poster = models.URLField(blank=True, null=True)
     background_pic = models.URLField(blank=True, null=True)
-    awards_won = models.JSONField(default=list)
+    awards = models.JSONField(default=list)
     seen = models.BooleanField(default=False)
     owned = models.BooleanField(default=False)
     watchlist = models.BooleanField(default=False)
@@ -462,12 +462,35 @@ class UserMusicPiece(AbstractUserTrackingModel):
     class Meta:
         verbose_name_plural = "User Music Pieces"
         indexes = [models.Index(fields=['user', 'universal_item'], name='user_music_idx')]
+        
+class UserMusicArtist(AbstractUserTrackingModel):
+    name = models.CharField(max_length=200)
+    person = models.ForeignKey(Person, on_delete=models.CASCADE, related_name="user_music_artists")
+    bio = models.TextField(blank=True, null=True)
+    photo = models.URLField(blank=True, null=True)
+    genres = models.JSONField(default=list, blank=True, null=True)
+    external_links = models.JSONField(default=list, blank=True)
+    year_active_start = models.IntegerField(null=True, blank=True)
+    year_active_end = models.IntegerField(null=True, blank=True)
+    notable_works = models.JSONField(default=list, blank=True, null=True)
+    ranking_tier = models.PositiveSmallIntegerField(null=True, blank=True)
+    favourite = models.BooleanField(default=False)
+    best_albums = models.JSONField(default=list, blank=True, null=True)
+    best_songs = models.JSONField(default=list, blank=True, null=True)
+
+    def __str__(self):
+        culture_names = ", ".join(culture.name for culture in self.cultures.all())
+        return f"{self.person.full_name()} ({culture_names})"
+
+    class Meta:
+        verbose_name_plural = "User Music Artists"
+        indexes = [models.Index(fields=['user', 'person'], name='user_music_artist_idx')]
 
 # ---- ARTWORK ----
 class Artwork(AbstractMedia):
     group = models.CharField(max_length=100, choices=[("artwork", "Artwork"), ("artifact", "Artifact")])
-    location = models.CharField(max_length=200, blank=True)
-    associated_culture = models.CharField(max_length=200, blank=True)
+    location = models.CharField(max_length=200, blank=True, null=True)
+    associated_culture = models.CharField(max_length=200, blank=True, null=True)
     photo = models.URLField(blank=True, null=True)
     model_3d = models.URLField(blank=True, null=True)
     type = models.CharField(max_length=100, blank=True)
@@ -481,7 +504,7 @@ class Artwork(AbstractMedia):
 class UserArtwork(AbstractUserTrackingModel):
     universal_item = models.ForeignKey(UniversalItem, on_delete=models.CASCADE, related_name="user_artworks")
     photo = models.URLField(blank=True, null=True)
-    themes = models.TextField(blank=True)
+    themes = models.TextField(blank=True, null=True)
     owned = models.BooleanField(default=False)
     
     def __str__(self):
@@ -495,7 +518,7 @@ class UserArtwork(AbstractUserTrackingModel):
 # ---- HISTORY EVENT ----
 class HistoryEvent(AbstractMedia):
     type = models.CharField(max_length=100)
-    location = models.CharField(max_length=200, blank=True)
+    location = models.CharField(max_length=200, blank=True, null=True)
     wikidata_id = models.CharField(max_length=20, null=True, blank=True, unique=True)
     universal_item = GenericRelation(UniversalItem, related_query_name="event")
 
@@ -509,6 +532,8 @@ class UserHistoryEvent(AbstractUserTrackingModel):
     sources = models.TextField(blank=True)
     significance_level = models.PositiveSmallIntegerField(default=0)
     importance_rank = models.PositiveSmallIntegerField(null=True, blank=True)
+    photo = models.URLField(blank=True, null=True)
+    summary = models.TextField(blank=True, null=True)
 
     def __str__(self):
         culture_names = ", ".join(culture.name for culture in self.cultures.all())
@@ -537,6 +562,7 @@ class List(TimestampedModel):
         ("artworks", "Artworks"),
         ("music", "Music"),
         ("events", "History Events"),
+        ("mixed", "Mixed"),
     ]
     type = models.CharField(max_length=100, blank=True, null=True, choices=LIST_TYPES)
     
