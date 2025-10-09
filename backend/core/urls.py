@@ -5,7 +5,7 @@ from .views import (
     ProfileViewSet, CultureViewSet, CategoryViewSet, PeriodViewSet, PageContentViewSet,
     RecipeViewSet, LangLessonViewSet, CalendarDateViewSet, PersonViewSet,
     MapBorderViewSet, MapPinViewSet, LanguageTableViewSet, UniversalItemViewSet,
-    BookViewSet, FilmViewSet, MusicPieceViewSet, ArtworkViewSet, HistoryEventViewSet,
+    BookViewSet, FilmViewSet, MusicPieceViewSet, ArtworkViewSet,
     UserBookViewSet, UserFilmViewSet, UserMusicPieceViewSet, UserArtworkViewSet,
     UserHistoryEventViewSet, RegisterView, CurrentUserView
 )
@@ -28,7 +28,6 @@ router.register(r'books', BookViewSet, basename='book')
 router.register(r'films', FilmViewSet, basename='film')
 router.register(r'music-pieces', MusicPieceViewSet, basename='musicpiece')
 router.register(r'artworks', ArtworkViewSet, basename='artwork')
-router.register(r'history-events', HistoryEventViewSet, basename='historyevent')
 router.register(r'user-books', UserBookViewSet, basename='userbook')
 router.register(r'user-films', UserFilmViewSet, basename='userfilm')
 router.register(r'user-music-pieces', UserMusicPieceViewSet, basename='usermusicpiece')

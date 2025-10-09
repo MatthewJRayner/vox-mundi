@@ -1,11 +1,9 @@
 "use client";
 import { useEffect, useState } from "react";
+import { SVGPath } from "@/utils/path";
 
 export default function ThemeToggle() {
   const [dark, setDark] = useState(false);
-
-  const iconPath =
-    "M512 320c0-106-86-192-192-192v384c106 0 192-86 192-192m-448 0C64 178.6 178.6 64 320 64s256 114.6 256 256-114.6 256-256 256S64 461.4 64 320";
 
   useEffect(() => {
     const saved = localStorage.getItem("theme");
@@ -36,10 +34,10 @@ export default function ThemeToggle() {
         className="text-foreground fill-foreground"
     >
       <svg
-        viewBox="0 0 640 640"
+        viewBox={SVGPath.theme.viewBox}
         className="fill-current size-5 hover:scale-105 transition cursor-pointer active:scale-90"
       >
-        <path d={iconPath} />
+        <path d={SVGPath.theme.path} />
       </svg>
     </button>
   );

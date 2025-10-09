@@ -238,6 +238,27 @@ class CalendarDate(AbstractUserTrackingModel):
     class Meta:
         verbose_name_plural = "Calendar Dates"
         indexes = [models.Index(fields=['user'])]
+             
+class UserHistoryEvent(AbstractUserTrackingModel):
+    title = models.CharField(max_length=200)
+    alt_title = models.CharField(max_length=200, null=True, blank=True)
+    type = models.CharField(max_length=100)
+    date = models.ForeignKey(DateEstimate, on_delete=models.SET_NULL, null=True, blank=True)
+    location = models.CharField(max_length=200, blank=True, null=True)
+    period = models.ForeignKey(Period, on_delete=models.SET_NULL, null=True, blank=True, related_name="events")
+    sources = models.TextField(blank=True)
+    significance_level = models.PositiveSmallIntegerField(default=0)
+    importance_rank = models.PositiveSmallIntegerField(null=True, blank=True)
+    photo = models.URLField(blank=True, null=True)
+    summary = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        culture_names = ", ".join(culture.name for culture in self.cultures.all())
+        return f"{self.universal_item.title} ({culture_names})"
+
+    class Meta:
+        verbose_name_plural = "User History Events"
+        indexes = [models.Index(fields=['user'], name='user_event_idx')]
 
 # -------------------------------------------------
 # GLOBAL MODELS
@@ -514,34 +535,6 @@ class UserArtwork(AbstractUserTrackingModel):
     class Meta:
         verbose_name_plural = "User Artworks"
         indexes = [models.Index(fields=['user', 'universal_item'], name='user_artwork_idx')]
-
-# ---- HISTORY EVENT ----
-class HistoryEvent(AbstractMedia):
-    type = models.CharField(max_length=100)
-    location = models.CharField(max_length=200, blank=True, null=True)
-    wikidata_id = models.CharField(max_length=20, null=True, blank=True, unique=True)
-    universal_item = GenericRelation(UniversalItem, related_query_name="event")
-
-    class Meta:
-        verbose_name_plural = "History Events"
-        indexes = [models.Index(fields=['wikidata_id'], name='event_wikidata_idx')]
-        
-class UserHistoryEvent(AbstractUserTrackingModel):
-    universal_item = models.ForeignKey(UniversalItem, on_delete=models.CASCADE, related_name="user_history_events")
-    period = models.ForeignKey(Period, on_delete=models.SET_NULL, null=True, blank=True, related_name="events")
-    sources = models.TextField(blank=True)
-    significance_level = models.PositiveSmallIntegerField(default=0)
-    importance_rank = models.PositiveSmallIntegerField(null=True, blank=True)
-    photo = models.URLField(blank=True, null=True)
-    summary = models.TextField(blank=True, null=True)
-
-    def __str__(self):
-        culture_names = ", ".join(culture.name for culture in self.cultures.all())
-        return f"{self.universal_item.title} ({culture_names})"
-
-    class Meta:
-        verbose_name_plural = "User History Events"
-        indexes = [models.Index(fields=['user', 'universal_item'], name='user_event_idx')]
         
 # ---- LISTS ----
 class List(TimestampedModel):

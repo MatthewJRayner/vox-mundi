@@ -11,7 +11,7 @@ from django.shortcuts import get_object_or_404
 from .models import (
     Profile, Culture, Category, Period, PageContent, Recipe, LangLesson,
     CalendarDate, Person, MapBorder, MapPin, LanguageTable, UniversalItem,
-    Book, Film, MusicPiece, Artwork, HistoryEvent, UserBook, UserFilm,
+    Book, Film, MusicPiece, Artwork, UserBook, UserFilm,
     UserMusicPiece, UserMusicArtist, UserArtwork, UserHistoryEvent, Visibility, List
 )
 from .serializers import (
@@ -19,7 +19,7 @@ from .serializers import (
     PageContentSerializer, RecipeSerializer, LangLessonSerializer, CalendarDateSerializer,
     PersonSerializer, MapBorderSerializer, MapPinSerializer, LanguageTableSerializer,
     UniversalItemSerializer, BookSerializer, FilmSerializer, MusicPieceSerializer,
-    ArtworkSerializer, HistoryEventSerializer, UserBookSerializer, UserFilmSerializer,
+    ArtworkSerializer, UserBookSerializer, UserFilmSerializer,
     UserMusicPieceSerializer, UserMusicArtistSerializer, UserArtworkSerializer, UserHistoryEventSerializer, RegisterSerializer, UserSerializer, ListSerializer
 )
 
@@ -108,15 +108,16 @@ class CategoryViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user
         code = self.request.query_params.get('code', None)
-        qs = Category.objects.select_related('culture')
+        key = self.request.query_params.get('key', None)
+        qs = Category.objects.select_related('culture').filter(culture__user=user)
         
         if not user.is_authenticated:
             return Category.objects.none()
         
         if code:
             qs = qs.filter(culture__code=code, culture__user=user)
-        else:
-            qs = qs.filter(culture__user=user)
+        if key:
+            qs = qs.filter(key=key)
         return qs
     
     def perform_create(self, serializer):
@@ -684,51 +685,6 @@ class ArtworkViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save()
     
-class HistoryEventViewSet(viewsets.ModelViewSet):
-    serializer_class = HistoryEventSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly]
-
-    def get_queryset(self):
-        q = self.request.query_params.get("q", None)
-        code = self.request.query_params.get("code", None)
-        period_title = self.request.query_params.get("period", None)
-        type_filter = self.request.query_params.get("type", None)
-
-        qs = (
-            HistoryEvent.objects
-            .select_related("creator", "date")
-            .prefetch_related("universal_item__cultures")
-            .order_by("date__date_estimate_start")
-        )
-
-        if code:
-            try:
-                user_culture = Culture.objects.get(code=code)
-                qs = qs.filter(universal_item__cultures__shared_group_key=user_culture.shared_group_key)
-            except Culture.DoesNotExist:
-                return HistoryEvent.objects.none()
-
-        if period_title:
-            qs = qs.filter(period__title__iexact=period_title)
-
-        if type_filter:
-            qs = qs.filter(type__icontains=type_filter)
-
-        if q:
-            qs = qs.filter(
-                Q(title__icontains=q) |
-                Q(creator__given_name__icontains=q) |
-                Q(creator__family_name__icontains=q) |
-                Q(creator_string__icontains=q) |
-                Q(location__icontains=q) |
-                Q(sources__icontains=q)
-            )
-
-        return qs.distinct()
-
-    def perform_create(self, serializer):
-        serializer.save()
-
 class UserBookViewSet(viewsets.ModelViewSet):
     serializer_class = UserBookSerializer
     permission_classes = [IsAuthenticatedOrReadOnly, IsOwnerOrPublic]
@@ -922,14 +878,15 @@ class UserHistoryEventViewSet(viewsets.ModelViewSet):
         shared = self.request.query_params.get("shared") == "true"
         code = self.request.query_params.get("code")
         period_title = self.request.query_params.get("period")
+        q = self.request.query_params.get("q")
 
         if not user.is_authenticated:
             return UserHistoryEvent.objects.none()
 
         qs = (
             UserHistoryEvent.objects
-            .select_related("user", "universal_item")
-            .prefetch_related("cultures", "universal_item__cultures")
+            .select_related("user")
+            .prefetch_related("cultures")
             .order_by("-updated_at")
         )
 
@@ -950,6 +907,14 @@ class UserHistoryEventViewSet(viewsets.ModelViewSet):
             qs = qs.filter(user=user)
             if code:
                 qs = qs.filter(cultures__code__iexact=code)
+                
+        if q:
+            qs = qs.filter(
+                Q(title__icontains=q) |
+                Q(alt_title__icontains=q) |
+                Q(type__icontains=q) |
+                Q(location__icontains=q)
+            )
 
         # Optional: filter by historical period (if linked through UniversalItem)
         if period_title:

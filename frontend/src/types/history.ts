@@ -1,16 +1,12 @@
-import { AbstractMedia } from "./media/abstract";
 import { AbstractUserTracking } from "./media/abstract";
-import { UniversalItem } from "./universal";
-
-export interface HistoryEvent extends AbstractMedia {
-    type: string;
-    location?: string;
-    wikidata_id?: string;
-    universal_item?: UniversalItem;
-}
+import { DateEstimate } from "./date";
 
 export interface UserHistoryEvent extends AbstractUserTracking {
-    universal_item: UniversalItem;
+    title: string;
+    alt_title?: string;
+    type: string;
+    date?: DateEstimate;
+    location?: string;
     period?: string;
     sources?: string;
     significance_level?: number;

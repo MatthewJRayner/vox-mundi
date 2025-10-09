@@ -6,7 +6,7 @@ from taggit.serializers import TagListSerializerField
 from .models import (
     Profile, Culture, Category, Period, PageContent, Recipe, LangLesson,
     CalendarDate, Person, MapBorder, MapPin, LanguageTable, UniversalItem,
-    Book, Film, MusicPiece, Artwork, HistoryEvent, UserBook, UserFilm,
+    Book, Film, MusicPiece, Artwork, UserBook, UserFilm,
     UserMusicPiece, UserMusicArtist, UserArtwork, UserHistoryEvent, DateEstimate, Visibility, List
 )
 
@@ -374,22 +374,6 @@ class ArtworkSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Artwork with this Wikidata ID already exists.")
         return value
 
-class HistoryEventSerializer(serializers.ModelSerializer):
-    creator_id = serializers.PrimaryKeyRelatedField(queryset=Person.objects.all(), source='creator', write_only=True, required=False)
-    date = DateEstimateSerializer(read_only=True)
-    date_id = serializers.PrimaryKeyRelatedField(queryset=DateEstimate.objects.all(), source='date', write_only=True, required=False)
-    tags = TagListSerializerField(required=False)
-
-    class Meta:
-        model = HistoryEvent
-        fields = ['id', 'title', 'alt_title', 'creator_id', 'creator_string', 'alt_creator_name', 'date', 'date_id', 'external_links', 'tags',
-                  'type', 'location', 'wikidata_id', 'created_at', 'updated_at']
-
-    def validate_wikidata_id(self, value):
-        if value and HistoryEvent.objects.filter(wikidata_id=value).exists():
-            raise serializers.ValidationError("HistoryEvent with this Wikidata ID already exists.")
-        return value
-
 class UserBookSerializer(serializers.ModelSerializer):
     universal_item_id = serializers.PrimaryKeyRelatedField(queryset=UniversalItem.objects.all(), source='universal_item', write_only=True, required=False)
     cultures = CultureSimpleSerializer(many=True, read_only=True)
@@ -559,11 +543,14 @@ class UserHistoryEventSerializer(serializers.ModelSerializer):
     cultures = CultureSimpleSerializer(many=True, read_only=True)
     culture_ids = serializers.PrimaryKeyRelatedField(queryset=Culture.objects.all(), many=True, source='cultures', write_only=True, required=False)
     period_id = serializers.PrimaryKeyRelatedField(queryset=Period.objects.all(), source='period', write_only=True, required=False)
+    date = DateEstimateSerializer(read_only=True)
+    date_id = serializers.PrimaryKeyRelatedField(queryset=DateEstimate.objects.all(), source='date', write_only=True, required=False)
 
     class Meta:
         model = UserHistoryEvent
         fields = ['id', 'universal_item_id', 'cultures' 'culture_ids', 'rating', 'notes', 'visibility',
-                  'importance_rank', 'created_at', 'sources', 'significance_level', 'period_id', 'updated_at']
+                  'importance_rank', 'created_at', 'sources', 'significance_level', 'period_id', 'updated_at',
+                  'title', 'alt_title', 'type', 'date', 'date_id', 'location']
 
     def validate_culture_ids(self, value):
         user = self.context['request'].user

@@ -2,13 +2,13 @@ from django.contrib import admin
 from .models import (
     Profile, Culture, Category, Period, PageContent, Recipe, LangLesson, CalendarDate,
     Person, MapBorder, MapPin, LanguageTable, UniversalItem, Book, Film, MusicPiece,
-    Artwork, HistoryEvent, UserBook, UserFilm, UserMusicPiece, UserArtwork, UserHistoryEvent 
+    Artwork, UserBook, UserFilm, UserMusicPiece, UserArtwork, UserHistoryEvent 
 )
 
 # Register your models here.
 @admin.register(Period)
 class PeriodAdmin(admin.ModelAdmin):
-    list_display = ('title', 'culture', 'start_year', 'end_year')
+    list_display = ('title', 'culture', 'start_year', 'end_year', 'category__key')
     search_fields = ('title', 'culture__name')
     list_filter = ('culture',)
     
@@ -29,3 +29,9 @@ class ProfileAdmin(admin.ModelAdmin):
     list_display = ('user', 'bio', 'location')
     search_fields = ('user__username', 'bio', 'location')
     list_filter = ('location',)
+    
+@admin.register(UserHistoryEvent)
+class UserHistoryEventAdmin(admin.ModelAdmin):
+    list_display = ('user', 'type', 'title', 'date' )
+    search_fields = ('user', 'title', 'description')
+    list_filter = ('type', 'user')
