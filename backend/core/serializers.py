@@ -63,7 +63,7 @@ class CultureSerializer(serializers.ModelSerializer):
 class CultureSimpleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Culture
-        fields = ['name', 'code', 'shared_group_key']
+        fields = ['id', 'name', 'code', 'shared_group_key']
 
 class ProfileSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
@@ -104,6 +104,11 @@ class PeriodSerializer(serializers.ModelSerializer):
             'start_year', 'end_year', 'desc', 'short_intro', 'title',
             'created_at', 'updated_at'
         ]
+        
+class PeriodSimpleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Period
+        fields = ['id', 'title', 'start_year', 'end_year']
 
 class PageContentSerializer(serializers.ModelSerializer):
     culture_id = serializers.PrimaryKeyRelatedField(queryset=Culture.objects.all(), source='culture', write_only=True, required=False)
@@ -541,16 +546,16 @@ class UserArtworkSerializer(serializers.ModelSerializer):
 class UserHistoryEventSerializer(serializers.ModelSerializer):
     universal_item_id = serializers.PrimaryKeyRelatedField(queryset=UniversalItem.objects.all(), source='universal_item', write_only=True, required=False)
     cultures = CultureSimpleSerializer(many=True, read_only=True)
+    period = PeriodSimpleSerializer(read_only=True)
     culture_ids = serializers.PrimaryKeyRelatedField(queryset=Culture.objects.all(), many=True, source='cultures', write_only=True, required=False)
     period_id = serializers.PrimaryKeyRelatedField(queryset=Period.objects.all(), source='period', write_only=True, required=False)
-    date = DateEstimateSerializer(read_only=True)
-    date_id = serializers.PrimaryKeyRelatedField(queryset=DateEstimate.objects.all(), source='date', write_only=True, required=False)
+    date = DateEstimateSerializer(required=False)
 
     class Meta:
         model = UserHistoryEvent
-        fields = ['id', 'universal_item_id', 'cultures' 'culture_ids', 'rating', 'notes', 'visibility',
-                  'importance_rank', 'created_at', 'sources', 'significance_level', 'period_id', 'updated_at',
-                  'title', 'alt_title', 'type', 'date', 'date_id', 'location']
+        fields = ['id', 'universal_item_id', 'cultures', 'culture_ids', 'rating', 'notes', 'visibility',
+                  'importance_rank', 'created_at', 'sources', 'significance_level', 'period', 'period_id', 'created_at', 'updated_at',
+                  'title', 'alt_title', 'type', 'date', 'location', 'photo', 'summary']
 
     def validate_culture_ids(self, value):
         user = self.context['request'].user
@@ -561,17 +566,34 @@ class UserHistoryEventSerializer(serializers.ModelSerializer):
     
     def create(self, validated_data):
         cultures = validated_data.pop('cultures', [])
+        date_data = validated_data.pop('date', None)
         instance = UserHistoryEvent.objects.create(**validated_data)
         instance.cultures.set(cultures)
+
+        if date_data:
+            date_instance = DateEstimate.objects.create(**date_data)
+            instance.date = date_instance
+            instance.save()
+
         return instance
 
     def update(self, instance, validated_data):
         cultures = validated_data.pop('cultures', None)
+        date_data = validated_data.pop('date', None)
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
+        
         if cultures is not None:
             instance.cultures.set(cultures)
-        instance.save()
+            instance.save()
+        if date_data:
+            if instance.date:
+                for attr, value in date_data.items():
+                    setattr(instance.date, attr, value)
+                instance.date.save()
+            else:
+                instance.date = DateEstimate.objects.create(**date_data)
+                instance.save()
         return instance
     
 class RegisterSerializer(serializers.ModelSerializer):

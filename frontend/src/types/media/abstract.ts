@@ -4,8 +4,8 @@ import { Person } from "../person";
 import { DateEstimate } from "../date";
 
 export interface AbstractUserTracking {
-    id: number;
-    user: User;
+    id?: number;
+    user?: User;
     cultures: Culture[];
     rating?: number;
     notes?: string;
@@ -13,7 +13,7 @@ export interface AbstractUserTracking {
 }
 
 export interface AbstractMedia {
-    id: number;
+    id?: number;
     title: string;
     alt_title?: string;
     creator?: Person;

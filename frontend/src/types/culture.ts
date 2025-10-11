@@ -1,8 +1,8 @@
 import { User } from "./user";
 
 export interface Culture {
-    id: number;
-    user: User;
+    id?: number;
+    user?: User;
     name: string;
     code: string;
     colour?: string;
@@ -12,14 +12,14 @@ export interface Culture {
 }
 
 export interface Category {
-    id: number;
+    id?: number;
     culture: Culture;
     key: string;
     display_name: string;
 }
 
 export interface Period {
-    id: number;
+    id?: number;
     culture: Culture;
     category: Category;
     start_year: number;
@@ -30,7 +30,7 @@ export interface Period {
 }
 
 export interface PageContent {
-    id: number;
+    id?: number;
     culture: Culture;
     category: Category;
     intro_text?: string;
@@ -39,8 +39,8 @@ export interface PageContent {
 }
 
 export interface Profile {
-    id: number;
-    user: User;
+    id?: number;
+    user?: User;
     bio?: string;
     avatar?: string;
     location?: string;

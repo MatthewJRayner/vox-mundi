@@ -84,7 +84,7 @@ class AbstractMedia(TimestampedModel):
     creator = models.ForeignKey('Person', on_delete=models.SET_NULL, null=True, blank=True)
     creator_string = models.CharField(max_length=200, null=True, blank=True)
     alt_creator_name = models.CharField(max_length=200, null=True, blank=True)
-    date = models.ForeignKey('DateEstimate', on_delete=models.SET_NULL, null=True, blank=True)
+    date = models.OneToOneField('DateEstimate', on_delete=models.CASCADE, null=True, blank=True)
     external_links = models.JSONField(default=list, blank=True)  # [ {"label": "Wikipedia", "url": "..."} ]
     tags = TaggableManager(blank=True)
 
@@ -243,7 +243,7 @@ class UserHistoryEvent(AbstractUserTrackingModel):
     title = models.CharField(max_length=200)
     alt_title = models.CharField(max_length=200, null=True, blank=True)
     type = models.CharField(max_length=100)
-    date = models.ForeignKey(DateEstimate, on_delete=models.SET_NULL, null=True, blank=True)
+    date = models.OneToOneField(DateEstimate, on_delete=models.CASCADE, null=True, blank=True, related_name="user_history_event")
     location = models.CharField(max_length=200, blank=True, null=True)
     period = models.ForeignKey(Period, on_delete=models.SET_NULL, null=True, blank=True, related_name="events")
     sources = models.TextField(blank=True)
@@ -254,7 +254,7 @@ class UserHistoryEvent(AbstractUserTrackingModel):
 
     def __str__(self):
         culture_names = ", ".join(culture.name for culture in self.cultures.all())
-        return f"{self.universal_item.title} ({culture_names})"
+        return f"{self.title} ({culture_names})"
 
     class Meta:
         verbose_name_plural = "User History Events"
@@ -273,8 +273,8 @@ class Person(TimestampedModel):
     profession = models.CharField(max_length=100, blank=True)
     nationality = models.CharField(max_length=100, blank=True)
     birthplace = models.CharField(max_length=100, blank=True)
-    birth_date = models.ForeignKey(DateEstimate, related_name="births", on_delete=models.SET_NULL, null=True, blank=True)
-    death_date = models.ForeignKey(DateEstimate, related_name="deaths", on_delete=models.SET_NULL, null=True, blank=True)
+    birth_date = models.OneToOneField(DateEstimate, on_delete=models.CASCADE, null=True, blank=True, related_name="births")
+    death_date = models.OneToOneField(DateEstimate, on_delete=models.CASCADE, null=True, blank=True, related_name="deaths")
     titles = models.CharField(max_length=255, blank=True)
     epithets = models.CharField(max_length=255, blank=True)
     resting_place = models.CharField(max_length=255, blank=True)
