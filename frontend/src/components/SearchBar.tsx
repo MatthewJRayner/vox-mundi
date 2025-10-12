@@ -1,21 +1,64 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { SVGPath } from "@/utils/path";
-import { SVG } from "leaflet";
 
 interface SearchBarProps {
   onSearch: (query: string) => void;
   className?: string;
 }
 
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+}
+
 export default function SearchBar({ onSearch, className = "" }: SearchBarProps) {
   const [query, setQuery] = useState("");
+  const debouncedQuery = useDebounce(query, 500);
+  const prevQueryRef = useRef<string>(""); // Track previous query
 
-  const handleSearch = () => {
-    if (!query.trim()) return;
-    onSearch(query.trim());
-  };
+  // Memoize onSearch to prevent unnecessary effect triggers
+  const memoizedOnSearch = useCallback(
+    (query: string) => {
+      console.log("Search triggered with query:", query); // Debugging
+      onSearch(query);
+    },
+    [onSearch]
+  );
+
+  useEffect(() => {
+    if (debouncedQuery.trim() && debouncedQuery.trim() !== prevQueryRef.current) {
+      console.log("useEffect triggered with debouncedQuery:", debouncedQuery);
+      memoizedOnSearch(debouncedQuery.trim());
+      prevQueryRef.current = debouncedQuery.trim();
+    } else if (!debouncedQuery.trim() && prevQueryRef.current !== "") {
+      console.log("useEffect triggered to reset search");
+      memoizedOnSearch("");
+      prevQueryRef.current = "";
+    }
+  }, [debouncedQuery, memoizedOnSearch]);
+
+  const handleImmediateSearch = useCallback(() => {
+    if (query.trim()) {
+      memoizedOnSearch(query.trim());
+      prevQueryRef.current = query.trim();
+    } else {
+      memoizedOnSearch("");
+      prevQueryRef.current = "";
+    }
+  }, [query, memoizedOnSearch]);
 
   return (
     <div className={`flex items-center space-x-2 sm:space-x-4 ${className}`}>
@@ -24,11 +67,11 @@ export default function SearchBar({ onSearch, className = "" }: SearchBarProps) 
         value={query}
         placeholder="Search..."
         onChange={(e) => setQuery(e.target.value)}
-        onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-        className="flex-1 font-lora p-2 text-foreground text-lg bg-extra shadow-md rounded-lg border border-foreground focus:outline-none focus:ring-1 focus:ring-foreground"
+        onKeyDown={(e) => e.key === "Enter" && handleImmediateSearch()}
+        className="flex-1 font-lora p-2 text-foreground text-lg bg-extra shadow-md rounded-lg focus:outline-none focus:ring-1 focus:ring-foreground"
       />
       <button
-        onClick={handleSearch}
+        onClick={handleImmediateSearch}
         className="cursor-pointer hover:scale-110 hover:opacity-80 active:scale-95 transition-transform"
         aria-label="Search"
       >
@@ -38,11 +81,7 @@ export default function SearchBar({ onSearch, className = "" }: SearchBarProps) 
           fill="currentColor"
           className="w-4 h-4"
         >
-          <path
-            fillRule="evenodd"
-            d={SVGPath.search.path}
-            clipRule="evenodd"
-          />
+          <path fillRule="evenodd" d={SVGPath.search.path} clipRule="evenodd" />
         </svg>
       </button>
     </div>

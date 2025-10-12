@@ -216,7 +216,7 @@ export default function HistoryEventForm({
                     <label
                       key={culture.id}
                       className={`flex items-center space-x-2 cursor-pointer ${
-                        selected ? "bg-gray-200 rounded px-1" : ""
+                        selected ? "text-main rounded px-1" : ""
                       }`}
                     >
                       <input

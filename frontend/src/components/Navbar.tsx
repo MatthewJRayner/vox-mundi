@@ -45,7 +45,7 @@ export default function Navbar({ culture, categories = [] }: NavbarProps) {
           <Link
             key={cat.key}
             href={`/${culture?.code || ""}/${cat.key}`}
-            className="text-lg font-medium font-lora hover:text-foreground/80 transition"
+            className="text-lg font-medium font-lora hover:text-foreground/80 transition text-shadow-md"
           >
             {cat.display_name}
           </Link>

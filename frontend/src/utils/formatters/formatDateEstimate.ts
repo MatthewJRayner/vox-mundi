@@ -1,6 +1,6 @@
 import { DateEstimate } from "@/types/date";
 
-export function formatDateEstimate(dateEstimate: DateEstimate): string {
+export function formatDateEstimate(dateEstimate: DateEstimate | undefined): string {
   if (!dateEstimate) return "";
 
   const {

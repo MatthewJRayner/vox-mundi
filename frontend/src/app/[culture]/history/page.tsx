@@ -6,9 +6,13 @@ import api from "@/lib/api";
 import { Period } from "@/types/culture";
 import { UserHistoryEvent } from "@/types/history";
 import { SVGPath } from "@/utils/path";
+import HistoryTimeline from "@/components/history/HistoryTimeline";
+import HistoryEventModal from "@/components/history/HistoryEventModal";
+import PeriodSelector from "@/components/PeriodSelector";
 import SearchBar from "@/components/SearchBar";
 import { formatYears } from "@/utils/formatters/formatYears";
 import ReactMarkdown from "react-markdown";
+import { formatDateEstimate } from "@/utils/formatters/formatDateEstimate";
 
 export default function HistoryPage() {
   const { culture } = useParams();
@@ -17,29 +21,31 @@ export default function HistoryPage() {
     UserHistoryEvent[]
   >([]);
   const [activePeriod, setActivePeriod] = useState<Period | null>(null);
+  const [activeEvents, setActiveEvents] = useState<UserHistoryEvent[]>([]);
   const [activeEvent, setActiveEvent] = useState<UserHistoryEvent | null>(null);
+  const [hoveredEvent, setHoveredEvent] = useState<UserHistoryEvent | null>(
+    null
+  );
+  const [results, setResults] = useState<UserHistoryEvent[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [results, setResults] = useState<UserHistoryEvent[]>([]);
   const [showFullDesc, setShowFullDesc] = useState(false);
 
-  const handleSearch = async () => {
-    if (!searchQuery.trim()) {
-      setResults([]);
+  const handleSearch = useCallback(async (query: string) => {
+    if (!query.trim()) {
+      setResults(activeEvents);
       return;
     }
     try {
       const userHistoryRest = await api.get(
-        `/user-history-events/?code=${culture}&q=${encodeURIComponent(
-          searchQuery
-        )}`
+        `/user-history-events/?code=${culture}&q=${encodeURIComponent(query)}`
       );
       setResults(userHistoryRest.data);
     } catch (error) {
       console.error("Error fetching search results:", error);
+    } finally {
     }
-  };
+  }, [culture, activeEvents]);
 
   const fetchData = useCallback(async () => {
     if (!culture) return;
@@ -54,7 +60,13 @@ export default function HistoryPage() {
       setUserHistoryEvents(userHistoryRes.data);
 
       if (periodRes.data.length > 0) {
-        setActivePeriod(periodRes.data[0]);
+        const first = periodRes.data[0];
+        setActivePeriod(first);
+        setActiveEvents(
+          userHistoryRes.data.filter(
+            (e: UserHistoryEvent) => e.period?.title === first.title
+          )
+        );
       }
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -68,23 +80,18 @@ export default function HistoryPage() {
   }, [fetchData]);
 
   if (loading) return <main className="p-4">Loading...</main>;
-
   if (!activePeriod)
     return <main className="p-4">No periods yet for this culture.</main>;
 
   return (
     <main className="min-h-screen flex flex-col mt-4 w-full">
-      <div className="flex w-full items-center">
+      <div className="flex w-full items-center relative">
         <SearchBar
-          onSearch={(query) => {
-            setSearchQuery(query);
-            handleSearch();
-          }}
+          onSearch={(query) => handleSearch(query)}
           className="w-1/4"
         />
-        <Link
-          href={`/${culture}/history/new`}
-        >
+
+        <Link href={`/${culture}/history/new`}>
           <svg
             viewBox={SVGPath.add.viewBox}
             className="size-5 fill-current text-foreground ml-4 cursor-pointer hover:scale-110 hover:opacity-80 active:scale-95 transition"
@@ -92,20 +99,20 @@ export default function HistoryPage() {
             <path d={SVGPath.add.path} />
           </svg>
         </Link>
-        <Link
-          href={`/${culture}/history/edit`}
-        >
+
+        <Link href={`/${culture}/history/edit`}>
           <svg
             viewBox={SVGPath.edit.viewBox}
-            className="size-5 fill-current text-foreground ml-2 cursor-pointer hover:scale-110 hover:opacity-80 active:scale-95 transition"
+            className="size-5 fill-current text-foreground ml-4 cursor-pointer hover:scale-110 hover:opacity-80 active:scale-95 transition"
           >
             <path d={SVGPath.edit.path} />
           </svg>
         </Link>
       </div>
+
       <div className="flex flex-col space-y-2 mt-8">
         <h1 className="font-garamond text-main text-5xl text-shadow-md">
-          {activePeriod?.title}
+          {activePeriod.title}
         </h1>
         <h3 className="font-garamond text-xl">
           {activePeriod.start_year && activePeriod.end_year
@@ -150,24 +157,49 @@ export default function HistoryPage() {
             )}
           </div>
         )}
-        <div className="w-full flex items-center justify-center">
-          {periods.map((period) => (
-            <button
-              key={period.id}
-              onClick={() => {
-                setActivePeriod(period);
-                setResults([]);
-                setSearchQuery("");
-              }}
-              className={`px-2 py-1 mr-2 mb-2 rounded-lg font-lora font-medium text-base transition duration-300 ${
-                activePeriod.id === period.id
-                  ? "bg-gray-400 text-background"
-                  : "bg-extra text-foreground hover:bg-foreground/80 hover:text-background cursor-pointer"
-              }`}
-            >
-              {period.title}
-            </button>
-          ))}
+
+        <div className="w-full">
+          <PeriodSelector
+            periods={periods}
+            activePeriod={activePeriod}
+            onSelect={(period) => {
+              setActivePeriod(period);
+              setActiveEvents(
+                userHistoryEvents.filter(
+                  (e) => e.period?.title === period.title
+                )
+              );
+              setActiveEvent(null);
+            }}
+          />
+        </div>
+
+        <div className="flex flex-col w-full">
+          <HistoryTimeline
+            events={results.length > 0 ? results.filter((r) => r.period?.title == activePeriod?.title) : activeEvents}
+            onEventClick={(e) => {
+              setActiveEvent(e);
+              setShowModal(true);
+            }}
+            onEventHover={(e) => setHoveredEvent(e)}
+          />
+
+          <div className="w-full text-center font-garamond text-4xl">
+            {`${hoveredEvent?.title || activeEvent?.title || ``} ${
+              hoveredEvent || activeEvent
+                ? `(${formatDateEstimate(
+                    hoveredEvent?.date || activeEvent?.date
+                  )})`
+                : ""
+            }`}
+          </div>
+
+          {showModal && (
+            <HistoryEventModal
+              event={activeEvent}
+              onClose={() => setShowModal(false)}
+            />
+          )}
         </div>
       </div>
     </main>

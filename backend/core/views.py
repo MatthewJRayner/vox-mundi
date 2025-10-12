@@ -913,7 +913,8 @@ class UserHistoryEventViewSet(viewsets.ModelViewSet):
                 Q(title__icontains=q) |
                 Q(alt_title__icontains=q) |
                 Q(type__icontains=q) |
-                Q(location__icontains=q)
+                Q(location__icontains=q) |
+                Q(period__title__icontains=q)
             )
 
         # Optional: filter by historical period (if linked through UniversalItem)
