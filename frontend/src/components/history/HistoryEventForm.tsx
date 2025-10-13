@@ -144,7 +144,7 @@ export default function HistoryEventForm({
   if (loading) return <main className="p-4">Loading...</main>;
 
   return (
-    <div className="flex flex-col md:flex-row w-full p-4 sm:p-6 items-center justify-center">
+    <div className="flex flex-col md:flex-row w-full p-2 sm:p-4 items-center justify-center">
       <div className="">
         <form onSubmit={handleSubmit} className="space-y-3">
           <input
@@ -325,7 +325,7 @@ export default function HistoryEventForm({
           <button
             type="submit"
             disabled={loading}
-            className="bg-foreground text-background px-4 py-2 rounded text-sm sm:text-base hover:bg-extra-mid hover:scale-105 transition cursor-pointer"
+            className="bg-foreground text-background w-full md:w-1/4 px-4 py-2 rounded text-sm sm:text-base hover:bg-extra-mid hover:scale-105 transition cursor-pointer"
           >
             {loading ? "Saving..." : initialData ? "Update Event" : "Add Event"}
           </button>

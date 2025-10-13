@@ -39,7 +39,7 @@ export default function PeriodList({
             }`}
             onClick={() => onEdit(period)}
           >
-            <h4 className="font-semibold font-lora text-lg">{period.title}</h4>
+            <h4 className="font-lora text-lg">{period.title}</h4>
             <p className="text-sm opacity-70">
               {formatYears(period.start_year, period.end_year)}
             </p>

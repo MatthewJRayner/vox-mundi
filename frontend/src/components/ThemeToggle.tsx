@@ -35,7 +35,7 @@ export default function ThemeToggle() {
     >
       <svg
         viewBox={SVGPath.theme.viewBox}
-        className="fill-current size-5 hover:scale-105 transition cursor-pointer active:scale-90"
+        className="fill-current size-5 ml-1 md:ml-0 hover:scale-105 transition cursor-pointer active:scale-90"
       >
         <path d={SVGPath.theme.path} />
       </svg>

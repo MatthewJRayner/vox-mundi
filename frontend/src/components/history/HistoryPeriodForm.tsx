@@ -42,9 +42,8 @@ export default function HistoryPeriodForm({
         />
       </div>
 
-      {/* Start/End */}
-      <div className="w-full flex space-x-2">
-        <div className="w-1/2 flex space-x-2 items-center">
+      <div className="w-full flex flex-col md:flex-row md:space-x-4 space-y-3 md:space-y-0">
+        <div className="w-full md:w-1/2 flex space-x-2 items-center">
           <h3 className="font-lora text-xl">Start:</h3>
           <input
             type="text"
@@ -56,7 +55,7 @@ export default function HistoryPeriodForm({
             className="p-2 rounded bg-extra shadow-md w-full"
           />
         </div>
-        <div className="w-1/2 flex space-x-2 items-center">
+        <div className="w-full md:w-1/2 flex space-x-2 items-center">
           <h3 className="font-lora text-xl">End:</h3>
           <input
             type="text"
@@ -70,7 +69,6 @@ export default function HistoryPeriodForm({
         </div>
       </div>
 
-      {/* Description */}
       <div className="w-full flex flex-col space-y-1">
         <h3 className="font-lora text-xl">Description:</h3>
         <textarea
@@ -86,7 +84,7 @@ export default function HistoryPeriodForm({
 
       <button
         type="submit"
-        className="self-start bg-foreground text-background px-4 py-2 rounded hover:opacity-80 active:scale-95 cursor-pointer"
+        className="self-start bg-foreground text-background w-full md:w-1/4 px-4 py-2 rounded hover:opacity-80 active:scale-95 cursor-pointer"
       >
         {periodForm.id ? "Update" : "Create"}
       </button>

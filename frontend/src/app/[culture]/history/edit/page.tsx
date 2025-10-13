@@ -64,6 +64,8 @@ export default function HistoryEditPage() {
     } catch (error) {
       console.error("Error updating display name:", error);
     }
+
+    window.location.reload();
   };
 
   const handleAddNewPeriod = () => {
@@ -117,7 +119,7 @@ export default function HistoryEditPage() {
   if (loading) return <main className="p-4">Loading...</main>;
 
   return (
-    <main className="flex flex-col w-full max-w-3xl mx-auto p-6 space-y-8">
+    <main className="flex flex-col max-w-3xl mx-auto p-6 space-y-8">
       <CategoryHeader
         displayName={displayName}
         setDisplayName={setDisplayName}

@@ -35,7 +35,7 @@ export default function Navbar({ culture, categories = [] }: NavbarProps) {
     <nav className="flex justify-between items-center px-4 py-2 bg-background w-full relative">
       <Link
         href={`/${culture?.code || ""}`}
-        className="text-4xl font-bold font-garamond text-main hover:opacity-80 transition duration-300"
+        className="text-2xl md:text-4xl font-bold font-garamond text-main hover:opacity-80 transition duration-300"
       >
         {culture?.name || "Vox Mundi"}
       </Link>
@@ -52,7 +52,7 @@ export default function Navbar({ culture, categories = [] }: NavbarProps) {
         ))}
       </div>
 
-      <div className="flex gap-4 items-center">
+      <div className="flex gap-2 md:gap-4 items-center">
         <Link href="/" className="text-sm">
           <svg
             viewBox={SVGPath.home.viewBox}
@@ -113,19 +113,11 @@ export default function Navbar({ culture, categories = [] }: NavbarProps) {
         <button onClick={toggleMobile} className="md:hidden focus:outline-none">
           {mobileOpen ? (
             <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth={2}
-              stroke="currentColor"
-              className="w-6 h-6"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
+            viewBox={SVGPath.close.viewBox}
+            className="size-4 md:size-5 fill-current text-foreground cursor-pointer hover:scale-110 hover:opacity-80 active:scale-95 transition"
+          >
+            <path d={SVGPath.close.path} />
+          </svg>
           ) : (
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -133,7 +125,7 @@ export default function Navbar({ culture, categories = [] }: NavbarProps) {
               viewBox="0 0 24 24"
               strokeWidth={2}
               stroke="currentColor"
-              className="w-6 h-6"
+              className="size-5"
             >
               <path
                 strokeLinecap="round"
@@ -146,7 +138,7 @@ export default function Navbar({ culture, categories = [] }: NavbarProps) {
       </div>
 
       {mobileOpen && (
-        <div className="absolute top-full left-0 w-full bg-background border-t border-border flex flex-col items-center gap-4 py-4 md:hidden z-40">
+        <div className="absolute top-full left-0 w-full bg-background/20 backdrop-blur-2xl border-t border-border flex flex-col items-center gap-4 py-4 md:hidden z-40">
           {categories.map((cat) => (
             <Link
               key={cat.key}
@@ -157,27 +149,6 @@ export default function Navbar({ culture, categories = [] }: NavbarProps) {
               {cat.display_name}
             </Link>
           ))}
-
-          {isAuthenticated && (
-            <>
-              <Link
-                href="/profile"
-                className="text-sm hover:text-main transition"
-                onClick={() => setMobileOpen(false)}
-              >
-                Profile
-              </Link>
-              <button
-                onClick={() => {
-                  logout();
-                  setMobileOpen(false);
-                }}
-                className="text-sm text-red-500 hover:text-red-600 transition"
-              >
-                Logout
-              </button>
-            </>
-          )}
         </div>
       )}
     </nav>

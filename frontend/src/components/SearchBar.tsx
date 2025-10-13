@@ -61,7 +61,7 @@ export default function SearchBar({ onSearch, className = "" }: SearchBarProps) 
   }, [query, memoizedOnSearch]);
 
   return (
-    <div className={`flex items-center space-x-2 sm:space-x-4 ${className}`}>
+    <div className={`flex items-center space-x-2 sm:space-x-4 ${className} w-full md:w-1/4`}>
       <input
         type="text"
         value={query}
@@ -76,13 +76,11 @@ export default function SearchBar({ onSearch, className = "" }: SearchBarProps) 
         aria-label="Search"
       >
         <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox={SVGPath.search.viewBox}
-          fill="currentColor"
-          className="w-4 h-4"
-        >
-          <path fillRule="evenodd" d={SVGPath.search.path} clipRule="evenodd" />
-        </svg>
+            viewBox={SVGPath.search.viewBox}
+            className="size-4 md:size-5 fill-current text-foreground cursor-pointer hover:scale-110 hover:opacity-80 active:scale-95 transition"
+          >
+            <path d={SVGPath.search.path} />
+          </svg>
       </button>
     </div>
   );

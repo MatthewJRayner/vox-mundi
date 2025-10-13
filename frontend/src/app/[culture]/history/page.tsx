@@ -94,7 +94,7 @@ export default function HistoryPage() {
         <Link href={`/${culture}/history/new`}>
           <svg
             viewBox={SVGPath.add.viewBox}
-            className="size-5 fill-current text-foreground ml-4 cursor-pointer hover:scale-110 hover:opacity-80 active:scale-95 transition"
+            className="size-4 md:size-5 fill-current text-foreground ml-4 cursor-pointer hover:scale-110 hover:opacity-80 active:scale-95 transition"
           >
             <path d={SVGPath.add.path} />
           </svg>
@@ -103,7 +103,7 @@ export default function HistoryPage() {
         <Link href={`/${culture}/history/edit`}>
           <svg
             viewBox={SVGPath.edit.viewBox}
-            className="size-5 fill-current text-foreground ml-4 cursor-pointer hover:scale-110 hover:opacity-80 active:scale-95 transition"
+            className="size-4 md:size-5 fill-current text-foreground ml-4 cursor-pointer hover:scale-110 hover:opacity-80 active:scale-95 transition"
           >
             <path d={SVGPath.edit.path} />
           </svg>
@@ -111,10 +111,10 @@ export default function HistoryPage() {
       </div>
 
       <div className="flex flex-col space-y-2 mt-8">
-        <h1 className="font-garamond text-main text-5xl text-shadow-md">
+        <h1 className="font-garamond text-main text-3xl md:text-5xl text-shadow-md">
           {activePeriod.title}
         </h1>
-        <h3 className="font-garamond text-xl">
+        <h3 className="font-garamond text-base md:text-xl">
           {activePeriod.start_year && activePeriod.end_year
             ? formatYears(activePeriod.start_year, activePeriod.end_year)
             : ""}
@@ -125,7 +125,7 @@ export default function HistoryPage() {
               className={`text-md/[1.75] sm:text-base/[1.75] leading-relaxed font-serif font-medium transition-all duration-300 ${
                 showFullDesc
                   ? "max-h-none"
-                  : "max-h-24 sm:max-h-42 overflow-hidden"
+                  : "max-h-42 overflow-hidden"
               }`}
             >
               <ReactMarkdown>{activePeriod.desc}</ReactMarkdown>
@@ -174,7 +174,7 @@ export default function HistoryPage() {
           />
         </div>
 
-        <div className="flex flex-col w-full">
+        <div className="flex md:flex-col w-full items-center">
           <HistoryTimeline
             events={results.length > 0 ? results.filter((r) => r.period?.title == activePeriod?.title) : activeEvents}
             onEventClick={(e) => {
@@ -184,7 +184,8 @@ export default function HistoryPage() {
             onEventHover={(e) => setHoveredEvent(e)}
           />
 
-          <div className="w-full text-center font-garamond text-4xl">
+          <div className="w-full text-center font-garamond text-lg md:text-[24px] mt-4 ">
+            {activeEvents.length ? "" : "No events added for this period."}
             {`${hoveredEvent?.title || activeEvent?.title || ``} ${
               hoveredEvent || activeEvent
                 ? `(${formatDateEstimate(

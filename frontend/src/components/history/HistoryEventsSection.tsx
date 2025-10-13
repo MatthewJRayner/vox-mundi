@@ -18,7 +18,17 @@ export default function HistoryEventsSection({
 
   return (
     <section className="flex flex-col space-y-3">
-      <h3 className="text-lg font-semibold text-main">Your Events</h3>
+      <div className="flex w-full justify-between items-center">
+        <h3 className="text-lg font-semibold text-main">Your Events</h3>
+        <Link href={`/${culture}/history/new`}>
+          <svg
+            viewBox={SVGPath.add.viewBox}
+            className="size-5 fill-current transition hover:text-foreground/80 active:scale-95 cursor-pointer"
+          >
+            <path d={SVGPath.add.path} />
+          </svg>
+        </Link>
+      </div>
       {Object.entries(groupedEvents).map(([periodName, events]) => (
         <div key={periodName} className="bg-extra rounded shadow">
           <button
