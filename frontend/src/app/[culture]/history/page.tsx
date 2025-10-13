@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import api from "@/lib/api";
-import { Period } from "@/types/culture";
+import { Period, Category } from "@/types/culture";
 import { UserHistoryEvent } from "@/types/history";
 import { SVGPath } from "@/utils/path";
 import HistoryTimeline from "@/components/history/HistoryTimeline";
