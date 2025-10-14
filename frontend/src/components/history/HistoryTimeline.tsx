@@ -1,7 +1,7 @@
 "use client";
 
 import { UserHistoryEvent } from "@/types/history";
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 
 interface TimelineProps {
   events: UserHistoryEvent[];
@@ -32,44 +32,95 @@ export default function HistoryTimeline({
     });
   }, [events]);
 
-  const [smallScreen, setSmallScreen] = useState(false);
-  
+  const [isMobile, setIsMobile] = useState(false);
+  const [dragPosition, setDragPosition] = useState<number | null>(null);
+  const [selectedEventIndex, setSelectedEventIndex] = useState<number | null>(null);
+  const timelineRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     const handleResize = () => {
-      setSmallScreen(window.innerWidth < 768);
+      setIsMobile(window.innerWidth < 768);
     };
 
     handleResize();
-
     window.addEventListener("resize", handleResize);
 
     return () => window.removeEventListener("resize", handleResize);
-  }, [])
+  }, []);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (!isMobile || !timelineRef.current) return;
+    const touchY = e.touches[0].clientY;
+    const rect = timelineRef.current.getBoundingClientRect();
+    const relativeY = touchY - rect.top;
+    const percent = (relativeY / rect.height) * 100;
+    setDragPosition(Math.max(0, Math.min(100, percent)));
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isMobile || !timelineRef.current) return;
+    const touchY = e.touches[0].clientY;
+    const rect = timelineRef.current.getBoundingClientRect();
+    const relativeY = touchY - rect.top;
+    const percent = (relativeY / rect.height) * 100;
+    setDragPosition(Math.max(0, Math.min(100, percent)));
+  };
+
+  const handleTouchEnd = () => {
+    if (!isMobile || dragPosition === null || !sortedEvents.length) return;
+    const eventPositions = sortedEvents.map((_, idx) => 
+      ((idx + 1) / (sortedEvents.length + 1)) * 100
+    );
+    const closestPositionIndex = eventPositions.reduce((closestIdx, pos, idx) => {
+      return Math.abs(pos - dragPosition) < Math.abs(eventPositions[closestIdx] - dragPosition)
+        ? idx
+        : closestIdx;
+    }, 0);
+    const selectedEvent = sortedEvents[closestPositionIndex];
+    setSelectedEventIndex(closestPositionIndex);
+    setDragPosition(eventPositions[closestPositionIndex]);
+    onEventClick(selectedEvent);
+  };
+
+  const circlePosition = dragPosition !== null 
+    ? dragPosition 
+    : selectedEventIndex !== null 
+      ? ((selectedEventIndex + 1) / (sortedEvents.length + 1)) * 100 
+      : 50;
 
   return (
-    <div className="flex flex-col w-full mt-12">
-      <div className="flex flex-col w-full items-center justify-center relative h-[300px] md:h-[100px]">
-        <div className="w-1/4 top-0 h-[2px] md:h-full md:left-0 md:w-[2px] bg-foreground absolute" />
-        <div className="w-1/4 bottom-0 h-[2px] md:h-full md:right-0 md:w-[2px] bg-foreground absolute" />
-        <div className="h-full w-[2px] md:w-full md:h-[2px] bg-foreground" />
+    <div className="flex flex-col w-full h-full">
+      <div 
+        className="flex flex-col w-full items-center justify-center relative h-[400px]"
+        ref={timelineRef}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
+        <div className="w-[2px] h-full bg-foreground absolute" />
+        <div className="w-1/3 h-[2px] bg-foreground absolute top-0" />
+        <div className="w-1/3 h-[2px] bg-foreground absolute bottom-0" />
         {sortedEvents.map((event, idx) => {
           const positionPercent = ((idx + 1) / (sortedEvents.length + 1)) * 100;
-          const positionStyle = smallScreen
-            ? { top: `${positionPercent}%` }
-            : { left: `${positionPercent}%` }
           return (
             <button
               key={event.id}
-              style={positionStyle}
-              className={`${
-                idx % 2 === 0 ? smallScreen ? "left-1/2" : "top-1/2" : smallScreen ? "right-1/2" : "bottom-1/2"
-              } absolute items-center cursor-pointer transition transform hover:scale-110 w-[24px] md:w-1 bg-foreground h-[2px] md:h-1/4`}
-              onClick={() => onEventClick(event)}
-              onMouseEnter={() => onEventHover(event)}
-              onMouseLeave={() => onEventHover(null)}
+              style={{ top: `${positionPercent}%` }}
+              className={`absolute w-[24px] h-[2px] md:h-[4px] bg-foreground cursor-pointer transition transform hover:scale-110 ${
+                isMobile ? "" : idx % 2 === 0 ? "left-1/2" : "right-1/2"
+              } ${isMobile ? "opacity-50" : ""}`}
+              onClick={() => !isMobile && onEventClick(event)}
+              onMouseEnter={() => !isMobile && onEventHover(event)}
+              onMouseLeave={() => !isMobile && onEventHover(null)}
             />
           );
         })}
+        {isMobile && (
+          <div
+            style={{ top: `${circlePosition}%` }}
+            className="absolute w-4 h-4 bg-main rounded-full cursor-pointer transform -translate-x-1/2 -translate-y-1/2 left-1/2 transition-all duration-200"
+          />
+        )}
       </div>
     </div>
   );

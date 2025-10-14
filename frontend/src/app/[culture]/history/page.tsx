@@ -7,7 +7,7 @@ import { Period, Category } from "@/types/culture";
 import { UserHistoryEvent } from "@/types/history";
 import { SVGPath } from "@/utils/path";
 import HistoryTimeline from "@/components/history/HistoryTimeline";
-import HistoryEventModal from "@/components/history/HistoryEventModal";
+import HistoryEventDisplay from "@/components/history/HistoryEventDisplay";
 import PeriodSelector from "@/components/PeriodSelector";
 import SearchBar from "@/components/SearchBar";
 import { formatYears } from "@/utils/formatters/formatYears";
@@ -27,7 +27,6 @@ export default function HistoryPage() {
     null
   );
   const [results, setResults] = useState<UserHistoryEvent[]>([]);
-  const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showFullDesc, setShowFullDesc] = useState(false);
 
@@ -43,7 +42,6 @@ export default function HistoryPage() {
       setResults(userHistoryRest.data);
     } catch (error) {
       console.error("Error fetching search results:", error);
-    } finally {
     }
   }, [culture, activeEvents]);
 
@@ -131,7 +129,7 @@ export default function HistoryPage() {
               <ReactMarkdown>{activePeriod.desc}</ReactMarkdown>
             </div>
             {!showFullDesc && activePeriod.desc.length > 300 && (
-              <div className="absolute bottom-6 left-0 w-full h-10 sm:h-12 bg-gradient-to-t from-background via-background/90 to-transparent pointer-events-none" />
+              <div className="absolute bottom-5 left-0 w-full h-10 sm:h-12 bg-gradient-to-t from-background via-background/90 to-transparent pointer-events-none" />
             )}
             {activePeriod.desc.length > 300 && (
               <button
@@ -174,33 +172,17 @@ export default function HistoryPage() {
           />
         </div>
 
-        <div className="flex md:flex-col w-full items-center">
-          <HistoryTimeline
-            events={results.length > 0 ? results.filter((r) => r.period?.title == activePeriod?.title) : activeEvents}
-            onEventClick={(e) => {
-              setActiveEvent(e);
-              setShowModal(true);
-            }}
-            onEventHover={(e) => setHoveredEvent(e)}
-          />
-
-          <div className="w-full text-center font-garamond text-lg md:text-[24px] mt-4 ">
-            {activeEvents.length ? "" : "No events added for this period."}
-            {`${hoveredEvent?.title || activeEvent?.title || ``} ${
-              hoveredEvent || activeEvent
-                ? `(${formatDateEstimate(
-                    hoveredEvent?.date || activeEvent?.date
-                  )})`
-                : ""
-            }`}
-          </div>
-
-          {showModal && (
-            <HistoryEventModal
-              event={activeEvent}
-              onClose={() => setShowModal(false)}
+        <div className="flex w-full items-center mt-8">
+          <div className="w-1/3">
+            <HistoryTimeline
+              events={results.length > 0 ? results.filter((r) => r.period?.title == activePeriod?.title) : activeEvents}
+              onEventClick={(e) => setActiveEvent(e)}
+              onEventHover={(e) => setHoveredEvent(e)}
             />
-          )}
+          </div>
+          <div className="w-2/3 md:ml-4">
+            <HistoryEventDisplay event={hoveredEvent || activeEvent} />
+          </div>
         </div>
       </div>
     </main>

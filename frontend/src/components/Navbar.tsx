@@ -33,6 +33,7 @@ export default function Navbar({ culture, categories = [] }: NavbarProps) {
 
   return (
     <nav className="flex justify-between items-center px-4 py-2 bg-background w-full relative">
+      {/* Logo */}
       <Link
         href={`/${culture?.code || ""}`}
         className="text-2xl md:text-4xl font-bold font-garamond text-main hover:opacity-80 transition duration-300"
@@ -40,6 +41,7 @@ export default function Navbar({ culture, categories = [] }: NavbarProps) {
         {culture?.name || "Vox Mundi"}
       </Link>
 
+      {/* Desktop Links */}
       <div className="hidden md:flex gap-6">
         {categories.map((cat) => (
           <Link
@@ -52,6 +54,7 @@ export default function Navbar({ culture, categories = [] }: NavbarProps) {
         ))}
       </div>
 
+      {/* Right Controls */}
       <div className="flex gap-2 md:gap-4 items-center">
         <Link href="/" className="text-sm">
           <svg
@@ -88,7 +91,7 @@ export default function Navbar({ culture, categories = [] }: NavbarProps) {
             </button>
 
             {dropdownOpen && (
-              <div className="absolute right-0 mt-2 w-40 bg-extra rounded shadow-md z-50">
+              <div className="absolute right-0 mt-2 w-40 bg-extra rounded shadow-md z-50 animate-fade-in">
                 <Link
                   href="/profile"
                   className="block px-4 py-2 text-sm hover:bg-background/80 cursor-pointer"
@@ -110,14 +113,15 @@ export default function Navbar({ culture, categories = [] }: NavbarProps) {
           </Link>
         )}
 
+        {/* Mobile Toggle Button */}
         <button onClick={toggleMobile} className="md:hidden focus:outline-none">
           {mobileOpen ? (
             <svg
-            viewBox={SVGPath.close.viewBox}
-            className="size-4 md:size-5 fill-current text-foreground cursor-pointer hover:scale-110 hover:opacity-80 active:scale-95 transition"
-          >
-            <path d={SVGPath.close.path} />
-          </svg>
+              viewBox={SVGPath.close.viewBox}
+              className="size-5 fill-current text-foreground cursor-pointer hover:scale-110 hover:opacity-80 active:scale-95 transition"
+            >
+              <path d={SVGPath.close.path} />
+            </svg>
           ) : (
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -137,20 +141,25 @@ export default function Navbar({ culture, categories = [] }: NavbarProps) {
         </button>
       </div>
 
-      {mobileOpen && (
-        <div className="absolute top-full left-0 w-full bg-background/20 backdrop-blur-2xl border-t border-border flex flex-col items-center gap-4 py-4 md:hidden z-40">
-          {categories.map((cat) => (
-            <Link
-              key={cat.key}
-              href={`/${culture?.code || ""}/${cat.key}`}
-              className="text-lg font-medium font-lora hover:text-foreground/80 transition"
-              onClick={() => setMobileOpen(false)}
-            >
-              {cat.display_name}
-            </Link>
-          ))}
-        </div>
-      )}
+      {/* Mobile Menu with Animation */}
+      <div
+        className={`absolute top-full left-0 w-full bg-background/20 backdrop-blur-2xl border-t border-border flex flex-col items-center gap-4 overflow-hidden md:hidden z-40 transition-all duration-500 ease-in-out ${
+          mobileOpen
+            ? "max-h-[400px] opacity-100 py-4"
+            : "max-h-0 opacity-0 py-0"
+        }`}
+      >
+        {categories.map((cat) => (
+          <Link
+            key={cat.key}
+            href={`/${culture?.code || ""}/${cat.key}`}
+            className="text-lg font-medium font-lora hover:text-foreground/80 transition"
+            onClick={() => setMobileOpen(false)}
+          >
+            {cat.display_name}
+          </Link>
+        ))}
+      </div>
     </nav>
   );
 }
