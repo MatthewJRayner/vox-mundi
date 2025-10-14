@@ -33,7 +33,6 @@ export default function Navbar({ culture, categories = [] }: NavbarProps) {
 
   return (
     <nav className="flex justify-between items-center px-4 py-2 bg-background w-full relative">
-      {/* Logo */}
       <Link
         href={`/${culture?.code || ""}`}
         className="text-2xl md:text-4xl font-bold font-garamond text-main hover:opacity-80 transition duration-300"
@@ -41,7 +40,6 @@ export default function Navbar({ culture, categories = [] }: NavbarProps) {
         {culture?.name || "Vox Mundi"}
       </Link>
 
-      {/* Desktop Links */}
       <div className="hidden md:flex gap-6">
         {categories.map((cat) => (
           <Link
@@ -54,7 +52,6 @@ export default function Navbar({ culture, categories = [] }: NavbarProps) {
         ))}
       </div>
 
-      {/* Right Controls */}
       <div className="flex gap-2 md:gap-4 items-center">
         <Link href="/" className="text-sm">
           <svg
@@ -113,7 +110,6 @@ export default function Navbar({ culture, categories = [] }: NavbarProps) {
           </Link>
         )}
 
-        {/* Mobile Toggle Button */}
         <button onClick={toggleMobile} className="md:hidden focus:outline-none">
           {mobileOpen ? (
             <svg
@@ -141,7 +137,6 @@ export default function Navbar({ culture, categories = [] }: NavbarProps) {
         </button>
       </div>
 
-      {/* Mobile Menu with Animation */}
       <div
         className={`absolute top-full left-0 w-full bg-background/20 backdrop-blur-2xl border-t border-border flex flex-col items-center gap-4 overflow-hidden md:hidden z-40 transition-all duration-500 ease-in-out ${
           mobileOpen

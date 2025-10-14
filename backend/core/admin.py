@@ -35,3 +35,9 @@ class UserHistoryEventAdmin(admin.ModelAdmin):
     list_display = ('user', 'type', 'title', 'date' )
     search_fields = ('user', 'title', 'description')
     list_filter = ('type', 'user')
+    
+@admin.register(CalendarDate)
+class CalendarDateAdmin(admin.ModelAdmin):
+    list_display = ('user', 'holiday_name', 'calendar_date')
+    search_fields = ('user', 'holiday_name', 'calendar_date')
+    list_filter = ('user', 'cultures')

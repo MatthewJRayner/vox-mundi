@@ -50,8 +50,10 @@ export default function HistoryTimeline({
 
   const handleTouchStart = (e: React.TouchEvent) => {
     if (!isMobile || !timelineRef.current) return;
+    e.preventDefault();
     const touchY = e.touches[0].clientY;
     const rect = timelineRef.current.getBoundingClientRect();
+    if (touchY < rect.top || touchY > rect.bottom) return;
     const relativeY = touchY - rect.top;
     const percent = (relativeY / rect.height) * 100;
     setDragPosition(Math.max(0, Math.min(100, percent)));
@@ -59,15 +61,18 @@ export default function HistoryTimeline({
 
   const handleTouchMove = (e: React.TouchEvent) => {
     if (!isMobile || !timelineRef.current) return;
+    e.preventDefault();
     const touchY = e.touches[0].clientY;
     const rect = timelineRef.current.getBoundingClientRect();
+    if (touchY < rect.top || touchY > rect.bottom) return;
     const relativeY = touchY - rect.top;
     const percent = (relativeY / rect.height) * 100;
     setDragPosition(Math.max(0, Math.min(100, percent)));
   };
 
-  const handleTouchEnd = () => {
+  const handleTouchEnd = (e: React.TouchEvent) => {
     if (!isMobile || dragPosition === null || !sortedEvents.length) return;
+    e.preventDefault();
     const eventPositions = sortedEvents.map((_, idx) => 
       ((idx + 1) / (sortedEvents.length + 1)) * 100
     );
@@ -91,7 +96,7 @@ export default function HistoryTimeline({
   return (
     <div className="flex flex-col w-full h-full">
       <div 
-        className="flex flex-col w-full items-center justify-center relative h-[400px]"
+        className="flex flex-col w-full items-center justify-center relative h-[400px] touch-none"
         ref={timelineRef}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
@@ -106,7 +111,7 @@ export default function HistoryTimeline({
             <button
               key={event.id}
               style={{ top: `${positionPercent}%` }}
-              className={`absolute w-[24px] h-[2px] md:h-[4px] bg-foreground cursor-pointer transition transform hover:scale-110 ${
+              className={`absolute w-[24px] h-[2px] md:h-[3px] bg-foreground cursor-pointer transition transform hover:scale-110 ${
                 isMobile ? "" : idx % 2 === 0 ? "left-1/2" : "right-1/2"
               } ${isMobile ? "opacity-50" : ""}`}
               onClick={() => !isMobile && onEventClick(event)}

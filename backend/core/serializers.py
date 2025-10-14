@@ -191,7 +191,7 @@ class CalendarDateSerializer(serializers.ModelSerializer):
         model = CalendarDate
         fields = ['id', 'cultures', 'culture_ids', 'holiday_name', 'date_text', 'calendar_date',
                   'traditions', 'meaning', 'photo', 'person', 'person_id', 'rating', 'notes',
-                  'visibility', 'created_at', 'updated_at']
+                  'visibility', 'created_at', 'updated_at', 'isAnnual', 'type']
 
     def validate_culture_ids(self, value):
         user = self.context['request'].user

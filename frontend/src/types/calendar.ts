@@ -9,4 +9,6 @@ export interface CalendarDate extends AbstractUserTracking {
     meaning?: string;
     photo?: string;
     person?: Person;
+    isAnnual: boolean;
+    type?: string;
 }

@@ -226,9 +226,11 @@ class CalendarDate(AbstractUserTrackingModel):
     holiday_name = models.CharField(max_length=200)
     date_text = models.CharField(max_length=100, blank=True)
     calendar_date = models.DateField(null=True, blank=True)
+    type = models.CharField(max_length=100, blank=True, null=True)
     traditions = models.TextField(blank=True)
     meaning = models.TextField(blank=True)
     photo = models.URLField(blank=True, null=True)
+    isAnnual = models.BooleanField(default=False)
     person = models.ForeignKey("Person", null=True, blank=True, on_delete=models.SET_NULL, related_name="holidays")
 
     def __str__(self):

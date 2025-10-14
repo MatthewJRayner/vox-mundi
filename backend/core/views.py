@@ -250,30 +250,45 @@ class CalendarDateViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        code = self.request.query_params.get('code', None)
-        shared = self.request.query_params.get('shared') == 'true'
-        
-        qs = CalendarDate.objects.select_related('user').prefetch_related('cultures')
-        
+        shared = self.request.query_params.get("shared") == "true"
+        code = self.request.query_params.get("code")
+        q = self.request.query_params.get("q")
+
         if not user.is_authenticated:
-            return qs.filter(visibility=Visibility.PUBLIC)
-        
-        if not shared:
-            qs.filter(user=user, culture__code=code)
-        
-        if code:
-            try:
-                user_culture = Culture.objects.get(user=user, code=code)
-            except Culture.DoesNotExist:
-                return qs.none()
+            return CalendarDate.objects.none()
+
+        qs = (
+            CalendarDate.objects
+            .select_related("user")
+            .prefetch_related("cultures")
+            .order_by("-updated_at")
+        )
+
+        if shared:
+            if code:
+                try:
+                    user_culture = Culture.objects.get(user=user, code=code)
+                    group_key = user_culture.shared_group_key
+                    qs = qs.filter(
+                        visibility=Visibility.PUBLIC,
+                        cultures__shared_group_key=group_key
+                    ).exclude(user=user)
+                except Culture.DoesNotExist:
+                    return qs.none()
+            else:
+                qs = qs.filter(visibility=Visibility.PUBLIC).exclude(user=user)
+        else:
+            qs = qs.filter(user=user)
+            if code:
+                qs = qs.filter(cultures__code__iexact=code)
+                
+        if q:
+            qs = qs.filter(
+                Q(holiday_name__icontains=q) |
+                Q(type__icontains=q)
+            )
             
-            group_key = user_culture.shared_group_key
-            return qs.filter(
-                visibility=Visibility.PUBLIC,
-                cultures__shared_group_key=group_key
-            ).exclude(user=user).distinct()
-            
-        return qs.filter(visibility=Visibility.PUBLIC).exclude(user=user).distinct()
+        return qs.distinct()
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)

@@ -120,10 +120,10 @@ export default function HistoryPage() {
         {activePeriod.desc && (
           <div className="mb-8 relative">
             <div
-              className={`text-md/[1.75] sm:text-base/[1.75] leading-relaxed font-serif font-medium transition-all duration-300 ${
+              className={`text-sm/[1.75] sm:text-base/[1.75] leading-relaxed font-serif font-medium transition-all duration-300 ${
                 showFullDesc
                   ? "max-h-none"
-                  : "max-h-42 overflow-hidden"
+                  : "max-h-52 md:max-h-42 overflow-hidden"
               }`}
             >
               <ReactMarkdown>{activePeriod.desc}</ReactMarkdown>
