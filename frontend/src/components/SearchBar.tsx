@@ -77,7 +77,7 @@ export default function SearchBar({ onSearch, className = "" }: SearchBarProps) 
       >
         <svg
             viewBox={SVGPath.search.viewBox}
-            className="size-4 md:size-5 fill-current text-foreground cursor-pointer hover:scale-110 hover:opacity-80 active:scale-95 transition"
+            className="size-4 md:size-5 fill-current text-foreground cursor-pointer hover:scale-101 hover:opacity-80 active:scale-95 transition"
           >
             <path d={SVGPath.search.path} />
           </svg>

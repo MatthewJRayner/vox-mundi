@@ -104,20 +104,23 @@ export default function CalendarEditPage() {
             {filteredEvents.map((event) => (
               <li
                 key={event.id}
-                className="flex justify-between items-center p-2 border-b"
+                className="flex justify-between items-center p-4 bg-extra shadow-lg rounded"
               >
                 <div>
                   <span className="font-medium">{event.holiday_name}</span>
-                  <span className="text-sm text-gray-500 ml-2">
-                    {dayjs(event.calendar_date).format("MMMM D, YYYY")} {event.isAnnual ? "(Annual)" : ""}
-                  </span>
+                  <span className="text-sm text-foreground/50 ml-2">{event.type}</span>
                 </div>
+                <div>
+                  <span className="text-sm text-foreground/50 ml-2">
+                    {event.isAnnual ? dayjs(event.calendar_date).format("MMMM D") : dayjs(event.calendar_date).format("MMMM D, YYYY")} {event.isAnnual ? "(Annual)" : ""}
+                  </span>
                 <button
                   onClick={() => handleEditEvent(event)}
-                  className="text-blue-500 hover:underline"
+                  className="text-primary hover:opacity-80 cursor-pointer ml-2"
                 >
                   See More
                 </button>
+                </div>
               </li>
             ))}
           </ul>

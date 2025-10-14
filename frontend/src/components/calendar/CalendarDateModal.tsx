@@ -58,7 +58,7 @@ export default function CalendarDateModal({
           </svg>
         </button>
         <h2 className="text-xl font-lora font-semibold">
-          {selectedDate.format("MMMM D, YYYY")}
+          {events[0].isAnnual ? selectedDate.format("MMMM D") : selectedDate.format("MMMM D, YYYY")}
         </h2>
 
         {showForm ? ( // Form view
