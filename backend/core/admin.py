@@ -41,3 +41,9 @@ class CalendarDateAdmin(admin.ModelAdmin):
     list_display = ('user', 'holiday_name', 'calendar_date')
     search_fields = ('user', 'holiday_name', 'calendar_date')
     list_filter = ('user', 'cultures')
+
+@admin.register(Recipe)
+class RecipeAdmin(admin.ModelAdmin):
+    list_display = ('user', 'name', 'type', 'course')
+    search_fields = ('user', 'name', 'type', 'course')
+    list_filter = ('user', 'course', 'type')
