@@ -9,6 +9,7 @@ import CategoryHeader from "@/components/CategoryHeader";
 import CalendarDateModal from "@/components/calendar/CalendarDateModal";
 import SearchBar from "@/components/SearchBar";
 import dayjs from "dayjs";
+import { SVGPath } from "@/utils/path";
 
 export default function CalendarEditPage() {
   const { culture } = useParams();
@@ -36,7 +37,7 @@ export default function CalendarEditPage() {
       setDisplayName(categoryData.display_name || "");
       setCultureCurrent(cultureRes.data);
       setCalendarEvents(eventsRes.data);
-      setFilteredEvents(eventsRes.data); // Initialize filtered events
+      setFilteredEvents(eventsRes.data);
     } catch (error) {
       console.error("Error fetching data:", error);
     } finally {
@@ -51,7 +52,9 @@ export default function CalendarEditPage() {
   const handleSaveDisplayName = async () => {
     if (!category) return;
     try {
-      await api.patch(`/categories/${category.id}/`, { display_name: displayName });
+      await api.patch(`/categories/${category.id}/`, {
+        display_name: displayName,
+      });
       setCategory((prev) => prev && { ...prev, display_name: displayName });
     } catch (error) {
       console.error("Error updating display name:", error);
@@ -65,38 +68,53 @@ export default function CalendarEditPage() {
         return;
       }
       const lowerQuery = query.toLowerCase();
-      const filtered = calendarEvents.filter((event) =>
-        event.holiday_name.toLowerCase().includes(lowerQuery) ||
-        event?.type?.toLowerCase().includes(lowerQuery)
+      const filtered = calendarEvents.filter(
+        (event) =>
+          event.holiday_name.toLowerCase().includes(lowerQuery) ||
+          event?.type?.toLowerCase().includes(lowerQuery)
       );
       setFilteredEvents(filtered);
     },
     [calendarEvents]
   );
 
-  const handleEditEvent = (event: CalendarDate) => {
-    setEditingEvent(event);
+  const openEventModal = (event: CalendarDate | null) => {
+    setEditingEvent(event ?? null);
     setShowModal(true);
   };
 
   const handleModalClose = () => {
     setEditingEvent(null);
     setShowModal(false);
-    fetchData(); // Refresh events after modal close
+    fetchData();
   };
 
   if (loading) return <main className="p-4">Loading...</main>;
 
   return (
-    <main className="flex flex-col max-w-3xl mx-auto p-6 space-y-8">
+    <main className="flex flex-col max-w-3xl mx-auto p-2 md:p-6 space-y-8">
       <CategoryHeader
         displayName={displayName}
         setDisplayName={setDisplayName}
         onSave={handleSaveDisplayName}
       />
-      <SearchBar onSearch={handleSearch} />
+      <div className="w-full flex items-center">
+        <SearchBar onSearch={handleSearch} />
+        <button
+          onClick={() => openEventModal(null)}
+          className="ml-2"
+          title="Add New Event"
+        >
+          <svg
+            viewBox={SVGPath.add.viewBox}
+            className="size-5 fill-current transition hover:scale-105 active:scale-95"
+          >
+            <path d={SVGPath.add.path} />
+          </svg>
+        </button>
+      </div>
       <section className="space-y-4">
-        <h2 className="text-xl font-semibold">Calendar Events</h2>
+        <h2 className="text-lg text-main">Calendar Events</h2>
         {filteredEvents.length === 0 ? (
           <p className="text-gray-500">No events found.</p>
         ) : (
@@ -104,22 +122,29 @@ export default function CalendarEditPage() {
             {filteredEvents.map((event) => (
               <li
                 key={event.id}
-                className="flex justify-between items-center p-4 bg-extra shadow-lg rounded"
+                className="flex justify-between items-center p-4 bg-extra shadow-lg rounded w-full"
               >
-                <div>
-                  <span className="font-medium">{event.holiday_name}</span>
-                  <span className="text-sm text-foreground/50 ml-2">{event.type}</span>
-                </div>
-                <div>
-                  <span className="text-sm text-foreground/50 ml-2">
-                    {event.isAnnual ? dayjs(event.calendar_date).format("MMMM D") : dayjs(event.calendar_date).format("MMMM D, YYYY")} {event.isAnnual ? "(Annual)" : ""}
+                <div className="w-full flex flex-col md:flex-row items-start md:justify-start md:items-center">
+                  <span className="font-medium text-lg">
+                    {event.holiday_name}
                   </span>
-                <button
-                  onClick={() => handleEditEvent(event)}
-                  className="text-primary hover:opacity-80 cursor-pointer ml-2"
-                >
-                  See More
-                </button>
+                  <span className="text-xs md:text-sm text-foreground/50 md:ml-2">
+                    {event.type}
+                  </span>
+                </div>
+                <div className="w-full flex flex-col md:flex-row items-end md:justify-end md:items-center">
+                  <span className="text-xs md:text-sm text-foreground/50 ml-2">
+                    {event.isAnnual
+                      ? dayjs(event.calendar_date).format("MMMM D")
+                      : dayjs(event.calendar_date).format("MMMM D, YYYY")}{" "}
+                    {event.isAnnual ? "(Annual)" : ""}
+                  </span>
+                  <button
+                    onClick={() => openEventModal(event)}
+                    className="text-primary hover:opacity-80 cursor-pointer ml-2 text-sm md:text-base"
+                  >
+                    See More
+                  </button>
                 </div>
               </li>
             ))}
@@ -128,7 +153,9 @@ export default function CalendarEditPage() {
       </section>
       {showModal && (
         <CalendarDateModal
-          selectedDate={dayjs(editingEvent?.calendar_date)}
+          selectedDate={
+            editingEvent ? dayjs(editingEvent.calendar_date) : dayjs() // fallback to today for new event
+          }
           events={editingEvent ? [editingEvent] : []}
           culture={culture as string}
           onClose={handleModalClose}

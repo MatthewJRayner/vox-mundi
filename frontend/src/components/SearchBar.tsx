@@ -24,7 +24,10 @@ function useDebounce<T>(value: T, delay: number): T {
   return debouncedValue;
 }
 
-export default function SearchBar({ onSearch, className = "" }: SearchBarProps) {
+export default function SearchBar({
+  onSearch,
+  className = "",
+}: SearchBarProps) {
   const [query, setQuery] = useState("");
   const debouncedQuery = useDebounce(query, 500);
   const prevQueryRef = useRef<string>(""); // Track previous query
@@ -39,7 +42,10 @@ export default function SearchBar({ onSearch, className = "" }: SearchBarProps) 
   );
 
   useEffect(() => {
-    if (debouncedQuery.trim() && debouncedQuery.trim() !== prevQueryRef.current) {
+    if (
+      debouncedQuery.trim() &&
+      debouncedQuery.trim() !== prevQueryRef.current
+    ) {
       console.log("useEffect triggered with debouncedQuery:", debouncedQuery);
       memoizedOnSearch(debouncedQuery.trim());
       prevQueryRef.current = debouncedQuery.trim();
@@ -61,7 +67,9 @@ export default function SearchBar({ onSearch, className = "" }: SearchBarProps) 
   }, [query, memoizedOnSearch]);
 
   return (
-    <div className={`flex items-center space-x-2 sm:space-x-4 ${className} w-full md:w-1/4`}>
+    <div
+      className={`flex items-center space-x-2 sm:space-x-4 ${className} w-full md:w-1/4`}
+    >
       <input
         type="text"
         value={query}
@@ -72,15 +80,16 @@ export default function SearchBar({ onSearch, className = "" }: SearchBarProps) 
       />
       <button
         onClick={handleImmediateSearch}
-        className="cursor-pointer hover:scale-110 hover:opacity-80 active:scale-95 transition-transform"
+        className="cursor-pointer hover:scale-105 hover:opacity-80 active:scale-95 transition-transform"
         aria-label="Search"
+        title="Search"
       >
         <svg
-            viewBox={SVGPath.search.viewBox}
-            className="size-4 md:size-5 fill-current text-foreground cursor-pointer hover:scale-101 hover:opacity-80 active:scale-95 transition"
-          >
-            <path d={SVGPath.search.path} />
-          </svg>
+          viewBox={SVGPath.search.viewBox}
+          className="size-4 md:size-5 fill-current text-foreground"
+        >
+          <path d={SVGPath.search.path} />
+        </svg>
       </button>
     </div>
   );

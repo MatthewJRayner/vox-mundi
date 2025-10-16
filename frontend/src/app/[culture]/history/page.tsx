@@ -89,7 +89,7 @@ export default function HistoryPage() {
           className="w-1/4"
         />
 
-        <Link href={`/${culture}/history/new`}>
+        <Link href={`/${culture}/history/new`} title="Add Event">
           <svg
             viewBox={SVGPath.add.viewBox}
             className="size-4 md:size-5 fill-current text-foreground ml-4 cursor-pointer hover:scale-110 hover:opacity-80 active:scale-95 transition"
@@ -98,10 +98,10 @@ export default function HistoryPage() {
           </svg>
         </Link>
 
-        <Link href={`/${culture}/history/edit`}>
+        <Link href={`/${culture}/history/edit`} title="Edit">
           <svg
             viewBox={SVGPath.edit.viewBox}
-            className="size-4 md:size-5 fill-current text-foreground ml-4 cursor-pointer hover:scale-110 hover:opacity-80 active:scale-95 transition"
+            className="size-4 md:size-5 fill-current text-foreground ml-4 cursor-pointer hover:fill-primary hover:scale-105 hover:opacity-80 active:scale-95 transition"
           >
             <path d={SVGPath.edit.path} />
           </svg>

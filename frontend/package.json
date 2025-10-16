@@ -11,7 +11,9 @@
   "dependencies": {
     "@tailwindcss/typography": "^0.5.19",
     "axios": "^1.12.2",
+    "chinese-lunar-calendar": "^1.0.1",
     "dayjs": "^1.11.18",
+    "hijri-converter": "^1.1.1",
     "leaflet": "^1.9.4",
     "leaflet-draw": "^1.0.4",
     "next": "15.5.2",

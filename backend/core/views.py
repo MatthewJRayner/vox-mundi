@@ -201,11 +201,14 @@ class RecipeViewSet(viewsets.ModelViewSet):
             return qs.filter(visibility=Visibility.PUBLIC)
         
         if not shared:
-            return qs.filter(user=user)
+            qs = qs.filter(user=user)
+        
+        if code:
+            qs = qs.filter(cultures__code__iexact=code)
         
                                                                                                    
             
-        return qs.filter(visibility=Visibility.PUBLIC).exclude(user=user).distinct()
+        return qs.distinct()
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)

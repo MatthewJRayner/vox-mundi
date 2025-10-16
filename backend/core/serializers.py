@@ -48,7 +48,7 @@ class CultureSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         culture = super().create(validated_data)
         
-        default_category = ["Literature", "Film", "Music", "Art", "Cuisine", "History", "Language", "Calendar"]
+        default_category = ["Literature", "Film", "Music", "Art", "Cuisine", "History", "Calendar"]
         
         Category.objects.bulk_create([
             Category(

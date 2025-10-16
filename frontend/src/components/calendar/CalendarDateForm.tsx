@@ -1,13 +1,15 @@
 "use client";
+
 import { useEffect, useState, useCallback } from "react";
 import api from "@/lib/api";
 import { CalendarDate } from "@/types/calendar";
 import { Culture } from "@/types/culture";
 import { SVGPath } from "@/utils/path";
+import dayjs from "dayjs";
 
 interface CalendarFormProps {
-  cultureCode: string; // Fixed to string, assuming ParamValue is string
-  selectedDate: Date;
+  cultureCode: string;
+  initialDate?: Date; // Optional for new events
   onClose: () => void;
   onSaved: () => void;
   initialData?: CalendarDate;
@@ -15,7 +17,7 @@ interface CalendarFormProps {
 
 export default function CalendarDateForm({
   cultureCode,
-  selectedDate,
+  initialDate,
   onClose,
   onSaved,
   initialData,
@@ -29,9 +31,12 @@ export default function CalendarDateForm({
       cultures: [],
       isAnnual: false,
       type: "",
+      calendar_date: initialDate ? dayjs(initialDate).format("YYYY-MM-DD") : dayjs().format("YYYY-MM-DD"),
     }
   );
-
+  const [selectedDate, setSelectedDate] = useState(
+    initialDate ? dayjs(initialDate).format("YYYY-MM-DD") : dayjs().format("YYYY-MM-DD")
+  );
   const [cultures, setCultures] = useState<Culture[]>([]);
   const [loading, setLoading] = useState(false);
   const [showCultureSelect, setShowCultureSelect] = useState(false);
@@ -64,6 +69,15 @@ export default function CalendarDateForm({
     }));
   };
 
+  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newDate = e.target.value;
+    setSelectedDate(newDate);
+    setFormData((prev) => ({
+      ...prev,
+      calendar_date: newDate,
+    }));
+  };
+
   const toggleCulture = (culture: Culture) => {
     setFormData((prev) => {
       const exists = prev.cultures.some((c) => c.id === culture.id);
@@ -86,7 +100,7 @@ export default function CalendarDateForm({
         photo: formData.photo,
         visibility: formData.visibility,
         culture_ids: formData.cultures.map((c) => c.id),
-        calendar_date: selectedDate.toISOString().split("T")[0],
+        calendar_date: selectedDate, // Use selected date
         isAnnual: formData.isAnnual,
         type: formData.type,
       };
@@ -112,23 +126,29 @@ export default function CalendarDateForm({
 
   return (
     <div className="mt-2 w-full p-2 relative">
-      {" "}
       <button
         onClick={onClose}
         className="absolute top-2 right-2 text-gray-500 hover:text-black"
       >
         <svg
-          viewBox={SVGPath.close.viewBox}
-          className="size-5 fill-gray-400 transition hover:scale-105 active:scale-95 cursor-pointer"
+          viewBox={SVGPath.arrow.viewBox}
+          className="size-5 fill-foreground/50 hover:fill-main transition hover:scale-105 active:scale-95 cursor-pointer"
         >
-          <path d={SVGPath.close.path} />
+          <path d={SVGPath.arrow.path} />
         </svg>
       </button>
       <h2 className="text-base md:text-xl font-semibold mb-4">
-        {initialData ? "Edit" : "Add"} –{" "}
-        {selectedDate.toDateString()}
+        {initialData ? "Edit Event" : "Add New Event"}
       </h2>
       <form onSubmit={handleSubmit} className="space-y-3">
+        <input
+          type="date"
+          name="calendar_date"
+          value={selectedDate}
+          onChange={handleDateChange}
+          className="text-sm md:text-base bg-extra shadow-lg p-2 w-full rounded"
+          required
+        />
         <input
           type="text"
           name="holiday_name"
@@ -169,8 +189,6 @@ export default function CalendarDateForm({
           onChange={handleChange}
           className="text-sm md:text-base bg-extra shadow-lg p-2 w-full rounded"
         />
-
-        {/* Culture Select Dropdown */}
         <div className="bg-extra shadow-lg p-2 rounded">
           <div
             className="flex justify-between items-center cursor-pointer"
@@ -210,7 +228,6 @@ export default function CalendarDateForm({
             </div>
           )}
         </div>
-
         <label className="flex items-center space-x-2">
           <input
             type="checkbox"
@@ -220,7 +237,6 @@ export default function CalendarDateForm({
           />
           <span>Annual Event</span>
         </label>
-
         <select
           name="visibility"
           value={formData.visibility}
@@ -230,11 +246,10 @@ export default function CalendarDateForm({
           <option value="public">Public</option>
           <option value="private">Private</option>
         </select>
-
         <button
           type="submit"
           disabled={loading}
-          className="bg-foreground text-background w-full py-2 rounded hover:scale-105 transition"
+          className="bg-foreground text-background w-full md:w-1/3 cursor-pointer py-2 rounded hover:bg-primary  hover:text-white active:scale-90 transition"
         >
           {loading
             ? "Saving..."

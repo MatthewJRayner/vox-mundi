@@ -3,6 +3,7 @@ import { AbstractUserTracking } from "./abstract";
 export interface Ingredient {
     name: string;
     quantity: number;
+    measurement: string;
 }
 
 export interface Instruction {
@@ -19,7 +20,7 @@ export interface Recipe extends AbstractUserTracking {
     instructions: Instruction[];
     type: string;
     course: string;
-    serving_size?: string;
+    serving_size?: number;
     photo?: string;
 }
 
