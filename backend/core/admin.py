@@ -44,6 +44,11 @@ class CalendarDateAdmin(admin.ModelAdmin):
 
 @admin.register(Recipe)
 class RecipeAdmin(admin.ModelAdmin):
-    list_display = ('user', 'name', 'type', 'course')
-    search_fields = ('user', 'name', 'type', 'course')
-    list_filter = ('user', 'course', 'type')
+    list_display = ('user', 'name', 'types', 'course')
+    search_fields = ('user', 'name', 'types', 'course')
+    list_filter = ('user', 'course', 'types')
+    
+@admin.register(PageContent)
+class PageContentAdmin(admin.ModelAdmin):
+    list_display = ('culture__user', 'category', 'culture')
+    search_fields = ('user', 'category')

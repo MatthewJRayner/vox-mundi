@@ -76,7 +76,7 @@ export default function SearchBar({
         placeholder="Search..."
         onChange={(e) => setQuery(e.target.value)}
         onKeyDown={(e) => e.key === "Enter" && handleImmediateSearch()}
-        className="flex-1 font-lora p-2 text-foreground text-lg bg-extra shadow-md rounded-lg focus:outline-none focus:ring-1 focus:ring-foreground"
+        className="flex-1 font-lora p-2 text-foreground text-lg bg-extra shadow-md rounded-lg focus:outline-none focus:ring-1 focus:ring-foreground w-full"
       />
       <button
         onClick={handleImmediateSearch}

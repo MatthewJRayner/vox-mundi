@@ -1,5 +1,49 @@
 import dayjs from "dayjs";
 
+// --- Islamic (Hijri) Calendar Adapter ---
+
+const ISLAMIC_EPOCH = 1948439.5;
+const ISLAMIC_YEAR_DAYS = 354;
+const ISLAMIC_LEAP_YEARS = [2, 5, 7, 10, 13, 16, 18, 21, 24, 26, 29]; // leap years in 30-year cycle
+
+function isIslamicLeapYear(year: number): boolean {
+  return ISLAMIC_LEAP_YEARS.includes((year % 30) || 30);
+}
+
+// Convert Gregorian → Islamic (tabular)
+function toIslamic(gregorian: Date): CalendarDateData {
+  const jdn = Math.floor(gregorian.getTime() / 86400000) + 2440587.5;
+  const daysSinceEpoch = jdn - ISLAMIC_EPOCH;
+
+  // Approximate Islamic year
+  const year = Math.floor((30 * daysSinceEpoch + 10646) / 10631);
+  const firstDayOfYear = ISLAMIC_EPOCH + 354 * (year - 1) + Math.floor((3 + 11 * year) / 30);
+  const dayOfYear = Math.floor(jdn - firstDayOfYear) + 1;
+
+  // Determine month and day
+  let month = Math.ceil(dayOfYear / 29.5);
+  if (month > 12) month = 12;
+  const monthStart = Math.ceil(29.5 * (month - 1));
+  const day = dayOfYear - monthStart;
+
+  return { year, month, day };
+}
+
+// Convert Islamic → Gregorian
+function fromIslamic(islamic: CalendarDateData): Date {
+  const { year, month, day } = islamic;
+
+  const jdn =
+    day +
+    Math.ceil(29.5 * (month - 1)) +
+    (year - 1) * ISLAMIC_YEAR_DAYS +
+    Math.floor((3 + 11 * year) / 30) +
+    ISLAMIC_EPOCH;
+
+  const unixTime = (jdn - 2440587.5) * 86400000;
+  return new Date(unixTime);
+}
+
 // --- Ancient Egyptian Calendar Adapter ---
 
 // Constants for Egyptian calendar calculations
@@ -75,7 +119,7 @@ function fromEgyptian(egyptian: CalendarDateData): Date {
   return new Date(unixTime);
 }
 
-export type CalendarSystem = "gregorian" | "egyptian"; // Add Egyptian to the type
+export type CalendarSystem = "gregorian" | "egyptian" | "islamic"; // Add Egyptian to the type
 
 export interface CalendarDateData {
   year: number;
@@ -148,7 +192,30 @@ export const EgyptianAdapter: CalendarAdapter = {
   convertToGregorian: fromEgyptian,
 };
 
+export const IslamicAdapter: CalendarAdapter = {
+  name: "Islamic (Hijri)",
+  getMonthName: (month) =>
+    [
+      "Muharram", "Safar", "Rabi‘ al-awwal", "Rabi‘ al-thani", "Jumada al-awwal",
+      "Jumada al-thani", "Rajab", "Sha‘ban", "Ramadan", "Shawwal", "Dhu al-Qi‘dah", "Dhu al-Hijjah"
+    ][month - 1] || "Unknown",
+  getWeekdayNames: () => ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+  getDaysInMonth: (year, month) => {
+    if (month % 2 === 1) return 30;
+    if (month !== 12) return 29;
+    return isIslamicLeapYear(year) ? 30 : 29;
+  },
+  getStartDayOfMonth: (year, month) => {
+    const g = fromIslamic({ year, month, day: 1 });
+    return g.getDay();
+  },
+  convertFromGregorian: toIslamic,
+  convertToGregorian: fromIslamic,
+};
+
+
 export const calendarSystems: Record<CalendarSystem, CalendarAdapter> = {
   gregorian: GregorianAdapter,
-  egyptian: EgyptianAdapter, // Add Egyptian to the available systems
+  egyptian: EgyptianAdapter,
+  islamic: IslamicAdapter,
 };

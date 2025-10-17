@@ -64,7 +64,7 @@ export default function CuisinePage() {
             recipe.name.toLowerCase().includes(lowerQuery) ||
             recipe.course.toLowerCase().includes(lowerQuery) ||
             recipe.ingredients?.some((i) => i.name.toLowerCase().includes(lowerQuery))) &&
-          (!filterType || recipe.type === filterType)
+          (!filterType || (recipe.types && recipe.types.includes(filterType)))
       );
       setFilteredRecipes(filtered);
     },
@@ -76,7 +76,7 @@ export default function CuisinePage() {
     setFilterType(newFilterType);
     const filtered = recipes.filter(
       (recipe) =>
-        (!newFilterType || recipe.type === newFilterType) &&
+        (!newFilterType || (recipe.types && recipe.types.includes(newFilterType))) &&
         (!query.trim() ||
           recipe.name.toLowerCase().includes(query.toLowerCase()) ||
           recipe.course.toLowerCase().includes(query.toLowerCase()) ||
@@ -88,9 +88,9 @@ export default function CuisinePage() {
   const getRandomRecipeByCourse = useCallback(() => {
     const now = new Date();
     const hours = now.getHours();
-    let course = "dinner";
-    if (hours < 11) course = "breakfast";
-    else if (hours < 16) course = "lunch";
+    let course = "Dinner";
+    if (hours < 11) course = "Breakfast";
+    else if (hours < 16) course = "Lunch";
 
     const courseRecipes = filteredRecipes.filter((recipe) => recipe.course.toLowerCase() === course);
     if (courseRecipes.length === 0) return null;
@@ -102,7 +102,10 @@ export default function CuisinePage() {
   }, [filteredRecipes]);
 
   const allTypes = useMemo(
-    () => Array.from(new Set(recipes.map((recipe) => recipe.type))).sort(),
+    () =>
+      Array.from(
+        new Set(recipes.flatMap((recipe) => recipe.types || []))
+      ).sort(),
     [recipes]
   );
 
@@ -134,15 +137,15 @@ export default function CuisinePage() {
           </svg>
         </Link>
       </section>
-      <section className="flex flex-col md:flex-row w-full space-y-2 md:space-y-0 md:space-x-2 md:min-h-[400px]">
+      <section className="flex flex-col md:flex-row w-full space-y-2 md:space-y-0 md:space-x-4 md:min-h-[300px]">
         <div className="flex flex-col space-y-4 w-full md:w-3/4">
           <div className="flex flex-col h-full justify-between">
             <div className="flex flex-col">
-              <h1 className="font-lora text-lg md:text-2xl font-bold">Overview</h1>
+              <h1 className="font-lora text-lg md:text-2xl font-bold text-main">Overview</h1>
               {pageContent?.overview_text ? (
                 <div className="mb-8 relative">
                   <div
-                    className={`text-sm/[1.75] sm:text-base/[1.75] leading-relaxed font-serif font-medium transition-all duration-300 ${
+                    className={`text-sm/[1.75] sm:text-base/[1.75] leading-relaxed font-medium transition-all duration-300 ${
                       showFullDesc
                         ? "max-h-none"
                         : "max-h-52 md:max-h-42 overflow-hidden"
@@ -188,17 +191,17 @@ export default function CuisinePage() {
                 </p>
               )}
             </div>
-            <div className="flex flex-col">
-              <h1 className="font-lora text-lg md:text-2xl font-bold">Types</h1>
+            <div className="flex flex-col mt-4 md:mt-2">
+              <h1 className="font-lora text-lg md:text-2xl font-bold text-main">Types</h1>
               <div className="flex flex-wrap gap-2 mt-2">
                 {allTypes.map((type) => (
                   <button
                     key={type}
                     onClick={() => handleTypeFilter(type)}
-                    className={`px-4 py-2 rounded-md text-sm font-medium transition ${
+                    className={`px-4 py-2 text-xs md:text-sm rounded-md font-medium transition duration-300 cursor-pointer ${
                       filterType === type
-                        ? "bg-primary text-white"
-                        : "bg-neutral/50 text-foreground hover:bg-primary hover:text-white"
+                        ? "bg-foreground text-background"
+                        : "bg-extra text-foreground hover:bg-primary hover:text-white"
                     }`}
                     aria-pressed={filterType === type}
                   >
@@ -209,12 +212,12 @@ export default function CuisinePage() {
             </div>
           </div>
         </div>
-        <div className="p-4 md:p-6 min-h-full w-full md:w-1/4 flex flex-col items-center">
+        <div className="p-4 md:p-6 min-h-full w-full md:w-1/4 flex flex-col items-center bg-extra shadow-md rounded-md mt-4 md:mt-0">
           <div className="flex items-center w-full mb-4">
-            <div className="flex w-full">
+            <div className="flex w-full justify-center items-center">
               <h3 className="text-xs md:text-sm">
                 Feeling like{" "}
-                <span className="font-semibold">
+                <span className="font-semibold text-main">
                   {randomRecipe?.course || "something delicious"}
                 </span>
                 ?
@@ -274,9 +277,9 @@ export default function CuisinePage() {
         </div>
       </section>
       <section className="flex flex-col space-y-4">
-        <h1 className="font-lora text-lg md:text-2xl font-bold">Featured Recipes</h1>
+        <h1 className="font-lora text-lg md:text-2xl font-bold text-main">Featured Recipes</h1>
         {getRandomFiveRecipes.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 md:gap-4">
             {getRandomFiveRecipes.map((recipe) => (
               <RecipeCard key={recipe.id} recipe={recipe} />
             ))}

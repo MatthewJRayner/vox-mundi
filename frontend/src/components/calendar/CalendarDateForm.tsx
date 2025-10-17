@@ -5,15 +5,19 @@ import api from "@/lib/api";
 import { CalendarDate } from "@/types/calendar";
 import { Culture } from "@/types/culture";
 import { SVGPath } from "@/utils/path";
+import { CalendarSystem } from "./CalendarAdapter";
 import dayjs from "dayjs";
 
 interface CalendarFormProps {
   cultureCode: string;
-  initialDate?: Date; // Optional for new events
+  initialDate: Date;
+  initialData?: CalendarDate;
+  referenceSystem?: CalendarSystem; // add this
   onClose: () => void;
   onSaved: () => void;
-  initialData?: CalendarDate;
 }
+
+
 
 export default function CalendarDateForm({
   cultureCode,
@@ -21,6 +25,7 @@ export default function CalendarDateForm({
   onClose,
   onSaved,
   initialData,
+  referenceSystem,
 }: CalendarFormProps) {
   const [formData, setFormData] = useState<CalendarDate>(
     initialData || {
@@ -32,6 +37,7 @@ export default function CalendarDateForm({
       isAnnual: false,
       type: "",
       calendar_date: initialDate ? dayjs(initialDate).format("YYYY-MM-DD") : dayjs().format("YYYY-MM-DD"),
+      reference_system: "gregorian",
     }
   );
   const [selectedDate, setSelectedDate] = useState(
@@ -103,6 +109,7 @@ export default function CalendarDateForm({
         calendar_date: selectedDate, // Use selected date
         isAnnual: formData.isAnnual,
         type: formData.type,
+        reference_system: formData.reference_system || 'gregorian',
       };
 
       const url = initialData
@@ -237,6 +244,16 @@ export default function CalendarDateForm({
           />
           <span>Annual Event</span>
         </label>
+        <select
+          name="reference_system"
+          value={formData.reference_system}
+          onChange={handleChange}
+          className="text-sm md:text-base bg-extra shadow-lg p-2 w-full rounded"
+        >
+          <option value="gregorian">Gregorian</option>
+          <option value="egyptian">Ancient Egyptian</option>
+          <option value="islamic">Islamic</option>
+        </select>
         <select
           name="visibility"
           value={formData.visibility}

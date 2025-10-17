@@ -11,4 +11,5 @@ export interface CalendarDate extends AbstractUserTracking {
     person?: Person;
     isAnnual: boolean;
     type?: string;
+    reference_system?: "gregorian" | "egyptian" | "islamic";
 }

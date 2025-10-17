@@ -12,13 +12,12 @@ export interface Instruction {
 }
 
 export interface Recipe extends AbstractUserTracking {
-    id: number;
     name: string;
     region?: string;
     cooking_time?: number;
     ingredients: Ingredient[];
     instructions: Instruction[];
-    type: string;
+    types: string[];
     course: string;
     serving_size?: number;
     photo?: string;

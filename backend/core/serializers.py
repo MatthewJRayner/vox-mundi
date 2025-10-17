@@ -58,6 +58,13 @@ class CultureSerializer(serializers.ModelSerializer):
             ) for cat in default_category
         ])
         
+        PageContent.objects.bulk_create([
+            PageContent(
+                culture=culture,
+                category=Category.objects.filter(culture=culture, key=cat.lower())
+            ) for cat in default_category
+        ])
+        
         return culture
     
 class CultureSimpleSerializer(serializers.ModelSerializer):
@@ -125,7 +132,7 @@ class RecipeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Recipe
         fields = ['id', 'cultures', 'culture_ids', 'name', 'region', 'cooking_time', 'ingredients',
-                  'instructions', 'type', 'course', 'rating', 'notes', 'visibility',
+                  'instructions', 'types', 'course', 'rating', 'notes', 'visibility',
                   'serving_size', 'photo', 'created_at', 'updated_at']
 
     def validate_culture_ids(self, value):

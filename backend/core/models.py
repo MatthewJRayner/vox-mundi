@@ -176,9 +176,9 @@ class Period(TimestampedModel):
 class PageContent(TimestampedModel):
     culture = models.ForeignKey(Culture, on_delete=models.CASCADE, related_name="pages")
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name="pages")
-    intro_text = models.TextField(blank=True)
-    overview_text = models.TextField(blank=True)
-    extra_text = models.TextField(blank=True)
+    intro_text = models.TextField(blank=True, null=True)
+    overview_text = models.TextField(blank=True, null=True)
+    extra_text = models.TextField(blank=True, null=True)
 
     def __str__(self):
         return f"{self.category.display_name} Page ({self.culture.name})"
@@ -192,7 +192,7 @@ class Recipe(AbstractUserTrackingModel):
     cooking_time = models.PositiveIntegerField(help_text="Minutes", null=True, blank=True)
     ingredients = models.JSONField(default=list)
     instructions = models.JSONField(default=list)
-    type = models.CharField(max_length=50)
+    types = models.JSONField(default=list)
     course = models.CharField(max_length=50)
     serving_size = models.CharField(max_length=50, blank=True)
     photo = models.URLField(blank=True, null=True)
@@ -231,6 +231,15 @@ class CalendarDate(AbstractUserTrackingModel):
     meaning = models.TextField(blank=True)
     photo = models.URLField(blank=True, null=True)
     isAnnual = models.BooleanField(default=False)
+    reference_system = models.CharField(
+        max_length=50,
+        choices=[
+            ("gregorian", "Gregorian"),
+            ("egyptian", "Egyptian"),
+            ("islamic", "Islamic"),
+        ],
+        default="gregorian",
+    )
     person = models.ForeignKey("Person", null=True, blank=True, on_delete=models.SET_NULL, related_name="holidays")
 
     def __str__(self):

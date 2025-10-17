@@ -7,17 +7,18 @@ import { CalendarDate } from "@/types/calendar";
 import api from "@/lib/api";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import dayjs from "dayjs"; // Add this import if not already global
+import dayjs from "dayjs";
 import { SVGPath } from "@/utils/path";
+import { CalendarSystem } from "@/components/calendar/CalendarAdapter";
 
 export default function CalendarPage() {
   const [calendarDates, setCalendarDates] = useState<CalendarDate[]>([]);
-  const [selectedDate, setSelectedDate] = useState<dayjs.Dayjs | undefined>(
-    undefined
-  );
+  const [selectedDate, setSelectedDate] = useState<dayjs.Dayjs | undefined>(undefined);
   const [showModal, setShowModal] = useState(false);
+  const [calendarType, setCalendarType] = useState<CalendarSystem>("gregorian"); // ✅ Track active system
   const { culture } = useParams();
 
+  // --- Fetch events ---
   const fetchCalendarDates = async () => {
     try {
       const res = await api.get(`/calendar-dates/?code=${culture}`);
@@ -31,6 +32,7 @@ export default function CalendarPage() {
     fetchCalendarDates();
   }, [culture]);
 
+  // --- Handle day clicks ---
   const handleDateClick = (date: dayjs.Dayjs) => {
     setSelectedDate(date);
     setShowModal(true);
@@ -39,11 +41,12 @@ export default function CalendarPage() {
   const handleModalClose = () => {
     setSelectedDate(undefined);
     setShowModal(false);
-    fetchCalendarDates();
+    fetchCalendarDates(); // refresh events in case of new additions
   };
 
   return (
     <main className="min-h-screen p-4 flex flex-col items-center">
+      {/* --- Page Header --- */}
       <div className="flex space-x-4 items-center w-fit mb-4">
         <h1 className="text-3xl font-bold font-garamond">Calendar</h1>
         <Link href={`/${culture}/calendar/edit`} title="Edit">
@@ -55,11 +58,15 @@ export default function CalendarPage() {
           </svg>
         </Link>
       </div>
+
+      {/* --- Calendar Grid --- */}
       <CalendarDisplay
         culture={culture?.toString() || ""}
         events={calendarDates}
         onDateClick={handleDateClick}
       />
+
+      {/* --- Modal --- */}
       {showModal && selectedDate && (
         <CalendarDateModal
           selectedDate={selectedDate}

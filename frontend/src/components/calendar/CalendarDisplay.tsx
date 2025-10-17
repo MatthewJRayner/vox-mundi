@@ -48,24 +48,35 @@ export default function CalendarDisplay({
 
   // --- Get events for a date ---
   const getEventsForDate = (day: number) => {
-    const dayDate = adapter.convertToGregorian({ year, month, day });
-    return events.filter((e) => {
-      if (!e.calendar_date) return false;
-      const eventDate = dayjs(e.calendar_date);
-      const eventCal = adapter.convertFromGregorian(eventDate.toDate());
+  const { convertToGregorian, convertFromGregorian } = adapter;
 
-      // If isAnnual, ignore the year
-      if (e.isAnnual) {
+  return events.filter((e) => {
+    if (!e.calendar_date) return false;
+
+    const refSystem = e.reference_system || "gregorian";
+    const eventGregorian = new Date(e.calendar_date);
+    const eventCal = convertFromGregorian(eventGregorian);
+
+    // --- Annual handling ---
+    if (e.isAnnual) {
+      if (refSystem === calendarType) {
+        // The event recurs annually *in this same system*
         return eventCal.month === month && eventCal.day === day;
       } else {
-        return (
-          eventCal.year === year &&
-          eventCal.month === month &&
-          eventCal.day === day
-        );
+        // The event is defined in another system, so just convert its Gregorian date
+        const eventConverted = convertFromGregorian(eventGregorian);
+        return eventConverted.month === month && eventConverted.day === day;
       }
-    });
-  };
+    }
+
+    // --- Non-annual (specific year) ---
+    return (
+      eventCal.year === year &&
+      eventCal.month === month &&
+      eventCal.day === day
+    );
+  });
+};
 
   // --- Day cells ---
   const dayCells = useMemo(() => {
@@ -171,6 +182,7 @@ export default function CalendarDisplay({
           >
             <option value="gregorian">Gregorian</option>
             <option value="egyptian">Egyptian</option>
+            <option value="islamic">Islamic</option>
           </select>
         </div>
       </div>
