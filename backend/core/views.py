@@ -1,10 +1,12 @@
+import requests
 from rest_framework import viewsets, status, generics
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly, SAFE_METHODS, BasePermission, AllowAny
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.exceptions import ValidationError
+from core.services.tmdb_import import import_films_from_list
 from django.contrib.auth.models import User
 from django.db.models import Q, Avg, Count
 from django.shortcuts import get_object_or_404
@@ -992,3 +994,70 @@ class ListViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
+        
+# FILM IMPORT VIEW
+@api_view(["POST"])
+def import_films_view(request):
+    """
+    Import one or more films by TMDb ID or title.
+    Input format:
+    {
+        "items": [550, "Inception", 1234]
+    }
+    """
+    items = request.data.get("items", [])
+    imported = import_films_from_list(items)
+    
+    return Response(
+        {"imported_count": len(imported), "results": imported},
+        status=status.HTTP_200_OK,
+    )
+    
+@api_view("GET")
+def fetch_tmdb_images(request, tmdb_id):
+    """
+    Fetches posters and backdrops from TMDb for a given movie ID
+    """
+    base = "https://api.themoviedb.org/3"
+    read_token = settings.CONFIG['TMDB_READ_TOKEN']
+    headers = {
+        "accept": "application/json",
+        "Authorization": f"Bearer {read_token}"
+    }
+    url = f"{base}/movie/{tmdb_id}/images"
+    response = requests.get(url, headers=headers)
+    
+    if response.status_code != 200:
+        return Response(
+            {"error": f"TMDB request failed: {response.status_code}"},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+        
+    data = response.json()
+    return Response({
+        "posters": data.get("posters", []),
+        "backdrops": data.get("backdrops", []),
+    })
+    
+@api_view(["PATCH"])
+@permission_classes([IsOwnerOrPublic])
+def update_film_image(request, pk):
+    """
+    Update poster or backdrop for a user's film
+    """
+    
+    try:
+        film = UserFilm.objects.get(pk=pk)
+    except UserFilm.DoesNotExist:
+        return Response({"error": "Film not found"}, status=status.HTTP_404_NOT_FOUND)
+    
+    poster = request.data.get("poster")
+    backdrop = request.data.get("backdround_pic")
+    
+    if poster:
+        film.poster = f"https://image.tmdb.org/t/p/original{poster}"
+    if backdrop:
+        film.background_pic = f"https://image.tmdb.org/t/p/original{backdrop}"
+    
+    film.save()
+    return Response({"success": True, "poster": film.poster, "backdround_pic": film.background_pic})

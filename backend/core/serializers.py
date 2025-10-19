@@ -258,52 +258,9 @@ class LanguageTableSerializer(serializers.ModelSerializer):
         fields = ['id', 'culture_id', 'title', 'table_data', 'created_at', 'updated_at']
 
 class UniversalItemSerializer(serializers.ModelSerializer):
-    cultures = CultureSimpleSerializer(many=True, read_only=True)
-    culture_ids = serializers.PrimaryKeyRelatedField(queryset=Culture.objects.all(), many=True, source='cultures', write_only=True, required=False)
-    content_type = serializers.StringRelatedField()
-    content_object = serializers.SerializerMethodField()
-
-    def get_content_object(self, obj):
-        if obj.content_object is None:
-            return None
-        content_type = obj.content_type.model
-        if content_type == 'book':
-            return BookSerializer(obj.content_object).data
-        elif content_type == 'film':
-            return FilmSerializer(obj.content_object).data
-        elif content_type == 'musicpiece':
-            return MusicPieceSerializer(obj.content_object).data
-        elif content_type == 'artwork':
-            return ArtworkSerializer(obj.content_object).data
-        elif content_type == 'historyevent':
-            return HistoryEventSerializer(obj.content_object).data
-        return None
-
     class Meta:
         model = UniversalItem
-        fields = ['id', 'content_type', 'object_id', 'content_object', 'cultures', 'culture_ids', 'title', 'creator_string', 'type', 'created_at', 'updated_at']
-
-    def validate_culture_ids(self, value):
-        user = self.context['request'].user
-        for culture in value:
-            if culture.user != user:
-                raise serializers.ValidationError("All cultures must belong to the authenticated user.")
-        return value
-    
-    def create(self, validated_data):
-        cultures = validated_data.pop('cultures', [])
-        instance = UniversalItem.objects.create(**validated_data)
-        instance.cultures.set(cultures)
-        return instance
-
-    def update(self, instance, validated_data):
-        cultures = validated_data.pop('cultures', None)
-        for attr, value in validated_data.items():
-            setattr(instance, attr, value)
-        if cultures is not None:
-            instance.cultures.set(cultures)
-        instance.save()
-        return instance
+        fields = ['id', 'title', 'creator_string', 'type', 'created_at', 'updated_at']
 
 class BookSerializer(serializers.ModelSerializer):
     creator_id = serializers.PrimaryKeyRelatedField(queryset=Person.objects.all(), source='creator', write_only=True, required=False)
@@ -330,7 +287,7 @@ class FilmSerializer(serializers.ModelSerializer):
         model = Film
         fields = ['id', 'title', 'alt_title', 'creator_id', 'creator_string', 'alt_creator_name', 'date', 'date_id', 'external_links', 'tags',
                   'runtime', 'genre', 'tmdb_id', 'cast', 'crew', 'blurb', 'synopsis', 'languages', 'countries', 'festival', 'poster', 'background_pic', 
-                  'budget', 'box_office', 'series', 'volume', 'release_date', 'created_at', 'updated_at']
+                  'budget', 'box_office', 'series', 'volume', 'release_date', 'industry_rating', 'created_at', 'updated_at']
 
     def validate_tmdb_id(self, value):
         if value and Film.objects.filter(tmdb_id=value).exists():

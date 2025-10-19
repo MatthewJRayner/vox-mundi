@@ -1,4 +1,4 @@
-from django.db import models
+from django.db import models, transaction
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
@@ -6,6 +6,7 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from django.core.exceptions import ValidationError
 from colorfield.fields import ColorField
 from taggit.managers import TaggableManager
+from datetime import timedelta
 import uuid
 
 # -------------------------------------------------
@@ -85,7 +86,7 @@ class AbstractMedia(TimestampedModel):
     creator_string = models.CharField(max_length=200, null=True, blank=True)
     alt_creator_name = models.CharField(max_length=200, null=True, blank=True)
     date = models.OneToOneField('DateEstimate', on_delete=models.CASCADE, null=True, blank=True)
-    external_links = models.JSONField(default=list, blank=True)  # [ {"label": "Wikipedia", "url": "..."} ]
+    external_links = models.JSONField(default=list, blank=True)  # [ {"label": "Wikipedia", "url": "..."}, ]
     tags = TaggableManager(blank=True)
 
     class Meta:
@@ -352,20 +353,10 @@ class LanguageTable(TimestampedModel):
 # HYBRID MODELS
 # -------------------------------------------------
 class UniversalItem(TimestampedModel):
-    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
-    object_id = models.PositiveIntegerField()
-    content_object = GenericForeignKey("content_type", "object_id")
-    cultures = models.ManyToManyField(Culture, related_name="universal_items")
+    external_id = models.CharField(max_length=255)
     title = models.CharField(max_length=200)
     creator_string = models.CharField(max_length=200, null=True, blank=True)
     type = models.CharField(max_length=50)
-
-    def clean(self):
-        if self.pk is None:
-            return
-        users = {culture.user for culture in self.cultures.all()}
-        if len(users) > 1:
-            raise ValidationError("All cultures must belong to the same user.")
 
     def __str__(self):
         culture_names = ", ".join(culture.name for culture in self.cultures.all())
@@ -374,7 +365,6 @@ class UniversalItem(TimestampedModel):
     class Meta:
         verbose_name_plural = "Universal Items"
         indexes = [
-            models.Index(fields=['content_type', 'object_id']),
             models.Index(fields=['title']),
             models.Index(fields=['type']),
             models.Index(fields=['creator_string'])
@@ -427,9 +417,9 @@ class UserBook(AbstractUserTrackingModel):
 # ---- FILM ----
 class Film(AbstractMedia):
     runtime = models.DurationField(null=True, blank=True)
-    genre = models.CharField(max_length=100, blank=True)
+    genre = models.JSONField(default=list, blank=True, null=True)
     tmdb_id = models.CharField(max_length=20, null=True, blank=True, unique=True)
-    universal_item = GenericRelation(UniversalItem, related_query_name="film")
+    universal_item = models.OneToOneField(UniversalItem, on_delete=models.CASCADE, related_name="film", blank=True, null=True)
     cast = models.JSONField(default=list, null=True, blank=True)
     crew = models.JSONField(default=list, null=True, blank=True)
     blurb = models.TextField(blank=True, null=True)
@@ -444,10 +434,74 @@ class Film(AbstractMedia):
     series = models.CharField(max_length=200, null=True, blank=True)
     volume = models.CharField(max_length=50, null=True, blank=True)
     release_date = models.DateField(null=True, blank=True)
+    industry_rating = models.DecimalField(max_digits=12, decimal_places=1, blank=True, null=True)
 
     class Meta:
         verbose_name_plural = "Films"
         indexes = [models.Index(fields=['tmdb_id'], name='film_tmdb_idx')]
+        
+    @classmethod
+    @transaction.atomic
+    def create_with_universal_item(cls, tmdb_data):
+        runtime = None
+        runtime_value = tmdb_data.get("runtime")
+        if runtime_value is not None:
+            try:
+                runtime = timedelta(minutes=int(runtime_value))
+            except (ValueError, TypeError):
+                runtime = None
+        
+        director_data = next(
+            (c for c in tmdb_data.get("credits", {}).get("crew", []) if c["job"] == "Director"),
+            None
+        )
+        director_name = director_data.get("name") if director_data else None
+        director_original_name = director_data.get("original_name") if director_data else None
+        alt_name = director_original_name if director_original_name and director_original_name != director_name else None
+        
+        universal_item, _ = UniversalItem.objects.get_or_create(
+            external_id=tmdb_data["id"],
+            type="film",
+            defaults={
+                "title": tmdb_data["title"],
+                "creator_string": director_data.get("name") if director_data else "Unknown"
+            },
+        )
+        
+        film, created = cls.objects.update_or_create(
+            tmdb_id=tmdb_data["id"],
+            defaults={
+                "universal_item": universal_item,
+                "title": tmdb_data.get("title") or "Unknown Title",
+                "tmdb_id": tmdb_data.get("id"),
+                "alt_title": tmdb_data.get("original_title") if tmdb_data.get("original_title") != tmdb_data.get("title") else None,
+                "creator_string": director_name,
+                "alt_creator_name": alt_name,
+                "runtime": runtime,
+                "cast": [
+                    {"name": c.get("name"), "role": c.get("character") or ""}
+                    for c in tmdb_data.get("credits", {}).get("cast", [])
+                ],
+                "crew": [
+                    {"name": c.get("name"), "role": c.get("job") or ""}
+                    for c in tmdb_data.get("credits", {}).get("crew", [])
+                ],
+                "industry_rating": round(float(tmdb_data.get("vote_average") or 0.0), 1),
+                "series": tmdb_data.get("belongs_to_collection", {}).get("name") if tmdb_data.get("belongs_to_collection") else None,
+                "blurb": tmdb_data.get("tagline"),
+                "synopsis": tmdb_data.get("overview"),
+                "countries": [c for c in tmdb_data.get("origin_country", [])] or [],
+                "poster": f"https://image.tmdb.org/t/p/original{tmdb_data.get('poster_path')}" if tmdb_data.get("poster_path") else None,
+                "background_pic": f"https://image.tmdb.org/t/p/original{tmdb_data.get('backdrop_path')}" if tmdb_data.get("backdrop_path") else None,
+                "genre": [g["name"] for g in tmdb_data.get("genres", [])] or [],
+                "budget": tmdb_data.get("budget") or 0,
+                "box_office": tmdb_data.get("box_office") or 0,
+                "release_date": tmdb_data.get("release_date") or None,
+                "languages": [l["iso_639_1"] for l in tmdb_data.get("spoken_languages", [])] or [],
+            },
+        )
+        
+        return film, created
 
 class UserFilm(AbstractUserTrackingModel):
     universal_item = models.ForeignKey(UniversalItem, on_delete=models.CASCADE, related_name="user_films")
