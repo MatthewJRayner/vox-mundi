@@ -50,7 +50,7 @@ export default function HistoryPage() {
     try {
       setLoading(true);
       const [periodRes, userHistoryRes] = await Promise.all([
-        api.get(`/periods/?code=${culture}`),
+        api.get(`/periods/?code=${culture}&key=history`),
         api.get(`/user-history-events/?code=${culture}`),
       ]);
 

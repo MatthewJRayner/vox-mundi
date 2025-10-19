@@ -7,7 +7,7 @@ from .views import (
     MapBorderViewSet, MapPinViewSet, LanguageTableViewSet, UniversalItemViewSet,
     BookViewSet, FilmViewSet, MusicPieceViewSet, ArtworkViewSet,
     UserBookViewSet, UserFilmViewSet, UserMusicPieceViewSet, UserArtworkViewSet,
-    UserHistoryEventViewSet, RegisterView, CurrentUserView
+    UserHistoryEventViewSet, RegisterView, CurrentUserView, FilmSimpleViewSet, import_films_view
 )
 
 router = DefaultRouter()
@@ -33,6 +33,7 @@ router.register(r'user-films', UserFilmViewSet, basename='userfilm')
 router.register(r'user-music-pieces', UserMusicPieceViewSet, basename='usermusicpiece')
 router.register(r'user-artworks', UserArtworkViewSet, basename='userartwork')
 router.register(r'user-history-events', UserHistoryEventViewSet, basename='userhistoryevent')
+router.register(r'simple-films', FilmSimpleViewSet, basename='simplefilm')
 
 urlpatterns = [
     path('api/', include(router.urls)),
@@ -40,4 +41,5 @@ urlpatterns = [
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('api/register/', RegisterView.as_view(), name='register'),
     path('api/current-user/', CurrentUserView.as_view(), name='current_user'),
+    path('api/import-films/', import_films_view, name="import-films"),
 ]

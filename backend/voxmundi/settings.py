@@ -158,5 +158,5 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 CONFIG = {
     'TMDB_KEY': os.getenv('TMDB_KEY'),
-    'TMDB_READ_TOKEN': os.getenv('TMBD_READ_TOKEN')
+    'TMDB_READ_TOKEN': os.getenv('TMDB_READ_TOKEN')
 }

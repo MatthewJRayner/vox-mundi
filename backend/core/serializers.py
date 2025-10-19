@@ -261,6 +261,11 @@ class UniversalItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = UniversalItem
         fields = ['id', 'title', 'creator_string', 'type', 'created_at', 'updated_at']
+        
+class UniversalItemSimpleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UniversalItem
+        fields = ['id']
 
 class BookSerializer(serializers.ModelSerializer):
     creator_id = serializers.PrimaryKeyRelatedField(queryset=Person.objects.all(), source='creator', write_only=True, required=False)
@@ -309,6 +314,12 @@ class FilmSerializer(serializers.ModelSerializer):
             if not isinstance(item, dict) or 'name' not in item or 'role' not in item:
                 raise serializers.ValidationError("Each crew item must be a dict with 'name' and 'role' keys.")
         return value
+    
+class FilmSimpleSerializer(serializers.ModelSerializer):
+    universal_item = UniversalItemSimpleSerializer(read_only=True)
+    class Meta:
+        model = Film
+        fields = ['id', 'universal_item', 'title', 'creator_string', 'release_date']
 
 class MusicPieceSerializer(serializers.ModelSerializer):
     creator_id = serializers.PrimaryKeyRelatedField(queryset=Person.objects.all(), source='creator', write_only=True, required=False)
@@ -378,15 +389,18 @@ class UserBookSerializer(serializers.ModelSerializer):
         return instance
 
 class UserFilmSerializer(serializers.ModelSerializer):
+    universal_item = UniversalItemSerializer(many=True, read_only=True)
     universal_item_id = serializers.PrimaryKeyRelatedField(queryset=UniversalItem.objects.all(), source='universal_item', write_only=True, required=False)
     cultures = CultureSimpleSerializer(many=True, read_only=True)
     culture_ids = serializers.PrimaryKeyRelatedField(queryset=Culture.objects.all(), many=True, source='cultures', write_only=True, required=False)
+    period = PeriodSimpleSerializer(read_only=True)
+    period_id = serializers.PrimaryKeyRelatedField(queryset=Period.objects.all(), source='period', write_only=True, required=False)
 
     class Meta:
         model = UserFilm
-        fields = ['id', 'universal_item_id', 'cultures', 'culture_ids', 'rating', 'notes', 'visibility',
-                  'rewatch_count', 'watch_location', 'date_watched', 'poster', 'background_pic', 'awards_won',
-                  'seen', 'owned', 'watchlist', 'favourite', 'created_at', 'updated_at']
+        fields = ['id', 'universal_item', 'universal_item_id', 'cultures', 'culture_ids', 'rating', 'notes', 'visibility',
+                  'rewatch_count', 'watch_location', 'date_watched', 'poster', 'background_pic',
+                  'seen', 'owned', 'watchlist', 'favourite', 'created_at', 'updated_at', 'period', 'period_id']
 
     def validate_culture_ids(self, value):
         user = self.context['request'].user

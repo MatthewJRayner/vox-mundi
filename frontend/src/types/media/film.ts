@@ -32,6 +32,7 @@ export interface Film extends AbstractMedia {
     series?: string;
     volume?: string;
     release_date?: string;
+    industry_rating?: number;
 }
 
 export interface UserFilm extends AbstractUserTracking {

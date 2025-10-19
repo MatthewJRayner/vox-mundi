@@ -359,8 +359,7 @@ class UniversalItem(TimestampedModel):
     type = models.CharField(max_length=50)
 
     def __str__(self):
-        culture_names = ", ".join(culture.name for culture in self.cultures.all())
-        return f"{self.title} ({self.type}, {culture_names})"
+        return f"{self.title} ({self.type})"
 
     class Meta:
         verbose_name_plural = "Universal Items"
@@ -510,11 +509,11 @@ class UserFilm(AbstractUserTrackingModel):
     date_watched = models.DateField(null=True, blank=True)
     poster = models.URLField(blank=True, null=True)
     background_pic = models.URLField(blank=True, null=True)
-    awards = models.JSONField(default=list)
     seen = models.BooleanField(default=False)
     owned = models.BooleanField(default=False)
     watchlist = models.BooleanField(default=False)
     favourite = models.BooleanField(default=False)
+    period = models.ForeignKey(Period, on_delete=models.SET_NULL, null=True, blank=True, related_name="user_films")
     
 
     def __str__(self):

@@ -1,4 +1,5 @@
 import requests
+import random
 from rest_framework import viewsets, status, generics
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly, SAFE_METHODS, BasePermission, AllowAny
 from rest_framework.views import APIView
@@ -22,7 +23,8 @@ from .serializers import (
     PersonSerializer, MapBorderSerializer, MapPinSerializer, LanguageTableSerializer,
     UniversalItemSerializer, BookSerializer, FilmSerializer, MusicPieceSerializer,
     ArtworkSerializer, UserBookSerializer, UserFilmSerializer,
-    UserMusicPieceSerializer, UserMusicArtistSerializer, UserArtworkSerializer, UserHistoryEventSerializer, RegisterSerializer, UserSerializer, ListSerializer
+    UserMusicPieceSerializer, UserMusicArtistSerializer, UserArtworkSerializer, UserHistoryEventSerializer, RegisterSerializer, UserSerializer, ListSerializer,
+    FilmSimpleSerializer
 )
 
 class RegisterView(generics.CreateAPIView):
@@ -484,8 +486,6 @@ class UniversalItemViewSet(viewsets.ModelViewSet):
     serializer_class = UniversalItemSerializer
     queryset = (
         UniversalItem.objects
-        .select_related("content_type")
-        .prefetch_related('cultures')
         .order_by('title')
     )
     
@@ -498,13 +498,10 @@ class UniversalItemViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         q = self.request.query_params.get("q", None)
-        code = self.request.query_params.get("code", None)
         type_filter = self.request.query_params.get("type", None)
         
         qs = self.queryset
         
-        if code:
-            qs = qs.filter(cultures__code__iexact=code)
         if type_filter:
             qs = qs.filter(type__iexact=type_filter)
             
@@ -532,7 +529,6 @@ class BookViewSet(viewsets.ModelViewSet):
         qs = (
             Book.objects
             .select_related("creator", "date")
-            .prefetch_related("universal_item__cultures")
             .order_by("title")
         )
         
@@ -571,7 +567,6 @@ class FilmViewSet(viewsets.ModelViewSet):
         qs = (
             Film.objects
             .select_related("creator", "date")
-            .prefetch_related("universal_item__cultures")
             .order_by("title")
         )
         
@@ -623,6 +618,72 @@ class FilmViewSet(viewsets.ModelViewSet):
             "review_count": review_count,
             "reviews": userfilm_data,
         })
+        
+    @action(detail=False, methods=["get"], permission_classes=[IsAuthenticated])
+    def frontpage(self, request):
+        user = request.user
+        code = request.query_params.get("code", None)
+        if not code:
+            return Response({"error": "culture code is required"}, status=400)
+        
+        culture = Culture.objects.filter(user=user, code=code).first()
+        if not culture:
+            return Response({"error": "Invalid culture code"}, status=404)
+        
+        userfilms = UserFilm.objects.filter(user=user, cultures__code__iexact=code)
+        
+        watchlist_ids = list(
+            userfilms.filter(watchlist=True).values_list("universal_item__film__id", flat=True)
+        )
+        favourite_ids = list(
+            userfilms.filter(favourite=True).values_list("universal_item__film__id", flat=True)
+        )
+        recent_ids = list(
+            userfilms.filter(seen=True).order_by("-date_watched").values_list("universal_item__film__id", flat=True)[:10]
+        )
+        
+        data = {
+            "watchlist": FilmSerializer(
+                Film.objects.filter(id__in=random.sample(watchlist_ids, min(5, len(watchlist_ids)))),
+                many=True
+            ).data if watchlist_ids else [],
+            "favourites": FilmSerializer(
+                Film.objects.filter(id__in=favourite_ids[:5]),
+                many=True
+            ).data if favourite_ids else [],
+            "recent": FilmSerializer(
+                Film.objects.filter(id__in=recent_ids),
+                many=True
+            ).data if recent_ids else [],
+        }
+        
+        return Response(data)
+        
+class FilmSimpleViewSet(viewsets.ModelViewSet):
+    serializer_class = FilmSimpleSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly]
+
+    def get_queryset(self):
+        qs = Film.objects.select_related('date').order_by('title')
+        
+        # Optional filtering (similar to FilmViewSet)
+        q = self.request.query_params.get("q", None)
+        tmdb_id = self.request.query_params.get("tmdb_id", None)
+        limit = self.request.query_params.get("limit", None)
+
+        if limit:
+            qs = qs[:int(limit)]
+        if tmdb_id:
+            qs = qs.filter(tmdb_id__iexact=tmdb_id)
+        if q:
+            qs = qs.filter(
+                Q(title__icontains=q) |
+                Q(alt_title__icontains=q) |
+                Q(creator_string__icontains=q) |
+                Q(alt_creator_name__icontains=q)
+            )
+
+        return qs
 
 class MusicPieceViewSet(viewsets.ModelViewSet):
     serializer_class = MusicPieceSerializer
@@ -636,7 +697,6 @@ class MusicPieceViewSet(viewsets.ModelViewSet):
         qs = (
             MusicPiece.objects
             .select_related("creator", "date")
-            .prefetch_related("universal_item__cultures")
             .order_by("title")
         )
 
@@ -676,7 +736,6 @@ class ArtworkViewSet(viewsets.ModelViewSet):
         qs = (
             Artwork.objects
             .select_related("creator", "date")
-            .prefetch_related("universal_item__cultures")
             .order_by("title")
         )
 
@@ -997,6 +1056,7 @@ class ListViewSet(viewsets.ModelViewSet):
         
 # FILM IMPORT VIEW
 @api_view(["POST"])
+@permission_classes([IsAuthenticated])
 def import_films_view(request):
     """
     Import one or more films by TMDb ID or title.
@@ -1006,14 +1066,25 @@ def import_films_view(request):
     }
     """
     items = request.data.get("items", [])
-    imported = import_films_from_list(items)
+    if not items or not all(isinstance(item, (str, int)) and str(item).strip() for item in items):
+        return Response(
+            {"error": "Items must be a non-empty list of non-empty strings or integers"},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    try:
+        imported = import_films_from_list(items)
+        return Response(
+            {"imported_count": len([r for r in imported if r["created"]]), "results": imported},
+            status=status.HTTP_200_OK,
+        )
+    except Exception as e:
+        return Response(
+            {"error": f"Import failed: {str(e)}"},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
     
-    return Response(
-        {"imported_count": len(imported), "results": imported},
-        status=status.HTTP_200_OK,
-    )
-    
-@api_view("GET")
+@api_view(["GET"])
 def fetch_tmdb_images(request, tmdb_id):
     """
     Fetches posters and backdrops from TMDb for a given movie ID
