@@ -50,7 +50,7 @@ export default function CultureLayout({
   }, [cultureCode]);
 
   return (
-    <div className="min-h-screen flex flex-col bg-background text-foreground transition-colors">
+    <div className="min-h-screen flex flex-col text-foreground transition-colors">
       <Navbar culture={culture} categories={categories} />
       <main className="flex-1 p-6">{children}</main>
     </div>

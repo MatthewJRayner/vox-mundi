@@ -11,7 +11,7 @@ export default function FilmCard({ film }: FilmProps) {
     const userFilm = film.userfilm ?? null
 
     return (
-        <Link href={`/film/${film.id}`}>
+        <Link href={`film/${film.id}`}>
             <div className="relative group w-full aspect-[2/3] rounded overflow-hidden shadow cursor-pointer">
                 {userFilm?.poster ? (
                     <img 
@@ -42,10 +42,10 @@ export default function FilmCard({ film }: FilmProps) {
                     <div className="absolute p-2 inset-0 bg-black bg-opacity-20 opacity-0 group-hover:opacity-70 transition-opacity duration-300 flex flex-col items-center justify-center text-center">
                         <h3 className="text-white text-lg font-semibold">{film.title}</h3>
                         {film.creator_string && (
-                            <p className="text-foreground/50 text-sm">{film.creator_string}</p>
+                            <p className="text-white/50 text-sm">{film.creator_string}</p>
                         )}
                         {film.release_date && (
-                            <p className="text-foreground/50 text-xs mt-1">{film.release_date.substring(0, 4)}</p>
+                            <p className="text-white/50 text-xs mt-1">{film.release_date.substring(0, 4)}</p>
                         )}
                     </div>
                 </div>

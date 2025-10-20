@@ -56,7 +56,7 @@ class TimestampedModel(models.Model):
 
 class AbstractUserTrackingModel(TimestampedModel):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    cultures = models.ManyToManyField('Culture', related_name="%(class)s_items")
+    cultures = models.ManyToManyField('Culture', related_name="%(class)s_items", blank=True)
     rating = models.PositiveSmallIntegerField(
         null=True, blank=True,
         validators=[MinValueValidator(1), MaxValueValidator(10)]
@@ -503,7 +503,7 @@ class Film(AbstractMedia):
         return film, created
 
 class UserFilm(AbstractUserTrackingModel):
-    universal_item = models.ForeignKey(UniversalItem, on_delete=models.CASCADE, related_name="user_films")
+    universal_item = models.ForeignKey(UniversalItem, on_delete=models.CASCADE, related_name="user_films", null=True, blank=True)
     rewatch_count = models.PositiveIntegerField(default=0)
     watch_location = models.CharField(max_length=200, blank=True, null=True)
     date_watched = models.DateField(null=True, blank=True)

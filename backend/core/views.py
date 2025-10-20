@@ -8,6 +8,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.exceptions import ValidationError
 from core.services.tmdb_import import import_films_from_list
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.db.models import Q, Avg, Count
 from django.shortcuts import get_object_or_404
@@ -563,6 +564,7 @@ class FilmViewSet(viewsets.ModelViewSet):
         actor = self.request.query_params.get("actor", None)
         crew = self.request.query_params.get("crew", None)
         role = self.request.query_params.get("role", None)
+        limit = self.request.query_params.get("limit", None)
         
         qs = (
             Film.objects
@@ -595,6 +597,9 @@ class FilmViewSet(viewsets.ModelViewSet):
             qs = qs.filter(
                 Q(crew__icontains=role)
             )
+        if limit:
+            qs = qs[:int(limit)]
+            return qs
             
         return qs.distinct()
     
@@ -635,18 +640,30 @@ class FilmViewSet(viewsets.ModelViewSet):
         
         # Build the sets
         watchlist_ids = list(userfilms.filter(watchlist=True)
-                             .values_list("universal_item__film__id", flat=True))
+                             .values_list("universal_item__id", flat=True))
         favourite_ids = list(userfilms.filter(favourite=True)
-                             .values_list("universal_item__film__id", flat=True))
+                             .values_list("universal_item__id", flat=True))
         recent_ids = list(userfilms.filter(seen=True)
-                           .order_by("-date_watched")
-                           .values_list("universal_item__film__id", flat=True)[:10])
+                          .order_by("-date_watched")
+                          .values_list("universal_item__id", flat=True)[:10])
+
+        # Map universal_item IDs to film IDs
+        film_ids_map = {
+            ui["universal_item__id"]: ui["id"] 
+            for ui in Film.objects.filter(universal_item__id__in=(watchlist_ids + favourite_ids + recent_ids))
+            .values("id", "universal_item__id")
+        }
+
+        # Convert universal_item IDs to film IDs
+        watchlist_film_ids = [film_ids_map.get(uid) for uid in watchlist_ids if film_ids_map.get(uid)]
+        favourite_film_ids = [film_ids_map.get(uid) for uid in favourite_ids if film_ids_map.get(uid)]
+        recent_film_ids = [film_ids_map.get(uid) for uid in recent_ids if film_ids_map.get(uid)]
 
         # Random samples
         data_sets = {
-            "watchlist": Film.objects.filter(id__in=random.sample(watchlist_ids, min(5, len(watchlist_ids)))) if watchlist_ids else [],
-            "favourites": Film.objects.filter(id__in=favourite_ids[:5]) if favourite_ids else [],
-            "recent": Film.objects.filter(id__in=recent_ids) if recent_ids else [],
+            "watchlist": Film.objects.filter(id__in=random.sample(watchlist_film_ids, min(5, len(watchlist_film_ids)))) if watchlist_film_ids else [],
+            "favourites": Film.objects.filter(id__in=favourite_film_ids[:5]) if favourite_film_ids else [],
+            "recent": Film.objects.filter(id__in=recent_film_ids) if recent_film_ids else [],
         }
 
         # If empty, provide fallback
@@ -657,8 +674,8 @@ class FilmViewSet(viewsets.ModelViewSet):
         # Gather all film IDs we're returning
         all_film_ids = [film.id for films in data_sets.values() for film in films]
         userfilm_map = {
-            uf.universal_item.film.id: uf
-            for uf in userfilms.filter(universal_item__film__id__in=all_film_ids)
+            uf.universal_item.id: uf
+            for uf in userfilms.filter(universal_item__id__in=[uid for uid, fid in film_ids_map.items() if fid in all_film_ids])
         }
 
         # Build response payload
@@ -667,7 +684,7 @@ class FilmViewSet(viewsets.ModelViewSet):
             result[key] = []
             for film in films:
                 film_data = FilmSimpleSerializer(film).data
-                uf = userfilm_map.get(film.id)
+                uf = userfilm_map.get(film.universal_item.id)
                 if uf:
                     film_data["userfilm"] = {
                         "poster": uf.poster,
@@ -695,8 +712,6 @@ class FilmSimpleViewSet(viewsets.ModelViewSet):
         tmdb_id = self.request.query_params.get("tmdb_id", None)
         limit = self.request.query_params.get("limit", None)
 
-        if limit:
-            qs = qs[:int(limit)]
         if tmdb_id:
             qs = qs.filter(tmdb_id__iexact=tmdb_id)
         if q:
@@ -706,6 +721,8 @@ class FilmSimpleViewSet(viewsets.ModelViewSet):
                 Q(creator_string__icontains=q) |
                 Q(alt_creator_name__icontains=q)
             )
+        if limit:
+            qs = qs[:int(limit)]
 
         return qs
 
@@ -844,7 +861,7 @@ class UserFilmViewSet(viewsets.ModelViewSet):
             serializer = self.get_serializer(user_film)
             return Response(serializer.data)
         else:
-            return Response({"detail": "No entry yet."})
+            return Response({"detail": "No entry yet."}, status=404)
 
 class UserMusicPieceViewSet(viewsets.ModelViewSet):
     serializer_class = UserMusicPieceSerializer

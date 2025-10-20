@@ -17,7 +17,7 @@ export interface AbstractMedia {
     title: string;
     alt_title?: string;
     creator?: Person;
-    creator_string?: string;
+    creator_string: string;
     alt_creator_name?: string;
     date?: DateEstimate;
     external_links?: string[];

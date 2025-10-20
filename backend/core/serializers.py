@@ -61,7 +61,7 @@ class CultureSerializer(serializers.ModelSerializer):
         PageContent.objects.bulk_create([
             PageContent(
                 culture=culture,
-                category=Category.objects.filter(culture=culture, key=cat.lower())
+                category=Category.objects.get(culture=culture, key=cat.lower())
             ) for cat in default_category
         ])
         
@@ -283,6 +283,7 @@ class BookSerializer(serializers.ModelSerializer):
         return value
 
 class FilmSerializer(serializers.ModelSerializer):
+    universal_item = UniversalItemSimpleSerializer(read_only=True)
     creator_id = serializers.PrimaryKeyRelatedField(queryset=Person.objects.all(), source='creator', write_only=True, required=False)
     date = DateEstimateSerializer(read_only=True)
     date_id = serializers.PrimaryKeyRelatedField(queryset=DateEstimate.objects.all(), source='date', write_only=True, required=False)
@@ -290,7 +291,7 @@ class FilmSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Film
-        fields = ['id', 'title', 'alt_title', 'creator_id', 'creator_string', 'alt_creator_name', 'date', 'date_id', 'external_links', 'tags',
+        fields = ['id', 'title', 'universal_item', 'alt_title', 'creator_id', 'creator_string', 'alt_creator_name', 'date', 'date_id', 'external_links', 'tags',
                   'runtime', 'genre', 'tmdb_id', 'cast', 'crew', 'blurb', 'synopsis', 'languages', 'countries', 'festival', 'poster', 'background_pic', 
                   'budget', 'box_office', 'series', 'volume', 'release_date', 'industry_rating', 'created_at', 'updated_at']
 
@@ -319,7 +320,7 @@ class FilmSimpleSerializer(serializers.ModelSerializer):
     universal_item = UniversalItemSimpleSerializer(read_only=True)
     class Meta:
         model = Film
-        fields = ['id', 'universal_item', 'title', 'creator_string', 'release_date']
+        fields = ['id', 'universal_item', 'title', 'creator_string', 'release_date', 'poster']
 
 class MusicPieceSerializer(serializers.ModelSerializer):
     creator_id = serializers.PrimaryKeyRelatedField(queryset=Person.objects.all(), source='creator', write_only=True, required=False)
@@ -389,7 +390,7 @@ class UserBookSerializer(serializers.ModelSerializer):
         return instance
 
 class UserFilmSerializer(serializers.ModelSerializer):
-    universal_item = UniversalItemSerializer(many=True, read_only=True)
+    universal_item = UniversalItemSimpleSerializer(read_only=True)
     universal_item_id = serializers.PrimaryKeyRelatedField(queryset=UniversalItem.objects.all(), source='universal_item', write_only=True, required=False)
     cultures = CultureSimpleSerializer(many=True, read_only=True)
     culture_ids = serializers.PrimaryKeyRelatedField(queryset=Culture.objects.all(), many=True, source='cultures', write_only=True, required=False)

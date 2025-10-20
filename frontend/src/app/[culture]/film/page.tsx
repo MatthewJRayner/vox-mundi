@@ -17,7 +17,6 @@ import { SVGPath } from "@/utils/path";
 export default function FilmPage() {
   const { culture } = useParams();
   const [films, setFilms] = useState<FilmPageData | null>(null);
-  const [userFilms, setUserFilms] = useState<UserFilm[]>([]);
   const [periods, setPeriods] = useState<Period[]>([]);
   const [activePeriod, setActivePeriod] = useState<Period | null>(null);
   const [loading, setLoading] = useState(false);
@@ -33,28 +32,14 @@ export default function FilmPage() {
       setLoading(true);
       setError(null);
 
-      const [filmRes, userFilmRes, periodRes] = await Promise.all([
+      const [filmRes, periodRes] = await Promise.all([
         api.get(`/films/frontpage?code=${culture}`),
-        api.get(`/user-films/`),
         api.get(`/periods/?code=${culture}&key=film`),
       ]);
 
-      let frontpageData = filmRes.data;
-
-      // Check if all sections are empty (watchlist, favourites, recent)
-      const isEmpty =
-        !frontpageData.watchlist?.length &&
-        !frontpageData.favourites?.length &&
-        !frontpageData.recent?.length;
-
-      // If empty, fetch 5 generic films as a fallback
-      if (isEmpty) {
-        const fallbackRes = await api.get(`/films/?limit=5`);
-        frontpageData = { fallback: fallbackRes.data.results };
-      }
+      const frontpageData = filmRes.data;
 
       setFilms(frontpageData);
-      setUserFilms(userFilmRes.data);
       setPeriods(periodRes.data[0]);
     } catch (error) {
       console.error("Error fetching data", error);
@@ -68,6 +53,18 @@ export default function FilmPage() {
     fetchData();
   }, [fetchData]);
 
+  useEffect(() => {
+    const handleResize = () => {
+      setIsSmallScreen(window.innerWidth < 768);
+    };
+
+    handleResize();
+
+    window.addEventListener("resize", handleResize);
+
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   const handleSearch = useCallback(async (query: string) => {
     if (!query.trim()) {
       setResults([]);
@@ -75,7 +72,7 @@ export default function FilmPage() {
     }
     try {
       const filmSearchRes = await api.get(
-        `/films/&q=${query}`
+        `/simple-films/?q=${encodeURIComponent(query)}&limit=5`
       );
       setResults(filmSearchRes.data);
     } catch (error) {
@@ -83,87 +80,134 @@ export default function FilmPage() {
     }
   }, []);
 
+
+  let watchlist = films?.watchlist
+  let favourites = films?.favourites
+  let recent = films?.recent
+  let fallback = films?.fallback
+
+  if (isSmallScreen) {
+    watchlist = watchlist?.slice(0,4);
+    favourites = favourites?.slice(0,4);
+    recent = recent?.slice(0,4);
+    fallback = fallback?.slice(0,4);
+  } 
+
   return (
     <div className="p-4 md:p-6 flex flex-col text-center md:text-left">
-      <div className="flex flex-col space-x-2 items-center">
-        <h1 className="text-xl sm:text-2xl font-bold mb-2">Track A New Film</h1>
-        <div className="flex">
-          <button
-            type="button"
-            onClick={() => setShowImportModal(true)}
-            className="px-4 py-2 text-white bg-primary hover:text-background rounded hover:bg-neutral-mid transition-all duration-300 mb-4 cursor-pointer"
+      <section className="relative flex items-center w-full">
+        <SearchBar onSearch={(query) => handleSearch(query)} />
+        <button
+          type="button"
+          onClick={() => setShowImportModal(true)}
+          className=""
+        >
+          <svg
+            viewBox={SVGPath.add.viewBox}
+            className="size-4 md:size-5 fill-current text-foreground ml-4 cursor-pointer hover:scale-110 hover:opacity-80 active:scale-95 transition"
+            aria-label="Add Recipe"
           >
-            Import from TMDb
-          </button>
-        </div>
-      </div>
+            <path d={SVGPath.add.path} />
+          </svg>
+        </button>
+        <Link href={`/${culture}/film/edit`} title="Edit Page">
+          <svg
+            viewBox={SVGPath.edit.viewBox}
+            className="size-4 md:size-5 fill-current text-foreground ml-4 cursor-pointer hover:fill-primary hover:scale-105 hover:opacity-80 active:scale-95 transition"
+            aria-label="Edit Page"
+          >
+            <path d={SVGPath.edit.path} />
+          </svg>
+        </Link>
+        {results.length > 0 && (
+          <div className="absolute top-[100%] mt-1 left-0 w-full md:w-1/3 bg-foreground/20 backdrop-blur-2xl rounded shadow-lg max-h-[300px] overflow-y-auto z-10">
+            {results.map((film) => (
+              <Link
+                key={film.id}
+                href={`/${culture}/film/${film.id}`}
+                className="flex items-center gap-3 px-4 py-2 hover:bg-extra transition"
+              >
+                <img
+                  src={film.poster}
+                  alt={film.title}
+                  className="w-10 h-14 object-cover rounded"
+                />
+                <div className="text-left">
+                  <p className="font-medium">{film.title}</p>
+                  {film.release_date && (
+                    <p className="text-sm text-neutral-400">
+                      {film.release_date.substring(0, 4)}
+                    </p>
+                  )}
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
+      </section>
 
-      <SearchBar onSearch={(query) => handleSearch(query)} className="w-1/4" />
       <FilmImportModal
         isOpen={showImportModal}
         onClose={() => setShowImportModal(false)}
       />
-      {loading ? (
-        <p className="text-center mt-4">Loading films...</p>
-      ) : error ? (
-        <p className="text-red-500 text-center mt-4">{error}</p>
-      ) : films?.watchlist?.length ||
-        films?.favourites?.length ||
-        films?.recent?.length ? (
+
+      {fallback && (
+        <section className="mt-6 text-center">
+          <h2 className="text-lg font-semibold mb-2">
+            Start building your film culture!
+          </h2>
+          <p className="text-neutral-500 mb-4">
+            You haven’t added any films yet. Here are some to
+            explore:
+          </p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            {fallback.map((film: Film) => (
+              <FilmCard key={film.id} film={film} />
+            ))}
+          </div>
+          <p className="text-sm text-neutral-500 mt-4">
+            Use the <strong>+</strong> button above to add films to our
+            database!
+          </p>
+        </section>
+      )}
+      
+      {!fallback && (
         <>
-          {films.watchlist && films.watchlist?.length > 0 && (
+          {watchlist && watchlist?.length > 0 && (
             <section className="mt-6">
               <h2 className="text-lg font-semibold mb-2">Your Watchlist</h2>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                {films.watchlist.map((film: Film) => (
+                {watchlist.map((film: Film) => (
                   <FilmCard key={film.id} film={film} />
                 ))}
               </div>
             </section>
           )}
 
-          {films.favourites && films.favourites?.length > 0 && (
+          {favourites && favourites?.length > 0 && (
             <section className="mt-6">
               <h2 className="text-lg font-semibold mb-2">Your Favourites</h2>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                {films.favourites.map((film: Film) => (
+                {favourites.map((film: Film) => (
                   <FilmCard key={film.id} film={film} />
                 ))}
               </div>
             </section>
           )}
 
-          {films.recent && films.recent?.length > 0 && (
+          {recent && recent?.length > 0 && (
             <section className="mt-6">
               <h2 className="text-lg font-semibold mb-2">Recently Watched</h2>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                {films.recent.map((film: Film) => (
+                {recent.map((film: Film) => (
                   <FilmCard key={film.id} film={film} />
                 ))}
               </div>
             </section>
           )}
         </>
-      ) : films?.fallback ? (
-        <section className="mt-6 text-center">
-          <h2 className="text-lg font-semibold mb-2">
-            Start building your film culture!
-          </h2>
-          <p className="text-neutral-500 mb-4">
-            You haven’t added any films yet for this culture. Here are some to
-            explore:
-          </p>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-            {films.fallback.map((film: Film) => (
-              <FilmCard key={film.id} film={film} />
-            ))}
-          </div>
-          <p className="text-sm text-neutral-500 mt-4">
-            Use the <strong>Import from TMDb</strong> button above to add films
-            to your culture.
-          </p>
-        </section>
-      ) : null}
+      )}
     </div>
   );
 }

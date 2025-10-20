@@ -52,3 +52,7 @@ class RecipeAdmin(admin.ModelAdmin):
 class PageContentAdmin(admin.ModelAdmin):
     list_display = ('culture__user', 'category', 'culture')
     search_fields = ('user', 'category')
+
+@admin.register(UserFilm)
+class UserFilmAdmin(admin.ModelAdmin):
+    list_display = ('user', 'notes')

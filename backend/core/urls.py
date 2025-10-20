@@ -7,7 +7,7 @@ from .views import (
     MapBorderViewSet, MapPinViewSet, LanguageTableViewSet, UniversalItemViewSet,
     BookViewSet, FilmViewSet, MusicPieceViewSet, ArtworkViewSet,
     UserBookViewSet, UserFilmViewSet, UserMusicPieceViewSet, UserArtworkViewSet,
-    UserHistoryEventViewSet, RegisterView, CurrentUserView, FilmSimpleViewSet, import_films_view
+    UserHistoryEventViewSet, RegisterView, CurrentUserView, FilmSimpleViewSet, import_films_view, update_film_image, fetch_tmdb_images
 )
 
 router = DefaultRouter()
@@ -42,4 +42,6 @@ urlpatterns = [
     path('api/register/', RegisterView.as_view(), name='register'),
     path('api/current-user/', CurrentUserView.as_view(), name='current_user'),
     path('api/import-films/', import_films_view, name="import-films"),
+    path('api/user-films/<int:pk>/update-image/', update_film_image, name="update_film_image"),
+    path('api/films/<int:tmdb_id>/images/', fetch_tmdb_images, name="fetch_tmdb_images"),
 ]
