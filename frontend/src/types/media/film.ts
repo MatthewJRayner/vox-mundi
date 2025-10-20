@@ -1,6 +1,7 @@
 import { AbstractMedia } from "./abstract";
 import { AbstractUserTracking } from "./abstract";
 import { UniversalItem } from "../universal";
+import { Period } from "../culture";
 
 export interface Member {
     name: string;
@@ -47,6 +48,7 @@ export interface UserFilm extends AbstractUserTracking {
     owned?: boolean;
     watchlist?: boolean;
     favourite?: boolean;
+    period?: Period;
 }
 
 export interface FilmPageData {

@@ -624,6 +624,28 @@ class FilmViewSet(viewsets.ModelViewSet):
             "reviews": userfilm_data,
         })
         
+    @action(detail=False, methods=["get"], url_path="random", permission_classes=[IsAuthenticatedOrReadOnly])
+    def random_film(self, request):
+        """Return a random film + its userfilm if it exists"""
+        film = Film.objects.order_by("?").first()
+        if not film:
+            return Response({"detail": "No films available."}, status=404)
+
+        userfilm = None
+        if request.user.is_authenticated:
+            userfilm = UserFilm.objects.filter(
+                universal_item=film.universal_item,
+                user=request.user
+            ).first()
+
+        film_data = FilmSimpleSerializer(film).data
+        userfilm_data = UserFilmSerializer(userfilm).data if userfilm else None
+
+        return Response({
+            "film": film_data,
+            "userfilm": userfilm_data
+        })
+        
     @action(detail=False, methods=["get"], permission_classes=[IsAuthenticated])
     def frontpage(self, request):
         user = request.user
@@ -838,9 +860,18 @@ class UserFilmViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        if user.is_authenticated:
-            return UserFilm.objects.filter(Q(user=user) | Q(visibility='public')).select_related('user', 'universal_item').prefetch_related('cultures')
-        return UserFilm.objects.filter(visibility='public').select_related('user', 'universal_item').prefetch_related('cultures')
+        period = self.request.query_params.get("period", None)
+        code = self.request.query_params.get("code", None)
+        
+        qs = UserFilm.objects.all()
+        
+        if not user.is_authenticated:
+            return UserBook.objects.filter(visibility=Visibility.PUBLIC)
+        if code:
+            qs = qs.filter(cultures__code__iexact=code)
+        if period:
+            qs.filter(period__id=period)
+        return qs.filter(user=user)
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)

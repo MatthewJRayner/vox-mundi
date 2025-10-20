@@ -38,7 +38,7 @@ export default function ReviewModal({
         <div className="flex justify-end gap-2">
           <button
             onClick={onClose}
-            className="px-4 py-2 bg-neutral-mid text-background rounded hover:bg-danger  hover:text-white transition active:scale-95 cursor-pointer"
+            className="px-4 py-2 bg-extra rounded hover:bg-red-400 transition active:scale-95 cursor-pointer"
           >
             Cancel
           </button>

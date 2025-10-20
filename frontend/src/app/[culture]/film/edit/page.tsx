@@ -48,7 +48,7 @@ export default function FilmEditPage() {
       const categoryData = catRes.data[0];
       setCategory(categoryData);
       setDisplayName(categoryData?.display_name || "");
-      setCultureCurrent(cultureRes.data);
+      setCultureCurrent(cultureRes.data[0]);
       setPeriods(periodRes.data);
       setUserFilms(userFilmRes.data);
 
@@ -97,6 +97,7 @@ export default function FilmEditPage() {
           culture_id: cultureCurrent?.id,
           category_id: category?.id,
           overview_text: overviewText,
+          user: cultureCurrent?.user,
         });
         setPageContent(response.data);
       }

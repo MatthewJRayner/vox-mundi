@@ -12,6 +12,8 @@ import Link from "next/link";
 import { formatDate } from "@/utils/formatters/formatDate";
 import { formatRuntime } from "@/utils/formatters/formatRuntime";
 import FilmPosterModal from "@/components/film/FilmPosterModal";
+import DateWatchedModal from "@/components/film/FilmDateWatched";
+import UserFilmAssignmentForm from "@/components/film/UserFilmAssignmentForm";
 import ReactMarkdown from "react-markdown";
 import { SVGPath } from "@/utils/path";
 
@@ -22,6 +24,9 @@ export default function FilmDetailPage() {
   const [userFilm, setUserFilm] = useState<UserFilm | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<string>("");
+  const [showDateModal, setShowDateModal] = useState(false);
+  const [showAssignmentModal, setShowAssignmentModal] = useState(false);
   const [rating, setRating] = useState(0);
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [activeTab, setActiveTab] = useState<"cast" | "crew">("cast");
@@ -93,7 +98,7 @@ export default function FilmDetailPage() {
         return res.data;
       }
     } catch (err: unknown) {
-      console.warn("Error", err)
+      console.warn("Error", err);
     }
 
     if (!film?.universal_item?.id) {
@@ -156,6 +161,12 @@ export default function FilmDetailPage() {
     setUserFilm(res.data);
   };
 
+  const updateDateWatched = async (date: string | null) => {
+    if (!userFilm?.id) return;
+
+    setSelectedDate(date || "");
+  };
+
   const toggleSeen = async () => {
     if (!film) return;
     const uf = await ensureUserFilm();
@@ -191,6 +202,11 @@ export default function FilmDetailPage() {
 
   const handleFilmUpdated = () => {
     window.location.reload();
+  };
+
+  const handleAssignmentSuccess = () => {
+    setShowAssignmentModal(false);
+    fetchFilm(); // Refresh film data to reflect updated cultures/period
   };
 
   if (!film)
@@ -240,12 +256,53 @@ export default function FilmDetailPage() {
               )}
               <button
                 onClick={toggleFavourite}
-                className={`text-base cursor-pointer transition-all duration-300 hover:text-danger/50 hover:scale-105 active:scale-90 ${
+                className={`text-base cursor-pointer transition-all duration-300 hover:text-red-500/50 hover:scale-105 active:scale-90 ${
                   userFilm?.favourite ? "text-red-500" : "text-neutral-mid"
                 }`}
+                title="Favourite"
               >
                 ❤︎
               </button>
+              <button
+                onClick={() => setShowDateModal(true)}
+                title="Edit Date Watched"
+                className="cursor-pointer"
+              >
+                <svg
+                  viewBox={SVGPath.calendar.viewBox}
+                  className={`size-6 fill-current transition hover:scale-105 active:scale-95`}
+                >
+                  <path d={SVGPath.calendar.path} />
+                </svg>
+              </button>
+              <button
+                onClick={() => setShowAssignmentModal(!showAssignmentModal)}
+                className="cursor-pointer"
+              >
+                <svg
+                  viewBox={SVGPath.add.viewBox}
+                  className={`size-6 fill-current transition hover:scale-105 active:scale-95`}
+                >
+                  <path d={SVGPath.add.path} />
+                </svg>
+              </button>
+
+              {showAssignmentModal && (
+                <UserFilmAssignmentForm
+                  userFilmId={userFilm?.id || 0}
+                  initialData={userFilm}
+                  currentCultureCode={culture}
+                  onSuccess={handleAssignmentSuccess}
+                />
+              )}
+
+              <DateWatchedModal
+                isOpen={showDateModal}
+                onClose={() => setShowDateModal(false)}
+                onSave={updateDateWatched}
+                userFilmId={userFilm?.id || 0}
+                initialValue={userFilm?.date_watched || null}
+              />
               {showImageModal && film.id && film.tmdb_id && (
                 <FilmPosterModal
                   userFilmId={userFilm?.id || 0}
@@ -347,7 +404,7 @@ export default function FilmDetailPage() {
                         <svg
                           viewBox={SVGPath.clock.viewBox}
                           className={`size-6 fill-current transition hover:scale-105 active:scale-95 hover:fill-blue-300 ${
-                            userFilm?.watchlist ? "fill-green-300" : ""
+                            userFilm?.watchlist ? "fill-blue-300" : ""
                           }`}
                         >
                           <path d={SVGPath.clock.path} />
@@ -393,7 +450,7 @@ export default function FilmDetailPage() {
                     <div className="py-4 px-2 text-center">
                       <button
                         onClick={() => setShowReviewModal(true)}
-                        className="bg-primary text-white hover:text-background px-4 py-2 rounded hover:bg-extra/50 hover:scale-105 transition cursor-pointer active:scale-95"
+                        className="bg-primary text-white px-4 py-2 rounded hover:scale-105 transition cursor-pointer active:scale-95"
                       >
                         + Add Review
                       </button>
@@ -766,7 +823,7 @@ export default function FilmDetailPage() {
                       <svg
                         viewBox={SVGPath.clock.viewBox}
                         className={`size-6 fill-current transition hover:scale-105 active:scale-95 hover:fill-blue-300 ${
-                          userFilm?.watchlist ? "fill-green-300" : ""
+                          userFilm?.watchlist ? "fill-blue-300" : ""
                         }`}
                       >
                         <path d={SVGPath.clock.path} />
@@ -812,7 +869,7 @@ export default function FilmDetailPage() {
                   <div className="py-4 px-2 text-center">
                     <button
                       onClick={() => setShowReviewModal(true)}
-                      className="bg-primary text-white px-4 py-2 rounded hover:bg-extra/50 hover:scale-105 transition cursor-pointer active:scale-95"
+                      className="bg-primary text-white px-4 py-2 rounded hover:scale-105 transition cursor-pointer active:scale-95"
                     >
                       + Add Review
                     </button>
