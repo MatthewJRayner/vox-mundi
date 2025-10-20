@@ -48,3 +48,10 @@ export interface UserFilm extends AbstractUserTracking {
     watchlist?: boolean;
     favourite?: boolean;
 }
+
+export interface FilmPageData {
+    watchlist?: Film[];
+    favourites?: Film[];
+    recent?: Film[];
+    fallback?: Film[];
+}

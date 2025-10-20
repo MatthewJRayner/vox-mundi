@@ -6,7 +6,7 @@ import { Culture, Period, Category } from "@/types/culture";
 import { UserHistoryEvent } from "@/types/history";
 import CategoryHeader from "@/components/CategoryHeader";
 import PeriodList from "@/components/PeriodList";
-import HistoryPeriodForm from "@/components/history/HistoryPeriodForm";
+import PeriodForm from "@/components/PeriodForm";
 import HistoryEventsSection from "@/components/history/HistoryEventsSection";
 
 export default function HistoryEditPage() {
@@ -131,7 +131,7 @@ export default function HistoryEditPage() {
         onAddNew={handleAddNewPeriod}
         onEdit={handleEditPeriod}
       />
-      <HistoryPeriodForm
+      <PeriodForm
         periodForm={periodForm}
         setPeriodForm={setPeriodForm}
         onSubmit={handleSubmitPeriod}

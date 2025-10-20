@@ -9,6 +9,8 @@ import { UserFilm } from "@/types/media/film";
 import CategoryHeader from "@/components/CategoryHeader";
 import SearchBar from "@/components/SearchBar";
 import { SVGPath } from "@/utils/path";
+import PeriodList from "@/components/PeriodList";
+import PeriodForm from "@/components/PeriodForm";
 
 export default function FilmEditPage() {
   const { culture } = useParams();
@@ -19,6 +21,7 @@ export default function FilmEditPage() {
   const [overviewText, setOverviewText] = useState("");
   const [periods, setPeriods] = useState<Period[]>([]);
   const [activePeriod, setActivePeriod] = useState<Period | null>(null);
+  const [userFilms, setUserFilms] = useState<UserFilm[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [periodForm, setPeriodForm] = useState({
@@ -33,18 +36,21 @@ export default function FilmEditPage() {
     if (!culture) return;
     try {
       setLoading(true);
-      const [catRes, contentRes, cultureRes, periodRes] = await Promise.all([
-        api.get(`/categories/?key=film&code=${culture}`),
-        api.get(`/page-contents/?code=${culture}&key=film`),
-        api.get(`/cultures/?code=${culture}`),
-        api.get(`/periods/?code=${culture}&key=film`),
-      ]);
+      const [catRes, contentRes, cultureRes, periodRes, userFilmRes] =
+        await Promise.all([
+          api.get(`/categories/?key=film&code=${culture}`),
+          api.get(`/page-contents/?code=${culture}&key=film`),
+          api.get(`/cultures/?code=${culture}`),
+          api.get(`/periods/?code=${culture}&key=film`),
+          api.get(`/user-films/?code=${culture}`),
+        ]);
 
       const categoryData = catRes.data[0];
       setCategory(categoryData);
       setDisplayName(categoryData?.display_name || "");
       setCultureCurrent(cultureRes.data);
       setPeriods(periodRes.data);
+      setUserFilms(userFilmRes.data);
 
       if (contentRes.data[0]) {
         setPageContent(contentRes.data[0]);
@@ -100,7 +106,13 @@ export default function FilmEditPage() {
   };
 
   const handleAddNewPeriod = () => {
-    setPeriodForm({ id: null, title: "", start_year: "", end_year: "", desc: "" });
+    setPeriodForm({
+      id: null,
+      title: "",
+      start_year: "",
+      end_year: "",
+      desc: "",
+    });
     setActivePeriod(null);
   };
 
@@ -114,13 +126,15 @@ export default function FilmEditPage() {
       desc: period.desc || "",
     });
   };
-  
+
   const handleSubmitPeriod = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       const payload = {
         ...periodForm,
-        start_year: periodForm.start_year ? Number(periodForm.start_year) : null,
+        start_year: periodForm.start_year
+          ? Number(periodForm.start_year)
+          : null,
         end_year: periodForm.end_year ? Number(periodForm.end_year) : null,
         culture_id: cultureCurrent?.id,
         category_id: category?.id,
@@ -128,13 +142,24 @@ export default function FilmEditPage() {
 
       if (periodForm.id) {
         const res = await api.patch(`/periods/${periodForm.id}/`, payload);
-        setPeriods((prev) => prev.map((p) => (p.id === res.data.id ? res.data : p)));
+        setPeriods((prev) =>
+          prev.map((p) => (p.id === res.data.id ? res.data : p))
+        );
       } else {
-        const res = await api.post(`/periods/`, { ...payload, culture_code: culture });
+        const res = await api.post(`/periods/`, {
+          ...payload,
+          culture_code: culture,
+        });
         setPeriods((prev) => [...prev, res.data]);
       }
 
-      setPeriodForm({ id: null, title: "", start_year: "", end_year: "", desc: "" });
+      setPeriodForm({
+        id: null,
+        title: "",
+        start_year: "",
+        end_year: "",
+        desc: "",
+      });
     } catch (error) {
       console.error("Error saving period:", error);
     }
@@ -156,7 +181,7 @@ export default function FilmEditPage() {
           onChange={(e) => setOverviewText(e.target.value)}
           className="w-full p-4 rounded-md bg-extra shadow-lg text-foreground text-sm md:text-base"
           rows={6}
-          placeholder="Enter the overview for this film history and style..."
+          placeholder="Enter the overview for the cinematic history and style..."
         />
         <button
           onClick={handleSaveOverviewText}
@@ -165,6 +190,17 @@ export default function FilmEditPage() {
           Save Overview
         </button>
       </section>
+      <PeriodList
+        periods={periods}
+        activePeriod={activePeriod}
+        onAddNew={handleAddNewPeriod}
+        onEdit={handleEditPeriod}
+      />
+      <PeriodForm
+        periodForm={periodForm}
+        setPeriodForm={setPeriodForm}
+        onSubmit={handleSubmitPeriod}
+      />
     </main>
   );
 }

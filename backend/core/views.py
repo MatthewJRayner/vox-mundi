@@ -622,42 +622,66 @@ class FilmViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=["get"], permission_classes=[IsAuthenticated])
     def frontpage(self, request):
         user = request.user
-        code = request.query_params.get("code", None)
+        code = request.query_params.get("code")
         if not code:
             return Response({"error": "culture code is required"}, status=400)
-        
+
         culture = Culture.objects.filter(user=user, code=code).first()
         if not culture:
             return Response({"error": "Invalid culture code"}, status=404)
-        
+
+        # All userfilms for that user/culture
         userfilms = UserFilm.objects.filter(user=user, cultures__code__iexact=code)
         
-        watchlist_ids = list(
-            userfilms.filter(watchlist=True).values_list("universal_item__film__id", flat=True)
-        )
-        favourite_ids = list(
-            userfilms.filter(favourite=True).values_list("universal_item__film__id", flat=True)
-        )
-        recent_ids = list(
-            userfilms.filter(seen=True).order_by("-date_watched").values_list("universal_item__film__id", flat=True)[:10]
-        )
-        
-        data = {
-            "watchlist": FilmSerializer(
-                Film.objects.filter(id__in=random.sample(watchlist_ids, min(5, len(watchlist_ids)))),
-                many=True
-            ).data if watchlist_ids else [],
-            "favourites": FilmSerializer(
-                Film.objects.filter(id__in=favourite_ids[:5]),
-                many=True
-            ).data if favourite_ids else [],
-            "recent": FilmSerializer(
-                Film.objects.filter(id__in=recent_ids),
-                many=True
-            ).data if recent_ids else [],
+        # Build the sets
+        watchlist_ids = list(userfilms.filter(watchlist=True)
+                             .values_list("universal_item__film__id", flat=True))
+        favourite_ids = list(userfilms.filter(favourite=True)
+                             .values_list("universal_item__film__id", flat=True))
+        recent_ids = list(userfilms.filter(seen=True)
+                           .order_by("-date_watched")
+                           .values_list("universal_item__film__id", flat=True)[:10])
+
+        # Random samples
+        data_sets = {
+            "watchlist": Film.objects.filter(id__in=random.sample(watchlist_ids, min(5, len(watchlist_ids)))) if watchlist_ids else [],
+            "favourites": Film.objects.filter(id__in=favourite_ids[:5]) if favourite_ids else [],
+            "recent": Film.objects.filter(id__in=recent_ids) if recent_ids else [],
         }
-        
-        return Response(data)
+
+        # If empty, provide fallback
+        if not any(data_sets.values()):
+            fallback = Film.objects.order_by("?")[:5]
+            data_sets["fallback"] = fallback
+
+        # Gather all film IDs we're returning
+        all_film_ids = [film.id for films in data_sets.values() for film in films]
+        userfilm_map = {
+            uf.universal_item.film.id: uf
+            for uf in userfilms.filter(universal_item__film__id__in=all_film_ids)
+        }
+
+        # Build response payload
+        result = {}
+        for key, films in data_sets.items():
+            result[key] = []
+            for film in films:
+                film_data = FilmSimpleSerializer(film).data
+                uf = userfilm_map.get(film.id)
+                if uf:
+                    film_data["userfilm"] = {
+                        "poster": uf.poster,
+                        "background_pic": uf.background_pic,
+                        "seen": uf.seen,
+                        "favourite": uf.favourite,
+                        "watchlist": uf.watchlist,
+                        "id": uf.id,
+                    }
+                else:
+                    film_data["userfilm"] = None
+                result[key].append(film_data)
+
+        return Response(result)
         
 class FilmSimpleViewSet(viewsets.ModelViewSet):
     serializer_class = FilmSimpleSerializer

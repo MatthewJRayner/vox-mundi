@@ -17,7 +17,7 @@ interface PeriodFormProps {
   onSubmit: (e: React.FormEvent) => void;
 }
 
-export default function HistoryPeriodForm({
+export default function PeriodForm({
   periodForm,
   setPeriodForm,
   onSubmit,
@@ -28,7 +28,6 @@ export default function HistoryPeriodForm({
         {periodForm.id ? "Edit Period" : "Add New Period"}
       </h4>
 
-      {/* Title */}
       <div className="w-full flex space-x-2 items-center">
         <h3 className="font-lora text-xl">Title:</h3>
         <input
@@ -51,7 +50,7 @@ export default function HistoryPeriodForm({
             onChange={(e) =>
               setPeriodForm((prev) => ({ ...prev, start_year: e.target.value }))
             }
-            placeholder="Year"
+            placeholder="Year (Optional)"
             className="p-2 rounded bg-extra shadow-md w-full"
           />
         </div>
@@ -63,7 +62,7 @@ export default function HistoryPeriodForm({
             onChange={(e) =>
               setPeriodForm((prev) => ({ ...prev, end_year: e.target.value }))
             }
-            placeholder="Year"
+            placeholder="Year (Optional)"
             className="p-2 rounded bg-extra shadow-md w-full"
           />
         </div>
@@ -76,7 +75,7 @@ export default function HistoryPeriodForm({
           onChange={(e) =>
             setPeriodForm((prev) => ({ ...prev, desc: e.target.value }))
           }
-          placeholder="Enter description..."
+          placeholder="Enter description for this period/category..."
           rows={4}
           className="p-2 rounded bg-extra shadow-md w-full resize-y"
         />

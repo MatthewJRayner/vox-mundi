@@ -4,11 +4,12 @@ import Link from "next/link";
 import { Film, UserFilm } from "@/types/media/film";
 
 type FilmProps = {
-    film: Film;
-    userFilm: UserFilm | null;
+    film: Film & { userfilm?: UserFilm | null }
 }
 
-export default function FilmCard({ film, userFilm }: FilmProps) {
+export default function FilmCard({ film }: FilmProps) {
+    const userFilm = film.userfilm ?? null
+
     return (
         <Link href={`/film/${film.id}`}>
             <div className="relative group w-full aspect-[2/3] rounded overflow-hidden shadow cursor-pointer">
