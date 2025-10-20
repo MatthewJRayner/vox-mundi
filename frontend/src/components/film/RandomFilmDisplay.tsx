@@ -41,8 +41,8 @@ export default function RandomFilmDisplay() {
         </button>
       </div>
       {!film && !loading && (
-        <p className="text-neutral-500 mb-4">
-          Click below to explore a random film from the database!
+        <p className="text-foreground/50 mb-4">
+          Click to explore a random film from the database!
         </p>
       )}
 
@@ -50,17 +50,10 @@ export default function RandomFilmDisplay() {
       {error && <p className="text-red-500">{error}</p>}
 
       {film && (
-        <div className="mt-4 max-h-[100px]">
+        <div className="mt-4 shadow-lg hover:shadow-2xl">
           <FilmCard film={film} />
         </div>
       )}
-
-      <button
-        onClick={fetchRandomFilm}
-        className="mt-4 bg-primary text-background px-4 py-2 rounded hover:opacity-80 transition"
-      >
-        {film ? "Show Another Random Film" : "Show Random Film"}
-      </button>
     </section>
   );
 }

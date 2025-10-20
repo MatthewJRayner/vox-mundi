@@ -6,11 +6,14 @@ import Link from "next/link";
 import api from "@/lib/api";
 import { Period, PageContent } from "@/types/culture";
 import { Film, UserFilm, FilmPageData } from "@/types/media/film";
+import { List } from "@/types/list";
 import SearchBar from "@/components/SearchBar";
 import FilmCard from "@/components/film/FilmCard";
 import FilmImportModal from "@/components/film/FilmImportModal";
 import FilmPeriodGrid from "@/components/film/FilmPeriodGrid";
 import RandomFilmDisplay from "@/components/film/RandomFilmDisplay";
+import FilmListCreationModal from "@/components/film/FilmListCreationModal";
+import FilmListDisplayModal from "@/components/film/FilmListDisplayModal";
 import { SVGPath } from "@/utils/path";
 import ReactMarkdown from "react-markdown";
 
@@ -22,7 +25,11 @@ export default function FilmPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showImportModal, setShowImportModal] = useState(false);
+  const [showListDisplayModal, setShowListDisplayModal] = useState(false);
+  const [editingList, setEditingList] = useState<List | null>(null);
+  const [showListCreationModal, setShowListCreationModal] = useState(false);
   const [isSmallScreen, setIsSmallScreen] = useState(false);
+  const [showFullDesc, setShowFullDesc] = useState(false);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<Film[]>([]);
 
@@ -74,10 +81,34 @@ export default function FilmPage() {
       console.error("Error fetching search results:", error);
     }
   }, []);
+  
+  const handleListCreated = useCallback(() => {
+    // Refresh films data or lists if needed
+    fetchData();
+    setShowListDisplayModal(true); // Reopen display modal to show updated lists
+  }, [fetchData]);
+
+  // Handle opening list for editing
+  const handleEditList = (list: List) => {
+    setEditingList(list);
+    setShowListDisplayModal(false);
+    setShowListCreationModal(true);
+  };
 
   let watchlist = films?.watchlist;
   let favourites = films?.favourites;
   let recent = films?.recent;
+  if (recent) {
+    recent = recent.sort((a, b) => {
+      const dateA = a.userfilm?.date_watched
+        ? new Date(a.userfilm?.date_watched)
+        : new Date(0);
+      const dateB = b.userfilm?.date_watched
+        ? new Date(b.userfilm?.date_watched)
+        : new Date(0);
+      return dateB.getTime() - dateA.getTime();
+    });
+  }
   let fallback = films?.fallback;
 
   if (isSmallScreen) {
@@ -91,7 +122,7 @@ export default function FilmPage() {
   if (error) return <div className="p-4 text-red-500">{error}</div>;
 
   return (
-    <div className="p-4 md:p-6 flex flex-col text-center md:text-left">
+    <div className="p-2 md:p-6 flex flex-col text-center md:text-left">
       {/* Search Bar + Import */}
       <section className="relative flex items-center w-full">
         <SearchBar onSearch={(query) => handleSearch(query)} />
@@ -111,6 +142,12 @@ export default function FilmPage() {
             <path d={SVGPath.edit.path} />
           </svg>
         </Link>
+        <button 
+          onClick={() => setShowListDisplayModal(true)}
+          className="px-3 py-1 bg-extra ml-2 rounded shadow cursor-pointer hover:scale-105 active:scale-90"
+        >
+          Lists
+        </button>
 
         {results.length > 0 && (
           <div className="absolute top-[100%] mt-1 left-0 w-full md:w-1/3 bg-foreground/20 backdrop-blur-2xl rounded shadow-lg max-h-[300px] overflow-y-auto z-10">
@@ -139,14 +176,62 @@ export default function FilmPage() {
         )}
       </section>
 
-      <section className="w-full">
-        <div className="w-full flex space-x-2">
-          {pageContent?.overview_text && (
-            <div className="mt-6 text-neutral-400 leading-relaxed w-1/2 mx-auto text-sm sm:text-base">
-              <ReactMarkdown>{pageContent.overview_text}</ReactMarkdown>
-            </div>
-          )}
-          <div className="w-1/2 max-h-[100px]">
+      <section className="w-full h-fit">
+        <div className="w-full flex flex-col-reverse md:flex-row md:space-x-2">
+          <div className="flex flex-col w-full md:w-3/4 mt-4">
+            <h1 className="font-lora text-lg md:text-2xl font-bold text-main">
+              Overview
+            </h1>
+            {pageContent?.overview_text ? (
+              <div className="relative">
+                <div
+                  className={`text-sm/[1.75] sm:text-base/[1.75] leading-relaxed font-medium transition-all duration-300 ${
+                    showFullDesc
+                      ? "max-h-none"
+                      : "max-h-52 md:max-h-52 overflow-hidden"
+                  }`}
+                >
+                  <ReactMarkdown>{pageContent.overview_text}</ReactMarkdown>
+                </div>
+                {!showFullDesc &&
+                  pageContent.overview_text &&
+                  pageContent.overview_text.length > 300 && (
+                    <div className="absolute bottom-7 left-0 w-full h-10 sm:h-12 bg-gradient-to-t from-background via-background/90 to-transparent pointer-events-none" />
+                  )}
+                {pageContent.overview_text &&
+                  pageContent.overview_text.length > 300 && (
+                    <button
+                      onClick={() => setShowFullDesc(!showFullDesc)}
+                      className="mt-1 cursor-pointer z-10 flex items-center font-lora sm:text-base"
+                      aria-expanded={showFullDesc}
+                    >
+                      <span className="mr-1 font-bold transition hover:text-main">
+                        {showFullDesc ? "Show Less" : "Show More"}
+                      </span>
+                      <span
+                        className={`transition-transform duration-300 ${
+                          showFullDesc ? "rotate-180" : "rotate-0"
+                        }`}
+                      >
+                        <svg
+                          viewBox={SVGPath.chevron.viewBox}
+                          className="size-5 fill-current cursor-pointer transition-transform"
+                        >
+                          <path d={SVGPath.chevron.path} />
+                        </svg>
+                      </span>
+                    </button>
+                  )}
+              </div>
+            ) : (
+              <p className="text-foreground/50">
+                {`There's currently no overview saved for this culture film history or style.\n
+                please edit the page to add your own personal summary of the
+                your favourite films directors and just general thoughts along your cinematic journery!`}
+              </p>
+            )}
+          </div>
+          <div className="w-full max-h-[300px] md:w-1/4 mt-4 md:mt-0">
             <RandomFilmDisplay />
           </div>
         </div>
@@ -175,7 +260,9 @@ export default function FilmPage() {
         <>
           {recent?.length && recent?.length > 0 && (
             <section className="mt-6">
-              <h2 className="text-lg font-semibold mb-2">Recently Watched</h2>
+              <h2 className="text-2xl font-semibold mb-2 text-main font-garamond">
+                Recently Watched
+              </h2>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                 {recent.map((film) => (
                   <FilmCard key={film.id} film={film} />
@@ -186,7 +273,9 @@ export default function FilmPage() {
 
           {watchlist?.length && watchlist?.length > 0 && (
             <section className="mt-6">
-              <h2 className="text-lg font-semibold mb-2">Your Watchlist</h2>
+              <h2 className="text-2xl font-semibold mb-2 text-main font-garamond">
+                Your Watchlist
+              </h2>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                 {watchlist.map((film) => (
                   <FilmCard key={film.id} film={film} />
@@ -197,7 +286,9 @@ export default function FilmPage() {
 
           {favourites?.length && favourites?.length > 0 && (
             <section className="mt-6">
-              <h2 className="text-lg font-semibold mb-2">Your Favourites</h2>
+              <h2 className="text-2xl font-semibold mb-2 text-main font-garamond">
+                Your Favourites
+              </h2>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                 {favourites.map((film) => (
                   <FilmCard key={film.id} film={film} />
@@ -211,6 +302,25 @@ export default function FilmPage() {
       <FilmImportModal
         isOpen={showImportModal}
         onClose={() => setShowImportModal(false)}
+      />
+      
+      <FilmListDisplayModal
+        isOpen={showListDisplayModal}
+        onClose={() => setShowListDisplayModal(false)}
+        onEditList={handleEditList}
+        currentCultureCode={culture}
+      />
+
+      <FilmListCreationModal
+        isOpen={showListCreationModal}
+        onClose={() => {
+          setShowListCreationModal(false);
+          setShowListDisplayModal(true);
+          setEditingList(null);
+        }}
+        onCreated={handleListCreated}
+        initialList={editingList || undefined}
+        currentCultureCode={culture}
       />
     </div>
   );

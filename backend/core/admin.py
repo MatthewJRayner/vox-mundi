@@ -2,7 +2,7 @@ from django.contrib import admin
 from .models import (
     Profile, Culture, Category, Period, PageContent, Recipe, LangLesson, CalendarDate,
     Person, MapBorder, MapPin, LanguageTable, UniversalItem, Book, Film, MusicPiece,
-    Artwork, UserBook, UserFilm, UserMusicPiece, UserArtwork, UserHistoryEvent 
+    Artwork, UserBook, UserFilm, UserMusicPiece, UserArtwork, UserHistoryEvent, List
 )
 
 # Register your models here.
@@ -56,3 +56,7 @@ class PageContentAdmin(admin.ModelAdmin):
 @admin.register(UserFilm)
 class UserFilmAdmin(admin.ModelAdmin):
     list_display = ('user', 'notes')
+    
+@admin.register(List)
+class ListAdmin(admin.ModelAdmin):
+    list_display = ('user', 'type')

@@ -164,6 +164,8 @@ export default function FilmDetailPage() {
   const updateDateWatched = async (date: string | null) => {
     if (!userFilm?.id) return;
 
+    const uf = await ensureUserFilm();
+
     setSelectedDate(date || "");
   };
 
@@ -403,8 +405,8 @@ export default function FilmDetailPage() {
                       >
                         <svg
                           viewBox={SVGPath.clock.viewBox}
-                          className={`size-6 fill-current transition hover:scale-105 active:scale-95 hover:fill-blue-300 ${
-                            userFilm?.watchlist ? "fill-blue-300" : ""
+                          className={`size-6 transition hover:scale-105 active:scale-95 hover:fill-blue-300 ${
+                            userFilm?.watchlist ? "fill-blue-300" : "fill-current"
                           }`}
                         >
                           <path d={SVGPath.clock.path} />
@@ -822,8 +824,8 @@ export default function FilmDetailPage() {
                     >
                       <svg
                         viewBox={SVGPath.clock.viewBox}
-                        className={`size-6 fill-current transition hover:scale-105 active:scale-95 hover:fill-blue-300 ${
-                          userFilm?.watchlist ? "fill-blue-300" : ""
+                        className={`size-6 transition hover:scale-105 active:scale-95 hover:fill-blue-300 ${
+                          userFilm?.watchlist ? "fill-blue-300" : "fill-current"
                         }`}
                       >
                         <path d={SVGPath.clock.path} />

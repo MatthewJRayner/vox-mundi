@@ -7,7 +7,8 @@ from .views import (
     MapBorderViewSet, MapPinViewSet, LanguageTableViewSet, UniversalItemViewSet,
     BookViewSet, FilmViewSet, MusicPieceViewSet, ArtworkViewSet,
     UserBookViewSet, UserFilmViewSet, UserMusicPieceViewSet, UserArtworkViewSet,
-    UserHistoryEventViewSet, RegisterView, CurrentUserView, FilmSimpleViewSet, import_films_view, update_film_image, fetch_tmdb_images
+    UserHistoryEventViewSet, RegisterView, CurrentUserView, FilmSimpleViewSet, ListViewSet,
+    import_films_view, update_film_image, fetch_tmdb_images
 )
 
 router = DefaultRouter()
@@ -34,6 +35,7 @@ router.register(r'user-music-pieces', UserMusicPieceViewSet, basename='usermusic
 router.register(r'user-artworks', UserArtworkViewSet, basename='userartwork')
 router.register(r'user-history-events', UserHistoryEventViewSet, basename='userhistoryevent')
 router.register(r'simple-films', FilmSimpleViewSet, basename='simplefilm')
+router.register(r'lists', ListViewSet, basename='list')
 
 urlpatterns = [
     path('api/', include(router.urls)),

@@ -591,13 +591,26 @@ class RegisterSerializer(serializers.ModelSerializer):
         return user
     
 class ListSerializer(serializers.ModelSerializer):
-    culture_ids = serializers.PrimaryKeyRelatedField(queryset=Culture.objects.all(), many=True, source='cultures', write_only=True, required=False)
+    culture_ids = serializers.PrimaryKeyRelatedField(
+        queryset=Culture.objects.all(),
+        many=True,
+        source='cultures',
+        write_only=True,
+        required=False
+    )
     items = UniversalItemSerializer(many=True, read_only=True)
-    item_ids = serializers.PrimaryKeyRelatedField(queryset=UniversalItem.objects.all(), many=True, source='items', write_only=True, required=False)
+    item_ids = serializers.PrimaryKeyRelatedField(
+        queryset=UniversalItem.objects.all(),
+        many=True,
+        source='items',
+        write_only=True,
+        required=False
+    )
 
     class Meta:
         model = List
-        fields = ['id', 'culture_ids', 'items', 'item_ids', 'name', 'description', 'visibility', 'created_at', 'updated_at']
+        fields = ['id', 'culture_ids', 'items', 'item_ids', 'name', 'description', 'visibility', 'created_at', 'updated_at', 'type']
+        read_only_fields = ['created_at', 'updated_at']  # Ensure these are not writable
 
     def validate_culture_ids(self, value):
         user = self.context['request'].user
@@ -605,18 +618,11 @@ class ListSerializer(serializers.ModelSerializer):
             if culture.user != user:
                 raise serializers.ValidationError("All cultures must belong to the authenticated user.")
         return value
-
-    def validate_item_ids(self, value):
-        user = self.context['request'].user
-        for item in value:
-            item_cultures = item.cultures.all()
-            if not any(culture.user == user for culture in item_cultures):
-                raise serializers.ValidationError("All items must belong to the authenticated user.")
-        return value
     
     def create(self, validated_data):
         cultures = validated_data.pop('cultures', [])
         items = validated_data.pop('items', [])
+        validated_data.pop('user', None)  # Remove user from validated_data if present
         user = self.context['request'].user
         
         list_instance = List.objects.create(user=user, **validated_data)
@@ -627,6 +633,7 @@ class ListSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         cultures = validated_data.pop('cultures', None)
         items = validated_data.pop('items', None)
+        validated_data.pop('user', None)  # Remove user from validated_data if present
         
         for attr, value in validated_data.items():
             setattr(instance, attr, value)

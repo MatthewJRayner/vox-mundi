@@ -665,7 +665,7 @@ class FilmViewSet(viewsets.ModelViewSet):
                              .values_list("universal_item__id", flat=True))
         favourite_ids = list(userfilms.filter(favourite=True)
                              .values_list("universal_item__id", flat=True))
-        recent_ids = list(userfilms.filter(seen=True)
+        recent_ids = list(userfilms.filter(seen=True, date_watched__isnull=False)
                           .order_by("-date_watched")
                           .values_list("universal_item__id", flat=True)[:10])
 
@@ -715,6 +715,7 @@ class FilmViewSet(viewsets.ModelViewSet):
                         "favourite": uf.favourite,
                         "watchlist": uf.watchlist,
                         "id": uf.id,
+                        "date_watched": uf.date_watched,
                     }
                 else:
                     film_data["userfilm"] = None

@@ -32,7 +32,7 @@ export default function Navbar({ culture, categories = [] }: NavbarProps) {
   const toggleDropdown = () => setDropdownOpen((prev) => !prev);
 
   return (
-    <nav className="flex justify-between items-center px-4 py-2 w-full relative">
+    <nav className={`flex justify-between items-center px-4 py-2 w-full relative`}>
       <Link
         href={`/${culture?.code || ""}`}
         className="text-2xl md:text-4xl font-bold font-garamond text-main hover:opacity-80 transition duration-300"
@@ -63,7 +63,7 @@ export default function Navbar({ culture, categories = [] }: NavbarProps) {
         </Link>
 
         <ThemeToggle />
-
+ 
         {isAuthenticated ? (
           <div className="relative">
             <button
