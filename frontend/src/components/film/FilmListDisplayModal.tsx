@@ -54,9 +54,8 @@ export default function FilmListDisplayModal({
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
       <div className="bg-background rounded-xl shadow-lg w-full max-w-md max-h-[80vh] overflow-y-auto">
-        {/* Header */}
         <div className="flex justify-between items-center p-4 border-b border-neutral/20">
-          <h2 className="text-xl font-bold text-main">Your Film Lists</h2>
+          <h2 className="md:text-lg font-bold text-main">Your Film Lists</h2>
           <button
             onClick={onClose}
             className="text-foreground hover:text-red-400 transition"
@@ -71,7 +70,6 @@ export default function FilmListDisplayModal({
           </button>
         </div>
 
-        {/* Content */}
         <div className="p-4">
           {loading && (
             <p className="text-neutral-400 text-center py-4">
@@ -88,7 +86,7 @@ export default function FilmListDisplayModal({
               <button
                 onClick={() => {
                   onClose();
-                  onEditList({} as List); // Trigger create new list
+                  onEditList({} as List);
                 }}
                 className="px-4 py-2 bg-primary text-white rounded hover:bg-primary-dark transition cursor-pointer"
               >
@@ -104,8 +102,8 @@ export default function FilmListDisplayModal({
                   key={list.id}
                   className="border border-neutral/20 rounded-lg p-3 hover:bg-extra transition"
                 >
-                  <div className="flex justify-between items-center mb-2">
-                    <div className="flex-1">
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center space-x-2 max-w-[1/2] truncate">
                       <h3 className="font-semibold text-foreground">
                         {list.name}
                       </h3>
@@ -128,7 +126,7 @@ export default function FilmListDisplayModal({
                         </svg>
                       </button>
                       <Link
-                        href={`/${currentCultureCode}/film/list/${list.id}`}
+                        href={`/${currentCultureCode}/film/lists/${list.id}`}
                         className="p-1 text-foreground hover:bg-neutral/20 hover:text-primary rounded transition"
                         title="View list details"
                       >

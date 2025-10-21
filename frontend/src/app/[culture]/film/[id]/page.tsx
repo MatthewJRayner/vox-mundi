@@ -16,6 +16,7 @@ import DateWatchedModal from "@/components/film/FilmDateWatched";
 import UserFilmAssignmentForm from "@/components/film/UserFilmAssignmentForm";
 import ReactMarkdown from "react-markdown";
 import { SVGPath } from "@/utils/path";
+import { getLanguageName, getCountryName } from "@/utils/iso";
 
 export default function FilmDetailPage() {
   const { culture, id } = useParams();
@@ -337,7 +338,7 @@ export default function FilmDetailPage() {
                   <div className="text-gray-400 font-light">
                     DIRECTED BY
                     <Link
-                      href={`/films/search/director/${encodeURIComponent(
+                      href={`/${culture}/film/search/director/${encodeURIComponent(
                         film.creator_string
                       )}`}
                       className="cursor-pointer text-foreground text-base transition-all duration-500 hover:text-primary ml-1"
@@ -406,7 +407,9 @@ export default function FilmDetailPage() {
                         <svg
                           viewBox={SVGPath.clock.viewBox}
                           className={`size-6 transition hover:scale-105 active:scale-95 hover:fill-blue-300 ${
-                            userFilm?.watchlist ? "fill-blue-300" : "fill-current"
+                            userFilm?.watchlist
+                              ? "fill-blue-300"
+                              : "fill-current"
                           }`}
                         >
                           <path d={SVGPath.clock.path} />
@@ -467,7 +470,7 @@ export default function FilmDetailPage() {
                   />
                 </div>
 
-                <div className="space-y-4 pb-4">
+                <div className="space-y-4">
                   <div className="flex space-x-4">
                     <button
                       onClick={() => setActiveTab("cast")}
@@ -505,7 +508,7 @@ export default function FilmDetailPage() {
                               <div key={i} className="relative group">
                                 <Link
                                   className="bg-extra px-2 py-1 w-fit rounded-md text-sm cursor-help transition-all duration-300 hover:bg-extra/50"
-                                  href={`/films/search/actor/${encodeURIComponent(
+                                  href={`/${culture}/film/search/actor/${encodeURIComponent(
                                     c.name
                                   )}`}
                                 >
@@ -531,7 +534,7 @@ export default function FilmDetailPage() {
                           <div className="grid grid-cols-1">
                             {film.cast?.map((c, i) => (
                               <Link
-                                href={`/films/search/actor/${encodeURIComponent(
+                                href={`/${culture}/film/search/actor/${encodeURIComponent(
                                   c.name
                                 )}`}
                                 key={i}
@@ -574,7 +577,7 @@ export default function FilmDetailPage() {
                               <div className="flex flex-wrap gap-2">
                                 <Link
                                   className="bg-extra p-1 w-fit rounded-md text-xs transition-all duration-300 hover:bg-extra/50"
-                                  href={`/films/search/director/${encodeURIComponent(
+                                  href={`/${culture}/film/search/director/${encodeURIComponent(
                                     film.creator_string
                                   )}`}
                                 >
@@ -602,7 +605,7 @@ export default function FilmDetailPage() {
                                 <div className="flex flex-wrap gap-2">
                                   {names.map((name, idx) => (
                                     <Link
-                                      href={`/films/search/crew/${encodeURIComponent(
+                                      href={`/${culture}/film/search/crew/${encodeURIComponent(
                                         name
                                       )}`}
                                       key={idx}
@@ -647,7 +650,7 @@ export default function FilmDetailPage() {
                           <div className="grid grid-cols-1">
                             {film.crew?.map((c, i) => (
                               <Link
-                                href={`/films/search/crew/${encodeURIComponent(
+                                href={`/${culture}/film/search/crew/${encodeURIComponent(
                                   c.name
                                 )}`}
                                 key={i}
@@ -678,7 +681,7 @@ export default function FilmDetailPage() {
 
                 <button
                   onClick={() => setShowDetails(!showDetails)}
-                  className="mt-3 text-xs sm:text-md text-primary cursor-pointer hover:text-neutral-mid"
+                  className="mt-3 text-xs sm:text-base text-primary cursor-pointer hover:text-neutral-mid"
                 >
                   {showDetails ? "Hide Details" : "More Details"}
                 </button>
@@ -691,7 +694,7 @@ export default function FilmDetailPage() {
                         </span>
                         {film.genre?.map((g, i) => (
                           <Link
-                            href={`/films/search/genre/${encodeURIComponent(
+                            href={`/${culture}/film/search/genre/${encodeURIComponent(
                               g
                             )}`}
                             className="bg-extra p-1 rounded-md transition-all duration-300 hover:bg-primary/50"
@@ -772,18 +775,16 @@ export default function FilmDetailPage() {
                         }).format(Number(film.box_office))}
                       </p>
                     )}
-                    {film.languages &&
-                      film.languages.map((lang, idx) => (
-                        <p key={idx}>
-                          <strong>Language:</strong> {lang}
-                        </p>
-                      ))}
-                    {film.countries &&
-                      film.countries.map((land, idx) => (
-                        <p key={idx}>
-                          <strong>Country:</strong> {land}
-                        </p>
-                      ))}
+                    {film.languages && (
+                      <p>
+                        <strong>Languages:</strong> {film.languages?.map(lang => getLanguageName(lang)).join(", ")}
+                      </p>
+                    )}
+                    {film.countries && (
+                      <p>
+                        <strong>Countries:</strong> {film.countries?.map(code => getCountryName(code)).join(", ")}
+                      </p>
+                    )}
                   </div>
                 )}
               </div>

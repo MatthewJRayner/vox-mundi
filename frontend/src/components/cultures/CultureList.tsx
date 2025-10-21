@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import api from "@/lib/api";
-import { Culture } from "@/types";
+import { Culture } from "@/types/culture";
 import Link from "next/link";
 
 export default function CulturesList() {
@@ -50,9 +50,9 @@ export default function CulturesList() {
             <Link href={`/${c.code}`}>
               {c.name} <span className="text-gray-500">({c.code})</span>
             </Link>
-            <img src={c.picture} className="w-48 h-48 object-cover" />
+            <img src={c.picture || undefined} className="w-48 h-48 object-cover" />
             <button
-              onClick={() => deleteCulture(c.id)}
+              onClick={() => deleteCulture(c.id || 0)}
               className="text-red-500 hover:text-red-700"
             >
               Delete

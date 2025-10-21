@@ -30,7 +30,7 @@ export default function FilmListCreationModal({
   );
   const [search, setSearch] = useState("");
   const [results, setResults] = useState<Film[]>([]);
-  const [selected, setSelected] = useState<Film[]>(initialList?.items || []);
+  const [selected, setSelected] = useState<Film[]>([]);
   const [cultures, setCultures] = useState<Culture[]>([]);
   const [selectedCultures, setSelectedCultures] = useState<Culture[]>(
     initialList?.cultures || []
@@ -39,15 +39,28 @@ export default function FilmListCreationModal({
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  // Fetch cultures
+  const fetchExistingFilms = useCallback(async () => {
+    if (!initialList?.items?.length) return;
+    const ids = initialList.items.map((item) => item.id).join(",");
+    try {
+      const res = await api.get(
+        `/films/list_films/?ids=${encodeURIComponent(ids)}`
+      );
+      setSelected(res.data.results || []);
+    } catch (err) {
+      console.error("Error fetching existing films:", err);
+      alert("Failed to load existing films.");
+    }
+  }, [initialList]);
+
   const fetchCultures = useCallback(async () => {
     try {
-      setLoading(true);
       const res = await api.get(
-        `/cultures/?code=${encodeURIComponent(String(currentCultureCode))}`
+        `/cultures/?code=${encodeURIComponent(
+          String(currentCultureCode || "")
+        )}`
       );
       setCultures(res.data);
-      // Pre-select current culture if not already in initialList
       if (currentCultureCode && !initialList?.cultures?.length) {
         const currentCulture = res.data.find(
           (c: Culture) =>
@@ -60,18 +73,19 @@ export default function FilmListCreationModal({
     } catch (error) {
       console.error("Error fetching cultures:", error);
       alert("Failed to load cultures.");
-    } finally {
-      setLoading(false);
     }
   }, [currentCultureCode, initialList]);
 
   useEffect(() => {
-    if (!isOpen || !currentCultureCode) return;
-
+    if (!isOpen) return;
     fetchCultures();
-  }, [isOpen, fetchCultures]);
+    if (initialList?.id) {
+      fetchExistingFilms();
+      setName(initialList?.name);
+      setDescription(initialList?.description || "")
+    }
+  }, [isOpen, fetchCultures, fetchExistingFilms, initialList]);
 
-  // 🔎 Search films
   const handleSearch = async () => {
     if (!search.trim()) {
       setResults([]);
@@ -83,8 +97,7 @@ export default function FilmListCreationModal({
         `/films/?q=${encodeURIComponent(search)}&limit=5`
       );
       const validResults = res.data.filter(
-        (film: Film) =>
-          film.id && film.universal_item?.id && typeof film.id === "number"
+        (film: Film) => film.id && film.universal_item?.id
       );
       setResults(validResults);
     } catch (error) {
@@ -95,9 +108,7 @@ export default function FilmListCreationModal({
     }
   };
 
-  // 🎞 Toggle film selection
   const toggleSelect = (film: Film) => {
-    if (!film.id || !film.universal_item?.id) return;
     setSelected((prev) =>
       prev.find((f) => f.id === film.id)
         ? prev.filter((f) => f.id !== film.id)
@@ -105,7 +116,6 @@ export default function FilmListCreationModal({
     );
   };
 
-  // 🌍 Toggle culture selection
   const toggleCulture = (culture: Culture) => {
     setSelectedCultures((prev) => {
       const exists = prev.some((c) => c.id === culture.id);
@@ -115,7 +125,6 @@ export default function FilmListCreationModal({
     });
   };
 
-  // 💾 Save or update list
   const handleSubmit = async () => {
     const itemIds = selected
       .map((f) => f.universal_item?.id)
@@ -140,30 +149,26 @@ export default function FilmListCreationModal({
       visibility: initialList?.visibility || "private",
     };
 
-    const isEdit = !!initialList?.id;
-    const url = isEdit ? `/lists/${initialList.id}/` : `/lists/`;
-
     try {
-      if (isEdit) {
-        await api.patch(url, payload);
+      if (initialList?.id) {
+        await api.patch(`/lists/${initialList.id}/`, payload);
       } else {
-        await api.post(url, payload);
+        await api.post(`/lists/`, payload);
       }
       onCreated();
       onClose();
     } catch (error) {
       console.error("Error saving list:", error);
-      alert(`Failed to ${isEdit ? "update" : "create"} list.`);
+      alert(`Failed to ${initialList?.id ? "update" : "create"} list.`);
     }
   };
 
-  // 🗑 Delete list
   const deleteList = async (id: number) => {
     if (!confirm("Are you sure you want to delete this list?")) return;
     try {
       await api.delete(`/lists/${id}/`);
       onCreated();
-      router.push("film");
+      router.push(`/${currentCultureCode}/film`);
     } catch (error) {
       console.error("Error deleting list:", error);
       alert("Failed to delete list.");
@@ -173,7 +178,7 @@ export default function FilmListCreationModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-start justify-center z-50 p-4 pt-8 sm:pt-16 overflow-y-auto">
+    <div className="fixed inset-0 bg-black/60 flex items-start justify-center z-50 p-4 pt-8 sm:pt-16 overflow-y-auto max-h-screen">
       <div className="bg-background rounded-xl shadow-lg p-4 sm:p-6 w-full max-w-lg sm:max-w-xl max-h-[90vh] flex flex-col">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold">
@@ -193,7 +198,6 @@ export default function FilmListCreationModal({
           </button>
         </div>
 
-        {/* 🧾 Name + description */}
         <input
           type="text"
           placeholder="List title"
@@ -208,7 +212,6 @@ export default function FilmListCreationModal({
           className="w-full p-2 border border-neutral/50 focus:border-primary rounded mb-4 resize-none h-24"
         />
 
-        {/* 🌍 Culture selection */}
         <div className="mb-4">
           <div
             className="flex justify-between items-center cursor-pointer p-2 border border-neutral/50 rounded"
@@ -220,7 +223,14 @@ export default function FilmListCreationModal({
                 "None selected"}
             </span>
             <span className="text-xs text-gray-500">
-              {showCultureSelect ? "▲" : "▼"}
+              <svg
+                viewBox={SVGPath.chevron.viewBox}
+                className={`size-5 fill-current transition hover:scale-105 active:scale-95 ${
+                  showCultureSelect ? "transform rotate-180" : ""
+                }`}
+              >
+                <path d={SVGPath.chevron.path} />
+              </svg>
             </span>
           </div>
           {showCultureSelect && (
@@ -233,7 +243,7 @@ export default function FilmListCreationModal({
                   <label
                     key={culture.id}
                     className={`flex items-center space-x-2 cursor-pointer p-1 rounded hover:bg-neutral/20 ${
-                      isSelected ? "text-main bg-primary/20" : ""
+                      isSelected ? "text-main" : ""
                     }`}
                   >
                     <input
@@ -250,7 +260,6 @@ export default function FilmListCreationModal({
           )}
         </div>
 
-        {/* 🔍 Film search */}
         <div className="flex space-x-2 mb-4">
           <input
             type="text"
@@ -263,13 +272,12 @@ export default function FilmListCreationModal({
           <button
             onClick={handleSearch}
             disabled={loading}
-            className="bg-primary text-white px-4 py-2 rounded hover:opacity-80 transition disabled:opacity-50"
+            className="bg-primary text-white px-4 py-2 rounded hover:opacity-80 transition disabled:opacity-50 cursor-pointer"
           >
             {loading ? "..." : "Search"}
           </button>
         </div>
 
-        {/* 🎬 Search results */}
         {results.length > 0 && (
           <div className="max-h-32 sm:max-h-40 overflow-y-auto mb-4 border rounded p-2">
             {results.map((film) => (
@@ -293,12 +301,11 @@ export default function FilmListCreationModal({
           </div>
         )}
 
-        {/* ✅ Selected Films */}
-        <div className="flex-1 overflow-y-auto mb-4">
+        <div className="flex-1 overflow-y-auto">
           <h3 className="font-semibold mb-2">
             Selected Films ({selected.length})
           </h3>
-          <div className="flex flex-col items-start gap-3">
+          <div className="flex flex-col items-start">
             {selected.length > 0 ? (
               selected.map((film) => (
                 <div
@@ -313,7 +320,7 @@ export default function FilmListCreationModal({
                         className="w-12 h-16 object-cover rounded"
                       />
                     )}
-                    <div className="text-sm flex flex-col">
+                    <div className="text-sm flex flex-col items-start">
                       <p>{film.title}</p>
                       <p className="text-gray-400 text-xs">
                         {film.release_date?.substring(0, 4) || "Unknown"}
@@ -324,7 +331,12 @@ export default function FilmListCreationModal({
                     onClick={() => toggleSelect(film)}
                     className="bg-danger text-white px-2 py-1 rounded hover:bg-danger/80 text-xs"
                   >
-                    X
+                    <svg
+                      viewBox={SVGPath.close.viewBox}
+                      className="size-5 fill-current transition hover:scale-105 active:scale-95 hover:text-red-400 cursor-pointer"
+                    >
+                      <path d={SVGPath.close.path} />
+                    </svg>
                   </button>
                 </div>
               ))
@@ -334,7 +346,6 @@ export default function FilmListCreationModal({
           </div>
         </div>
 
-        {/* 🔘 Actions */}
         <div className="flex justify-end space-x-3 pt-4 border-t border-neutral/20">
           <button
             onClick={handleSubmit}
@@ -343,20 +354,20 @@ export default function FilmListCreationModal({
               selected.length === 0 ||
               selectedCultures.length === 0
             }
-            className="bg-primary text-white px-4 py-2 rounded hover:bg-primary/80 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            className="bg-primary text-white px-4 py-2 rounded hover:bg-primary/80 transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
             {initialList?.id ? "Update List" : "Create List"}
           </button>
           <button
             onClick={onClose}
-            className="px-4 py-2 rounded bg-neutral-mid text-background hover:bg-neutral-dark transition"
+            className="px-4 py-2 rounded bg-neutral-mid text-background hover:bg-neutral-dark transition cursor-pointer"
           >
             Cancel
           </button>
           {initialList?.id && (
             <button
               onClick={() => deleteList(initialList.id!)}
-              className="bg-danger text-white px-4 py-2 rounded hover:bg-danger/80 transition"
+              className="bg-red-500 text-white px-4 py-2 rounded hover:opacity-80 transition cursor-pointer"
             >
               Delete
             </button>

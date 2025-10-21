@@ -30,27 +30,26 @@ export default function RandomFilmDisplay() {
   return (
     <section className="flex flex-col items-center text-center">
       <div className="flex items-center space-x-2">
-        <h2 className="text-lg font-semibold">Discover a Random Film</h2>
+        <h2 className="font-lora text-lg md:text-2xl font-bold=">Discover a Random Film</h2>
         <button onClick={fetchRandomFilm}>
           <svg
             viewBox={SVGPath.refresh.viewBox}
-            className="size-5 fill-current transition hover:scale-105 active:scale-95 cursor-pointer hover:fill-primary"
+            className="size-4 md:size-5 fill-current transition hover:scale-105 active:scale-95 cursor-pointer hover:fill-primary"
           >
             <path d={SVGPath.refresh.path} />
           </svg>
         </button>
       </div>
       {!film && !loading && (
-        <p className="text-foreground/50 mb-4">
+        <p className="text-foreground/50 mb-4 text-xs md:text-base">
           Click to explore a random film from the database!
         </p>
       )}
 
-      {loading && <p className="text-neutral-400">Fetching a random film...</p>}
       {error && <p className="text-red-500">{error}</p>}
 
       {film && (
-        <div className="mt-4 shadow-lg hover:shadow-2xl">
+        <div className="mt-4 h-fit max-w-[150px] md:max-w-[275px] shadow-lg hover:shadow-2xl">
           <FilmCard film={film} />
         </div>
       )}

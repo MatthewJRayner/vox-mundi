@@ -2,16 +2,18 @@
 
 import Link from "next/link";
 import { Film, UserFilm } from "@/types/media/film";
+import { useParams } from "next/navigation";
 
 type FilmProps = {
     film: Film & { userfilm?: UserFilm | null }
 }
 
 export default function FilmCard({ film }: FilmProps) {
+    const { culture } = useParams();
     const userFilm = film.userfilm ?? null
 
     return (
-        <Link href={`film/${film.id}`}>
+        <Link href={`/${culture}/film/${film.id}`}>
             <div className="relative group w-full aspect-[2/3] rounded overflow-hidden shadow cursor-pointer h-fit">
                 {userFilm?.poster ? (
                     <img 

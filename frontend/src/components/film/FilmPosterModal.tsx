@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import api from "@/lib/api"; // ✅ your axios instance
+import { getLanguageName } from "@/utils/iso"; 
 
 type Props = {
   userFilmId: number; // 👈 now this refers to the UserFilm record
@@ -121,7 +122,7 @@ export default function FilmPosterModal({
                 value={lang}
                 className="bg-background text-foreground"
               >
-                {lang}
+                {getLanguageName(lang)}
               </option>
             )
           )}

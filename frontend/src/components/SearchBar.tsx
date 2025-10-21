@@ -30,12 +30,10 @@ export default function SearchBar({
 }: SearchBarProps) {
   const [query, setQuery] = useState("");
   const debouncedQuery = useDebounce(query, 500);
-  const prevQueryRef = useRef<string>(""); // Track previous query
+  const prevQueryRef = useRef<string>("");
 
-  // Memoize onSearch to prevent unnecessary effect triggers
   const memoizedOnSearch = useCallback(
     (query: string) => {
-      console.log("Search triggered with query:", query); // Debugging
       onSearch(query);
     },
     [onSearch]
@@ -46,11 +44,9 @@ export default function SearchBar({
       debouncedQuery.trim() &&
       debouncedQuery.trim() !== prevQueryRef.current
     ) {
-      console.log("useEffect triggered with debouncedQuery:", debouncedQuery);
       memoizedOnSearch(debouncedQuery.trim());
       prevQueryRef.current = debouncedQuery.trim();
     } else if (!debouncedQuery.trim() && prevQueryRef.current !== "") {
-      console.log("useEffect triggered to reset search");
       memoizedOnSearch("");
       prevQueryRef.current = "";
     }

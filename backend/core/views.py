@@ -563,7 +563,7 @@ class FilmViewSet(viewsets.ModelViewSet):
         genre = self.request.query_params.get("genre", None)
         actor = self.request.query_params.get("actor", None)
         crew = self.request.query_params.get("crew", None)
-        role = self.request.query_params.get("role", None)
+        director = self.request.query_params.get("director", None)
         limit = self.request.query_params.get("limit", None)
         
         qs = (
@@ -587,16 +587,17 @@ class FilmViewSet(viewsets.ModelViewSet):
             
         if actor:
             qs = qs.filter(
-                Q(cast__icontains=actor)
+                Q(cast__name__icontains=actor)
             )
         if crew:
             qs = qs.filter(
-                Q(crew__icontains=crew)
+                Q(crew__name__icontains=crew)
             )
-        if role:
+        if director:
             qs = qs.filter(
-                Q(crew__icontains=role)
+                Q(crew__role__iexact="Director")
             )
+            
         if limit:
             qs = qs[:int(limit)]
             return qs
@@ -722,6 +723,178 @@ class FilmViewSet(viewsets.ModelViewSet):
                 result[key].append(film_data)
 
         return Response(result)
+    
+    @action(detail=False, methods=["get"], permission_classes=[IsAuthenticated])
+    def search(self, request):
+        user = request.user
+        q = request.query_params.get("q", None)
+        actor = request.query_params.get("actor", None)
+        director = request.query_params.get("director", None)
+        crew = request.query_params.get("crew", None)
+        genre = request.query_params.get("genre", None)
+        limit = int(request.query_params.get("limit", 20))
+        offset = int(request.query_params.get("offset", 0))
+        
+        # Build the film queryset with filters
+        qs = (
+            Film.objects
+            .select_related("creator", "date")
+            .order_by("title")
+        )
+        
+        if actor:
+            qs = qs.filter(Q(cast__icontains=actor))
+        if director:
+            qs = qs.filter(
+                Q(creator_string__iexact=director)
+            )
+        if crew:
+            qs = qs.filter(Q(crew__icontains=crew))
+        if genre:
+            qs = qs.filter(Q(genre__icontains=genre))
+        if q:
+            qs = qs.filter(
+                Q(title__icontains=q)
+                | Q(alt_title__icontains=q)
+                | Q(creator_string__icontains=q)
+                | Q(alt_creator_name__icontains=q)
+            )
+            
+        films = qs.distinct()[offset:offset + limit]
+        
+        if not films:
+            return Response({"results": []}, status=200)
+        
+        userfilms = UserFilm.objects.filter(
+            user=user,
+            universal_item__id__in=films.values_list("universal_item__id", flat=True)
+        )
+        
+        userfilm_map = {
+            uf.universal_item.id: uf for uf in userfilms
+        }
+        
+        results = []
+        for film in films:
+            film_data = FilmSimpleSerializer(film).data
+            uf = userfilm_map.get(film.universal_item.id)
+            if uf:
+                film_data["userfilm"] = {
+                    "poster": uf.poster,
+                    "background_pic": uf.background_pic,
+                    "seen": uf.seen,
+                    "favourite": uf.favourite,
+                    "watchlist": uf.watchlist,
+                    "id": uf.id,
+                    "date_watched": uf.date_watched,
+                }
+            else:
+                film_data["userfilm"] = None
+            results.append(film_data)
+        
+        return Response({"results": results, "total": qs.count()})
+    
+    @action(detail=False, methods=["get"], permission_classes=[IsAuthenticated])
+    def list_films(self, request):
+        user = request.user
+        universal_item_ids = request.query_params.get("ids", "").split(",")
+        q = request.query_params.get("q", None)
+        
+        qs = Film.objects.filter(universal_item__id__in=universal_item_ids)
+        
+        if q:
+            qs = qs.filter(
+                Q(title__icontains=q)
+                | Q(alt_title__icontains=q)
+                | Q(creator_string__icontains=q)
+                | Q(alt_creator_name__icontains=q)
+            )
+        
+        films = qs.distinct()
+        
+        if not films:
+            return Response({"results": []}, status=200)
+        
+        userfilms = UserFilm.objects.filter(
+            user=user,
+            universal_item__id__in=universal_item_ids
+        )
+        
+        userfilm_map = {uf.universal_item.id: uf for uf in userfilms}
+
+        results = []
+        for film in films:
+            film_data = FilmSimpleSerializer(film).data
+            uf = userfilm_map.get(film.universal_item.id)
+            if uf:
+                film_data["userfilm"] = {
+                    "poster": uf.poster,
+                    "background_pic": uf.background_pic,
+                    "seen": uf.seen,
+                    "favourite": uf.favourite,
+                    "watchlist": uf.watchlist,
+                    "id": uf.id,
+                    "date_watched": uf.date_watched,
+                    "rating": uf.rating,
+                }
+            else:
+                film_data["userfilm"] = None
+            results.append(film_data)
+
+        return Response({"results": results})
+    
+    @action(detail=False, methods=["get"], permission_classes=[IsAuthenticated])
+    def period_films(self, request):
+        user = self.request.user
+        period = self.request.query_params.get("period", None)
+        q = self.request.query_params.get("g", None)
+        
+        qs = UserFilm.objects.filter(user=user)
+        
+        if period:
+            qs = qs.filter(period__id__iexact=period)
+        
+        userfilms = qs.distinct()
+        
+        if not userfilms:
+            return Response({"results": []}, status=200)
+        
+        films = Film.objects.filter(
+            universal_item__id__in=userfilms.values_list("universal_item__id", flat=True)
+        )
+        
+        if q:
+            films = films.filter(
+                Q(title__icontains=q)
+                | Q(alt_title__icontains=q)
+                | Q(creator_string__icontains=q)
+                | Q(alt_creator_name__icontains=q)
+            )
+        
+        film_map = {
+            f.universal_item.id: f for f in films
+        }
+        
+        results = []
+        for uf in userfilms:
+            film = film_map.get(uf.universal_item.id)
+            if film:
+                film_data = FilmSimpleSerializer(film).data
+                film_data["userfilm"] = {
+                    "id": uf.id,
+                    "poster": uf.poster,
+                    "background_pic": uf.background_pic,
+                    "seen": uf.seen,
+                    "favourite": uf.favourite,
+                    "watchlist": uf.watchlist,
+                    "date_watched": uf.date_watched,
+                    "rating": uf.rating,
+                    "period_id": uf.period.id if uf.period else None,
+                }
+                results.append(film_data)
+        
+        return Response({"results": results}, status=200)
+        
         
 class FilmSimpleViewSet(viewsets.ModelViewSet):
     serializer_class = FilmSimpleSerializer
@@ -879,7 +1052,7 @@ class UserFilmViewSet(viewsets.ModelViewSet):
         
     @action(detail=False, methods=["get"], url_path="by-film/(?P<film_id>[^/.]+)")
     def by_film(self, request, film_id=None):
-        user = request.user
+        user = self.request.user
         if not user.is_authenticated:
             return Response({"detail": "Authentication required."}, status=401)
 

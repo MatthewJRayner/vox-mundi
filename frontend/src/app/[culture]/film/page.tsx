@@ -61,7 +61,7 @@ export default function FilmPage() {
   }, [fetchData]);
 
   useEffect(() => {
-    const handleResize = () => setIsSmallScreen(window.innerWidth < 768);
+    const handleResize = () => setIsSmallScreen(window.innerWidth < 1024);
     handleResize();
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
@@ -81,14 +81,12 @@ export default function FilmPage() {
       console.error("Error fetching search results:", error);
     }
   }, []);
-  
+
   const handleListCreated = useCallback(() => {
-    // Refresh films data or lists if needed
     fetchData();
-    setShowListDisplayModal(true); // Reopen display modal to show updated lists
+    setShowListDisplayModal(true);
   }, [fetchData]);
 
-  // Handle opening list for editing
   const handleEditList = (list: List) => {
     setEditingList(list);
     setShowListDisplayModal(false);
@@ -123,7 +121,6 @@ export default function FilmPage() {
 
   return (
     <div className="p-2 md:p-6 flex flex-col text-center md:text-left">
-      {/* Search Bar + Import */}
       <section className="relative flex items-center w-full">
         <SearchBar onSearch={(query) => handleSearch(query)} />
         <button onClick={() => setShowImportModal(true)}>
@@ -142,7 +139,7 @@ export default function FilmPage() {
             <path d={SVGPath.edit.path} />
           </svg>
         </Link>
-        <button 
+        <button
           onClick={() => setShowListDisplayModal(true)}
           className="px-3 py-1 bg-extra ml-2 rounded shadow cursor-pointer hover:scale-105 active:scale-90"
         >
@@ -256,54 +253,55 @@ export default function FilmPage() {
         </section>
       )}
 
-      {!fallback && (
-        <>
-          {recent?.length && recent?.length > 0 && (
-            <section className="mt-6">
-              <h2 className="text-2xl font-semibold mb-2 text-main font-garamond">
-                Recently Watched
-              </h2>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                {recent.map((film) => (
-                  <FilmCard key={film.id} film={film} />
-                ))}
-              </div>
-            </section>
-          )}
+      {!fallback &&
+        (recent?.length || watchlist?.length || favourites?.length) && (
+          <div>
+            {recent?.length ? (
+              <section className="mt-6">
+                <h2 className="font-lora text-xl md:text-2xl font-bold text-main mb-2">
+                  Recently Watched
+                </h2>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                  {recent.map((film) => (
+                    <FilmCard key={film.id} film={film} />
+                  ))}
+                </div>
+              </section>
+            ) : null}
 
-          {watchlist?.length && watchlist?.length > 0 && (
-            <section className="mt-6">
-              <h2 className="text-2xl font-semibold mb-2 text-main font-garamond">
-                Your Watchlist
-              </h2>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                {watchlist.map((film) => (
-                  <FilmCard key={film.id} film={film} />
-                ))}
-              </div>
-            </section>
-          )}
+            {watchlist?.length ? (
+              <section className="mt-6">
+                <h2 className="font-lora text-xl md:text-2xl font-bold text-main mb-2">
+                  Your Watchlist
+                </h2>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                  {watchlist.map((film) => (
+                    <FilmCard key={film.id} film={film} />
+                  ))}
+                </div>
+              </section>
+            ) : null}
 
-          {favourites?.length && favourites?.length > 0 && (
-            <section className="mt-6">
-              <h2 className="text-2xl font-semibold mb-2 text-main font-garamond">
-                Your Favourites
-              </h2>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                {favourites.map((film) => (
-                  <FilmCard key={film.id} film={film} />
-                ))}
-              </div>
-            </section>
-          )}
-        </>
-      )}
+            {favourites?.length ? (
+              <section className="mt-6">
+                <h2 className="font-lora text-xl md:text-2xl font-bold text-main mb-2">
+                  Your Favourites
+                </h2>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                  {favourites.map((film) => (
+                    <FilmCard key={film.id} film={film} />
+                  ))}
+                </div>
+              </section>
+            ) : null}
+          </div>
+        )}
 
       <FilmImportModal
         isOpen={showImportModal}
         onClose={() => setShowImportModal(false)}
       />
-      
+
       <FilmListDisplayModal
         isOpen={showListDisplayModal}
         onClose={() => setShowListDisplayModal(false)}
