@@ -371,7 +371,6 @@ class UniversalItem(TimestampedModel):
 
 # ---- BOOK ----
 class Book(AbstractMedia):
-    isbn = models.CharField(max_length=20, null=True, blank=True, unique=True)
     universal_item = GenericRelation(UniversalItem, related_query_name="book")
     series = models.CharField(max_length=200, blank=True, null=True)
     volume = models.CharField(max_length=50, blank=True, null=True)
@@ -380,16 +379,48 @@ class Book(AbstractMedia):
     industry_rating = models.DecimalField(max_digits=4, blank=True, null=True, decimal_places=1)
     genre = models.JSONField(default=list, blank=True, null=True)
     language = models.CharField(max_length=100, blank=True, null=True)
+    ol_id = models.CharField(max_length=20, blank=True, null=True, unique=True)
     
 
     class Meta:
         verbose_name_plural = "Books"
         indexes = [models.Index(fields=['isbn'], name='book_isbn_idx')]
+        
+    @classmethod
+    @transaction.atomic
+    def create_with_universal_item(cls, payload):
+        """
+        Create or update a Book record and its linked UniversalItem entry.
+        """
+        universal_item, _ = UniversalItem.objects.get_or_create(
+            external_id=payload["ol_id"],
+            type="book",
+            defaults={
+                "title": payload["title"],
+                "creator_string": payload["creator_string"],
+            },
+        )
+
+        book, created = cls.objects.update_or_create(
+            ol_id=payload["ol_id"],
+            defaults={
+                "universal_item": universal_item,
+                "title": payload.get("title") or "Untitled",
+                "alt_title": payload.get("alt_title") or None,
+                "creator_string": payload.get("creator_string"),
+                "alt_creator_name": payload.get("alt_creator_name") or None,
+                "cover": payload.get("cover"),
+                "synopsis": payload.get("synopsis"),
+                "genre": payload.get("genre", []),
+                "language": payload.get("language"),
+            },
+        )
+
+        return book, created
 
 class UserBook(AbstractUserTrackingModel):
     universal_item = models.ForeignKey(UniversalItem, on_delete=models.CASCADE, related_name="user_books")
     page_count = models.PositiveIntegerField(null=True, blank=True)
-    is_history = models.BooleanField(default=False)
     translated = models.BooleanField(default=False)
     format = models.CharField(max_length=50, blank=True, null=True)
     cover = models.URLField(blank=True, null=True)
@@ -398,7 +429,6 @@ class UserBook(AbstractUserTrackingModel):
     edition_read_year = models.IntegerField(blank=True, null=True)
     date_started = models.DateField(null=True, blank=True)
     date_finished = models.DateField(null=True, blank=True)
-    location = models.CharField(max_length=200, blank=True)
     read_language = models.CharField(max_length=100, blank=True, null=True)
     owned = models.BooleanField(default=False)
     read = models.BooleanField(default=False)
@@ -578,7 +608,9 @@ class Artwork(AbstractMedia):
     associated_culture = models.CharField(max_length=200, blank=True, null=True)
     photo = models.URLField(blank=True, null=True)
     model_3d = models.URLField(blank=True, null=True)
-    type = models.CharField(max_length=100, blank=True)
+    type = models.CharField(max_length=100, null=True, blank=True)
+    medium = models.CharField(max_length=100, null=True, blank=True)
+    owner = models.CharField(max_length=200, null=True, blank=True)
     wikidata_id = models.CharField(max_length=20, null=True, blank=True, unique=True)
     universal_item = GenericRelation(UniversalItem, related_query_name="artwork")
 

@@ -363,8 +363,8 @@ class UserBookSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserBook
         fields = ['id', 'universal_item_id', 'cultures', 'culture_ids', 'rating', 'notes', 'visibility',
-                  'page_count', 'is_history', 'translated', 'format', 'cover', 'publisher', 'edition', 'edition_read_year',
-                  'date_started', 'date_finished', 'location', 'read_language',
+                  'page_count', 'translated', 'format', 'cover', 'publisher', 'edition', 'edition_read_year',
+                  'date_started', 'date_finished', 'read_language',
                   'owned', 'read', 'readlist', 'favourite', 'created_at', 'updated_at']
 
     def validate_culture_ids(self, value):
