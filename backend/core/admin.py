@@ -60,3 +60,15 @@ class UserFilmAdmin(admin.ModelAdmin):
 @admin.register(List)
 class ListAdmin(admin.ModelAdmin):
     list_display = ('user', 'type')
+    
+@admin.register(Book)
+class BookAdmin(admin.ModelAdmin):
+    list_display = ('title', 'creator_string', 'ol_id')
+
+@admin.register(UserBook)
+class UserBookAdmin(admin.ModelAdmin):
+    list_display = ('user', 'notes')
+    
+@admin.register(UniversalItem)
+class UniversalItemAdmin(admin.ModelAdmin):
+    list_display = ('title', 'type')

@@ -371,20 +371,20 @@ class UniversalItem(TimestampedModel):
 
 # ---- BOOK ----
 class Book(AbstractMedia):
-    universal_item = GenericRelation(UniversalItem, related_query_name="book")
+    universal_item = models.OneToOneField(UniversalItem, on_delete=models.CASCADE, related_name="book", blank=True, null=True)
     series = models.CharField(max_length=200, blank=True, null=True)
     volume = models.CharField(max_length=50, blank=True, null=True)
     cover = models.URLField(blank=True, null=True)
     synopsis = models.TextField(blank=True)
     industry_rating = models.DecimalField(max_digits=4, blank=True, null=True, decimal_places=1)
     genre = models.JSONField(default=list, blank=True, null=True)
-    language = models.CharField(max_length=100, blank=True, null=True)
+    languages = models.JSONField(default=list, blank=True, null=True)
     ol_id = models.CharField(max_length=20, blank=True, null=True, unique=True)
     
 
     class Meta:
         verbose_name_plural = "Books"
-        indexes = [models.Index(fields=['isbn'], name='book_isbn_idx')]
+        indexes = [models.Index(fields=['ol_id'], name='book_ol_id_idx')]
         
     @classmethod
     @transaction.atomic
@@ -425,6 +425,7 @@ class UserBook(AbstractUserTrackingModel):
     format = models.CharField(max_length=50, blank=True, null=True)
     cover = models.URLField(blank=True, null=True)
     publisher = models.CharField(max_length=200, blank=True, null=True)
+    isbn = models.CharField(max_length=25, blank=True, null=True)
     edition = models.CharField(max_length=50, blank=True, null=True)
     edition_read_year = models.IntegerField(blank=True, null=True)
     date_started = models.DateField(null=True, blank=True)
@@ -434,12 +435,14 @@ class UserBook(AbstractUserTrackingModel):
     read = models.BooleanField(default=False)
     readlist = models.BooleanField(default=False)
     favourite = models.BooleanField(default=False)
+    period = models.ForeignKey(Period, on_delete=models.SET_NULL, null=True, blank=True, related_name="user_books")
 
     def __str__(self):
         culture_names = ", ".join(culture.name for culture in self.cultures.all())
         return f"{self.universal_item.title} ({culture_names})"
 
     class Meta:
+        unique_together = [('user', 'isbn')]
         verbose_name_plural = "User Books"
         indexes = [models.Index(fields=['user', 'universal_item'], name='user_book_idx')]
 

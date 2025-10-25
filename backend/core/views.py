@@ -8,6 +8,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.exceptions import ValidationError
 from core.services.tmdb_import import import_films_from_list
+from core.services.openlibrary_import import create_book_from_openlibrary, fetch_works_by_title, search_openlibrary, update_userbook_with_isbn
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.db.models import Q, Avg, Count
@@ -25,7 +26,7 @@ from .serializers import (
     UniversalItemSerializer, BookSerializer, FilmSerializer, MusicPieceSerializer,
     ArtworkSerializer, UserBookSerializer, UserFilmSerializer,
     UserMusicPieceSerializer, UserMusicArtistSerializer, UserArtworkSerializer, UserHistoryEventSerializer, RegisterSerializer, UserSerializer, ListSerializer,
-    FilmSimpleSerializer
+    FilmSimpleSerializer, BookSimpleSerializer
 )
 
 class RegisterView(generics.CreateAPIView):
@@ -523,7 +524,6 @@ class BookViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         q = self.request.query_params.get("q", None)
-        isbn = self.request.query_params.get("isbn", None)
         language = self.request.query_params.get("language", None)
         genre = self.request.query_params.get("genre", None)
         
@@ -552,6 +552,303 @@ class BookViewSet(viewsets.ModelViewSet):
     
     def perform_create(self, serializer):
         serializer.save()
+        
+    @action(detail=True, methods=["get"], url_path="details")
+    def details(self, request, pk=None):
+        book = self.get_object()
+        user_books = book.universal_item.user_books.filter(visibility=Visibility.PUBLIC)
+        
+        avg_rating = user_books.aggregate(avg=Avg("rating"))["avg"]
+        review_count = user_books.aggregate(count=Count("id"))["count"]
+        
+        serializer = self.get_serializer(book)
+        userfilm_data = UserBookSerializer(user_books[:10], many=True).data
+        
+        return Response({
+            "book": serializer.data,
+            "average_rating": avg_rating,
+            "review_count": review_count,
+            "reviews": userfilm_data,
+        })
+        
+    @action(detail=False, methods=["get"], url_path="random", permission_classes=[IsAuthenticatedOrReadOnly])
+    def random_book(self, request):
+        """Return a random book + its userbook if it exists"""
+        book = Book.objects.order_by("?").first()
+        if not book:
+            return Response({"detail": "No books available."}, status=404)
+
+        userbook = None
+        if request.user.is_authenticated:
+            userbook = UserBook.objects.filter(
+                universal_item=book.universal_item,
+                user=request.user
+            ).first()
+
+        book_data = BookSimpleSerializer(book).data
+        userbook_data = UserBookSerializer(userbook).data if userbook else None
+
+        return Response({
+            "book": book_data,
+            "userbook": userbook_data
+        })
+        
+    @action(detail=False, methods=["get"], permission_classes=[IsAuthenticated])
+    def frontpage(self, request):
+        user = request.user
+        code = request.query_params.get("code")
+        if not code:
+            return Response({"error": "culture code is required"}, status=400)
+
+        culture = Culture.objects.filter(user=user, code=code).first()
+        if not culture:
+            return Response({"error": "Invalid culture code"}, status=404)
+
+        # All userbooks for that user/culture
+        userbooks = UserBook.objects.filter(user=user, cultures__code__iexact=code)
+        
+        # Build the sets
+        readlist_ids = list(userbooks.filter(readlist=True)
+                             .values_list("universal_item__id", flat=True))
+        favourite_ids = list(userbooks.filter(favourite=True)
+                             .values_list("universal_item__id", flat=True))
+        recent_ids = list(userbooks.filter(read=True, date_finished__isnull=False)
+                          .order_by("-date_finished")
+                          .values_list("universal_item__id", flat=True)[:10])
+
+        # Map universal_item IDs to book IDs
+        book_ids_map = {
+            ui["universal_item__id"]: ui["id"] 
+            for ui in Book.objects.filter(universal_item__id__in=(readlist_ids + favourite_ids + recent_ids))
+            .values("id", "universal_item__id")
+        }
+
+        # Convert universal_item IDs to book IDs
+        readlist_book_ids = [book_ids_map.get(uid) for uid in readlist_ids if book_ids_map.get(uid)]
+        favourite_book_ids = [book_ids_map.get(uid) for uid in favourite_ids if book_ids_map.get(uid)]
+        recent_book_ids = [book_ids_map.get(uid) for uid in recent_ids if book_ids_map.get(uid)]
+
+        # Random samples
+        data_sets = {
+            "readlist": Book.objects.filter(id__in=random.sample(readlist_book_ids, min(5, len(readlist_book_ids)))) if readlist_book_ids else [],
+            "favourites": Book.objects.filter(id__in=favourite_book_ids[:5]) if favourite_book_ids else [],
+            "recent": Book.objects.filter(id__in=recent_book_ids) if recent_book_ids else [],
+        }
+
+        # If empty, provide fallback
+        if not any(data_sets.values()):
+            fallback = Book.objects.order_by("?")[:5]
+            data_sets["fallback"] = fallback
+
+        # Gather all book IDs we're returning
+        all_book_ids = [book.id for books in data_sets.values() for book in books]
+        userbook_map = {
+            ub.universal_item.id: ub
+            for ub in userbooks.filter(universal_item__id__in=[uid for uid, bid in book_ids_map.items() if bid in all_book_ids])
+        }
+
+        # Build response payload
+        result = {}
+        for key, books in data_sets.items():
+            result[key] = []
+            for book in books:
+                book_data = BookSimpleSerializer(book).data
+                ub = userbook_map.get(book.universal_item.id)
+                if ub:
+                    book_data["userbook"] = {
+                        "cover": ub.cover,
+                        "read": ub.read,
+                        "favourite": ub.favourite,
+                        "readlist": ub.readlist,
+                        "id": ub.id,
+                        "date_finished": ub.date_finished,
+                    }
+                else:
+                    book_data["userbook"] = None
+                result[key].append(book_data)
+
+        return Response(result)
+    
+    @action(detail=False, methods=["get"], permission_classes=[IsAuthenticated])
+    def list_books(self, request):
+        user = request.user
+        universal_item_ids = request.query_params.get("ids", "").split(",")
+        q = request.query_params.get("q", None)
+        
+        qs = Book.objects.filter(universal_item__id__in=universal_item_ids)
+        
+        if q:
+            qs = qs.filter(
+                Q(title__icontains=q)
+                | Q(alt_title__icontains=q)
+                | Q(creator_string__icontains=q)
+                | Q(alt_creator_name__icontains=q)
+            )
+        
+        books = qs.distinct()
+        
+        if not books:
+            return Response({"results": []}, status=200)
+        
+        userbooks = UserBook.objects.filter(
+            user=user,
+            universal_item__id__in=universal_item_ids
+        )
+        
+        userbook_map = {ub.universal_item.id: ub for ub in userbooks}
+
+        results = []
+        for book in books:
+            book_data = BookSimpleSerializer(book).data
+            ub = userbook_map.get(book.universal_item.id)
+            if ub:
+                book_data["userbook"] = {
+                    "cover": ub.cover,
+                    "read": ub.read,
+                    "favourite": ub.favourite,
+                    "readlist": ub.readlist,
+                    "id": ub.id,
+                    "date_finished": ub.date_finished,
+                }
+            else:
+                book_data["userbook"] = None
+            results.append(book_data)
+
+        return Response({"results": results})
+    
+    @action(detail=False, methods=["get"], permission_classes=[IsAuthenticated])
+    def period_books(self, request):
+        user = self.request.user
+        period = self.request.query_params.get("period", None)
+        q = self.request.query_params.get("g", None)
+        
+        qs = UserBook.objects.filter(user=user)
+        
+        if period:
+            qs = qs.filter(period__id__iexact=period)
+        
+        userbooks = qs.distinct()
+        
+        if not userbooks:
+            return Response({"results": []}, status=200)
+        
+        books = Book.objects.filter(
+            universal_item__id__in=userbooks.values_list("universal_item__id", flat=True)
+        )
+        
+        if q:
+            books = books.filter(
+                Q(title__icontains=q)
+                | Q(alt_title__icontains=q)
+                | Q(creator_string__icontains=q)
+                | Q(alt_creator_name__icontains=q)
+            )
+        
+        book_map = {
+            b.universal_item.id: b for b in books
+        }
+        
+        results = []
+        for ub in userbooks:
+            book = book_map.get(ub.universal_item.id)
+            if book:
+                book_data = BookSimpleSerializer(book).data
+                book_data["userbook"] = {
+                    "cover": ub.cover,
+                    "read": ub.read,
+                    "favourite": ub.favourite,
+                    "readlist": ub.readlist,
+                    "id": ub.id,
+                    "date_finished": ub.date_finished,
+                }
+                results.append(book_data)
+        
+        return Response({"results": results}, status=200)
+    
+    @action(detail=False, methods=["get"], permission_classes=[IsAuthenticated])
+    def search(self, request):
+        user = request.user
+        q = request.query_params.get("q", None)
+        genre = request.query_params.get("genre", None)
+        limit = int(request.query_params.get("limit", 20))
+        offset = int(request.query_params.get("offset", 0))
+        
+        # Build the book queryset with filters
+        qs = (
+            Book.objects
+            .select_related("creator", "date")
+            .order_by("title")
+        )
+        
+        if genre:
+            qs = qs.filter(Q(genre__icontains=genre))
+        if q:
+            qs = qs.filter(
+                Q(title__icontains=q)
+                | Q(alt_title__icontains=q)
+                | Q(creator_string__icontains=q)
+                | Q(alt_creator_name__icontains=q)
+            )
+            
+        books = qs.distinct()[offset:offset + limit]
+        
+        if not books:
+            return Response({"results": []}, status=200)
+        
+        userbooks = UserBook.objects.filter(
+            user=user,
+            universal_item__id__in=books.values_list("universal_item__id", flat=True)
+        )
+        
+        userbook_map = {
+            uf.universal_item.id: uf for uf in userbooks
+        }
+        
+        results = []
+        for book in books:
+            book_data = BookSimpleSerializer(book).data
+            ub = userbook_map.get(book.universal_item.id)
+            if ub:
+                book_data["userbook"] = {
+                    "cover": ub.cover,
+                    "read": ub.read,
+                    "favourite": ub.favourite,
+                    "readlist": ub.readlist,
+                    "id": ub.id,
+                    "date_finished": ub.date_finished,
+                }
+            else:
+                book_data["userbook"] = None
+            results.append(book_data)
+        
+        return Response({"results": results, "total": qs.count()})
+    
+    
+class BookSimpleViewSet(viewsets.ModelViewSet):
+    serializer_class = BookSimpleSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly]
+
+    def get_queryset(self):
+        qs = Book.objects.select_related('date').order_by('title')
+        
+        # Optional filtering (similar to BookViewSet)
+        q = self.request.query_params.get("q", None)
+        ol_id = self.request.query_params.get("ol_id", None)
+        limit = self.request.query_params.get("limit", None)
+
+        if ol_id:
+            qs = qs.filter(ol_id__iexact=ol_id)
+        if q:
+            qs = qs.filter(
+                Q(title__icontains=q) |
+                Q(alt_title__icontains=q) |
+                Q(creator_string__icontains=q) |
+                Q(alt_creator_name__icontains=q)
+            )
+        if limit:
+            qs = qs[:int(limit)]
+
+        return qs
 
 class FilmViewSet(viewsets.ModelViewSet):
     serializer_class = FilmSerializer
@@ -1014,7 +1311,7 @@ class UserBookViewSet(viewsets.ModelViewSet):
         qs = (
             UserBook.objects
             .select_related("user", "universal_item", "period")
-            .prefetch_related("cultures", "universal_item__cultures")
+            .prefetch_related("cultures")
             .order_by("-updated_at")
         )
         
@@ -1378,3 +1675,151 @@ def update_film_image(request, pk):
     
     film.save()
     return Response({"success": True, "poster": film.poster, "backdround_pic": film.background_pic})
+
+# BOOK IMPORT VIEW
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def import_books_view(request):
+    """
+    Import one or more books by OpenLibrary Work ID or by title search.
+
+    Input format:
+    {
+        "items": ["OL27448W", "Pride and Prejudice"]
+    }
+
+    - If a string looks like an OLID (e.g. 'OL12345W'), it fetches directly.
+    - Otherwise, it performs a title search and imports the top result.
+    """
+    items = request.data.get("items", [])
+    if not items or not all(isinstance(item, str) and item.strip() for item in items):
+        return Response(
+            {"error": "Items must be a non-empty list of non-empty strings."},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    results = []
+    for item in items:
+        item = item.strip()
+        try:
+            # Detect OpenLibrary work ID format ("OLxxxxW")
+            if item.upper().startswith("OL") and item[-1].upper() == "W":
+                # Direct import
+                book = create_book_from_openlibrary(item)
+                results.append({
+                    "input": item,
+                    "book": str(book),
+                    "created": True,
+                    "ol_id": item
+                })
+            else:
+                # Treat as title search
+                works = fetch_works_by_title(item)
+                if not works:
+                    results.append({
+                        "input": item,
+                        "error": "No results found for this title."
+                    })
+                    continue
+
+                # Take the top search result (could be improved later)
+                top_result = works[0]
+                ol_id = top_result["work_id"]
+
+                book = create_book_from_openlibrary(ol_id)
+                results.append({
+                    "input": item,
+                    "book": str(book),
+                    "ol_id": ol_id,
+                    "created": True
+                })
+
+        except ValidationError as ve:
+            results.append({"input": item, "error": str(ve.detail)})
+        except Exception as e:
+            results.append({"input": item, "error": str(e)})
+
+    # Summarize import result
+    created_count = len([r for r in results if r.get("created")])
+
+    return Response(
+        {"imported_count": created_count, "results": results},
+        status=status.HTTP_200_OK
+    )
+    
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def update_userbook_isbn(request):
+    """
+    Update an existing UserBook with ISBN metadata from OpenLibrary.
+    
+    Expected input:
+    {
+        "userbook_id": 42,
+        "isbn": "000712693X"
+    }
+    """
+    userbook_id = request.data.get("userbook_id")
+    isbn = request.data.get("isbn")
+
+    if not userbook_id or not isbn:
+        return Response(
+            {"error": "Both 'userbook_id' and 'isbn' are required."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    try:
+        userbook = UserBook.objects.get(id=userbook_id, user=request.user)
+    except UserBook.DoesNotExist:
+        return Response(
+            {"error": "UserBook not found or not owned by this user."},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    try:
+        updated_userbook = update_userbook_with_isbn(userbook, isbn)
+        serializer = UserBookSerializer(updated_userbook)
+        return Response(
+            {"updated": True, "userbook": serializer.data},
+            status=status.HTTP_200_OK
+        )
+
+    except ValidationError as ve:
+        return Response({"error": str(ve.detail)}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def search_books_view(request):
+    """
+    Search for books on OpenLibrary by title or author keyword.
+    
+    Example: GET /api/books/search/?q=canterbury+tales
+
+    Returns:
+    [
+        {
+            "title": "The Canterbury Tales",
+            "author": "Geoffrey Chaucer",
+            "first_publish_year": 1478,
+            "work_id": "OL531767W"
+        },
+        ...
+    ]
+    """
+    query = request.query_params.get("q")
+    if not query:
+        return Response(
+            {"error": "Missing query parameter 'q'."},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    results = search_openlibrary(query)
+    if not results:
+        return Response(
+            {"results": [], "message": "No results found."},
+            status=status.HTTP_200_OK
+        )
+
+    return Response({"results": results}, status=status.HTTP_200_OK)

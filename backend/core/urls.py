@@ -7,8 +7,8 @@ from .views import (
     MapBorderViewSet, MapPinViewSet, LanguageTableViewSet, UniversalItemViewSet,
     BookViewSet, FilmViewSet, MusicPieceViewSet, ArtworkViewSet,
     UserBookViewSet, UserFilmViewSet, UserMusicPieceViewSet, UserArtworkViewSet,
-    UserHistoryEventViewSet, RegisterView, CurrentUserView, FilmSimpleViewSet, ListViewSet,
-    import_films_view, update_film_image, fetch_tmdb_images
+    UserHistoryEventViewSet, RegisterView, CurrentUserView, FilmSimpleViewSet, ListViewSet, BookSimpleViewSet,
+    import_films_view, update_film_image, fetch_tmdb_images, import_books_view, update_userbook_isbn
 )
 
 router = DefaultRouter()
@@ -34,7 +34,8 @@ router.register(r'user-films', UserFilmViewSet, basename='userfilm')
 router.register(r'user-music-pieces', UserMusicPieceViewSet, basename='usermusicpiece')
 router.register(r'user-artworks', UserArtworkViewSet, basename='userartwork')
 router.register(r'user-history-events', UserHistoryEventViewSet, basename='userhistoryevent')
-router.register(r'simple-films', FilmSimpleViewSet, basename='simplefilm')
+router.register(r'simple-films', FilmSimpleViewSet, basename='simplefilm'),
+router.register(r'simple-books', BookSimpleViewSet, basename='simplebook')
 router.register(r'lists', ListViewSet, basename='list')
 
 urlpatterns = [
@@ -46,4 +47,6 @@ urlpatterns = [
     path('api/import-films/', import_films_view, name="import-films"),
     path('api/user-films/<int:pk>/update-image/', update_film_image, name="update_film_image"),
     path('api/films/<int:tmdb_id>/images/', fetch_tmdb_images, name="fetch_tmdb_images"),
+    path('api/import-books/', import_books_view, name="import-books"),
+    path('api/update-userbook', update_userbook_isbn, name="update-userbook"),
 ]

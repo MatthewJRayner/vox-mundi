@@ -268,6 +268,7 @@ class UniversalItemSimpleSerializer(serializers.ModelSerializer):
         fields = ['id']
 
 class BookSerializer(serializers.ModelSerializer):
+    universal_item = UniversalItemSimpleSerializer(read_only=True)
     creator_id = serializers.PrimaryKeyRelatedField(queryset=Person.objects.all(), source='creator', write_only=True, required=False)
     date = DateEstimateSerializer(read_only=True)
     date_id = serializers.PrimaryKeyRelatedField(queryset=DateEstimate.objects.all(), source='date', write_only=True, required=False)
@@ -275,12 +276,23 @@ class BookSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Book
-        fields = ['id', 'title', 'alt_title', 'creator_id', 'creator_string', 'alt_creator_name', 'date', 'date_id', 'external_links', 'tags', 'isbn', 'series', 'volume', 'cover', 'synopsis', 'industry_rating', 'genre', 'language', 'created_at', 'updated_at']
+        fields = ['id', 'title', 'universal_item', 'alt_title', 'creator_id', 'creator_string', 'alt_creator_name', 'date', 'date_id', 'external_links', 'tags', 'isbn', 'series', 'volume', 'cover', 'synopsis', 'industry_rating', 'genre', 'language', 'created_at', 'updated_at']
 
+    def validate_tmdb_id(self, value):
+        if value and Book.objects.filter(ol_id=value).exists():
+            raise serializers.ValidationError("Film with this OL ID already exists.")
+        return value
+    
     def validate_isbn(self, value):
         if value and Book.objects.filter(isbn=value).exists():
             raise serializers.ValidationError("Book with this ISBN already exists.")
         return value
+    
+class BookSimpleSerializer(serializers.ModelSerializer):
+    universal_item = UniversalItemSimpleSerializer(read_only=True)
+    class Meta:
+        model = Book
+        fields = ['id', 'universal_item', 'title', 'creator_string', 'date', 'cover']
 
 class FilmSerializer(serializers.ModelSerializer):
     universal_item = UniversalItemSimpleSerializer(read_only=True)
