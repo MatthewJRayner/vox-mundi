@@ -272,11 +272,10 @@ class BookSerializer(serializers.ModelSerializer):
     creator_id = serializers.PrimaryKeyRelatedField(queryset=Person.objects.all(), source='creator', write_only=True, required=False)
     date = DateEstimateSerializer(read_only=True)
     date_id = serializers.PrimaryKeyRelatedField(queryset=DateEstimate.objects.all(), source='date', write_only=True, required=False)
-    tags = TagListSerializerField(required=False)
 
     class Meta:
         model = Book
-        fields = ['id', 'title', 'universal_item', 'alt_title', 'creator_id', 'creator_string', 'alt_creator_name', 'date', 'date_id', 'external_links', 'tags', 'isbn', 'series', 'volume', 'cover', 'synopsis', 'industry_rating', 'genre', 'language', 'created_at', 'updated_at']
+        fields = ['id', 'title', 'universal_item', 'alt_title', 'creator_id', 'creator_string', 'alt_creator_name', 'date', 'date_id', 'external_links', 'series', 'volume', 'cover', 'synopsis', 'industry_rating', 'genre', 'languages', 'created_at', 'updated_at']
 
     def validate_tmdb_id(self, value):
         if value and Book.objects.filter(ol_id=value).exists():
@@ -371,13 +370,14 @@ class UserBookSerializer(serializers.ModelSerializer):
     universal_item_id = serializers.PrimaryKeyRelatedField(queryset=UniversalItem.objects.all(), source='universal_item', write_only=True, required=False)
     cultures = CultureSimpleSerializer(many=True, read_only=True)
     culture_ids = serializers.PrimaryKeyRelatedField(queryset=Culture.objects.all(), many=True, source='cultures', write_only=True, required=False)
+    period_id = serializers.PrimaryKeyRelatedField(queryset=Period.objects.all(), source='period', write_only=True, required=False)
 
     class Meta:
         model = UserBook
         fields = ['id', 'universal_item_id', 'cultures', 'culture_ids', 'rating', 'notes', 'visibility',
                   'page_count', 'translated', 'format', 'cover', 'publisher', 'edition', 'edition_read_year',
                   'date_started', 'date_finished', 'read_language',
-                  'owned', 'read', 'readlist', 'favourite', 'created_at', 'updated_at']
+                  'owned', 'read', 'readlist', 'favourite', 'created_at', 'updated_at', 'period_id']
 
     def validate_culture_ids(self, value):
         user = self.context['request'].user

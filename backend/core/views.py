@@ -532,9 +532,7 @@ class BookViewSet(viewsets.ModelViewSet):
             .select_related("creator", "date")
             .order_by("title")
         )
-        
-        if isbn:
-            qs = qs.filter(isbn__iexact=isbn)
+    
         if language:
             qs = qs.filter(language__icontains=language)
         if genre:
@@ -769,6 +767,7 @@ class BookViewSet(viewsets.ModelViewSet):
     def search(self, request):
         user = request.user
         q = request.query_params.get("q", None)
+        author = request.query_params.get("author", None)
         genre = request.query_params.get("genre", None)
         limit = int(request.query_params.get("limit", 20))
         offset = int(request.query_params.get("offset", 0))
@@ -782,6 +781,11 @@ class BookViewSet(viewsets.ModelViewSet):
         
         if genre:
             qs = qs.filter(Q(genre__icontains=genre))
+        if author:
+            qs = qs.filter(
+                Q(creator_string__icontains=author)
+                | Q(alt_creator_name__icontains=author)
+            )
         if q:
             qs = qs.filter(
                 Q(title__icontains=q)
@@ -1324,6 +1328,24 @@ class UserBookViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
+        
+    @action(detail=False, methods=["get"], url_path="by-book/(?P<book_id>[^/.]+)")
+    def by_book(self, request, book_id=None):
+        user = self.request.user
+        if not user.is_authenticated:
+            return Response({"detail": "Authentication required."}, status=401)
+
+        try:
+            universal_item = UniversalItem.objects.get(book__id=book_id)
+            user_book = UserBook.objects.filter(user=user, universal_item=universal_item).first()
+        except UniversalItem.DoesNotExist:
+            return Response({"detail": "Book not found."}, status=404)
+
+        if user_book:
+            serializer = self.get_serializer(user_book)
+            return Response(serializer.data)
+        else:
+            return Response({"detail": "No entry yet."}, status=404)
 
 class UserFilmViewSet(viewsets.ModelViewSet):
     serializer_class = UserFilmSerializer

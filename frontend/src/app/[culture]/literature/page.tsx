@@ -9,11 +9,11 @@ import { Book, UserBook, BookPageData } from "@/types/media/book";
 import { List } from "@/types/list";
 import SearchBar from "@/components/SearchBar";
 import BookCard from "@/components/literature/BookCard";
-// import BookImportModal from "@/components/literature/BookImportModal";
-// import BookPeriodGrid from "@/components/literature/BookPeriodGrid";
-// import RandomBookDisplay from "@/components/literature/RandomBookDisplay";
-// import BookListCreationModal from "@/components/literature/BookListCreationModal";
-// import BookListDisplayModal from "@/components/literature/BookListDisplayModal";
+import BookImportModal from "@/components/literature/BookImportModal";
+import BookPeriodGrid from "@/components/literature/BookPeriodGrid";
+import RandomBookDisplay from "@/components/literature/RandomBookDisplay";
+import BookListCreationModal from "@/components/literature/BookListCreationModal";
+import BookListDisplayModal from "@/components/literature/BookListDisplayModal";
 import { SVGPath } from "@/utils/path";
 import ReactMarkdown from "react-markdown";
 
@@ -147,7 +147,7 @@ export default function BookPage() {
         </button>
 
         {results.length > 0 && (
-          <div className="absolute top-[100%] mt-1 left-0 w-full md:w-1/3 bg-foreground/20 backdrop-blur-2xl rounded shadow-lg max-h-[300px] overflow-y-auto z-10">
+          <div className="absolute top-[100%] mt-1 left-0 w-full md:w-1/3 bg-background/20 backdrop-blur-xl rounded shadow-lg max-h-[300px] overflow-y-auto z-10">
             {results.map((book) => (
               <Link
                 key={book.id}
@@ -228,11 +228,11 @@ export default function BookPage() {
             )}
           </div>
           <div className="w-full max-h-[300px] md:w-1/4 mt-4 md:mt-0">
-            {/* <RandomBookDisplay /> */}
+            <RandomBookDisplay />
           </div>
         </div>
 
-        {/* <BookPeriodGrid periods={periods} culture={String(culture)} /> */}
+        <BookPeriodGrid periods={periods} culture={String(culture)} />
       </section>
 
       {/* Fallback / Featured sections */}
@@ -296,9 +296,13 @@ export default function BookPage() {
           </div>
         )}
 
-      {/* <BookImportModal
+      <BookImportModal
         isOpen={showImportModal}
         onClose={() => setShowImportModal(false)}
+        onImported={() => {
+          fetchData(); // refreshes books on import
+          setShowImportModal(false);
+        }}
       />
 
       <BookListDisplayModal
@@ -318,7 +322,7 @@ export default function BookPage() {
         onCreated={handleListCreated}
         initialList={editingList || undefined}
         currentCultureCode={culture}
-      /> */}
+      />
     </div>
   );
 }

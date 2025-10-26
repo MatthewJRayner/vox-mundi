@@ -412,7 +412,7 @@ class Book(AbstractMedia):
                 "cover": payload.get("cover"),
                 "synopsis": payload.get("synopsis"),
                 "genre": payload.get("genre", []),
-                "language": payload.get("language"),
+                "languages": payload.get("language"),
             },
         )
 

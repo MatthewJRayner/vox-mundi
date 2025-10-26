@@ -8,7 +8,7 @@ from .views import (
     BookViewSet, FilmViewSet, MusicPieceViewSet, ArtworkViewSet,
     UserBookViewSet, UserFilmViewSet, UserMusicPieceViewSet, UserArtworkViewSet,
     UserHistoryEventViewSet, RegisterView, CurrentUserView, FilmSimpleViewSet, ListViewSet, BookSimpleViewSet,
-    import_films_view, update_film_image, fetch_tmdb_images, import_books_view, update_userbook_isbn
+    import_films_view, update_film_image, fetch_tmdb_images, import_books_view, update_userbook_isbn, search_books_view
 )
 
 router = DefaultRouter()
@@ -48,5 +48,6 @@ urlpatterns = [
     path('api/user-films/<int:pk>/update-image/', update_film_image, name="update_film_image"),
     path('api/films/<int:tmdb_id>/images/', fetch_tmdb_images, name="fetch_tmdb_images"),
     path('api/import-books/', import_books_view, name="import-books"),
-    path('api/update-userbook', update_userbook_isbn, name="update-userbook"),
+    path('api/update-userbook/', update_userbook_isbn, name="update-userbook"),
+    path('api/search-books/', search_books_view, name="search-books")
 ]

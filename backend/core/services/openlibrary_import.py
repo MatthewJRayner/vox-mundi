@@ -62,7 +62,7 @@ def fetch_info_from_olid(ol_id: str, date: str = None):
         if author_response.ok:
             author = author_response.json()
             author_name = author.get("name", "")
-            alt_creator_name = ", ".join(author.get("personal_name", ""))
+            alt_creator_name = author.get("personal_name") if author.get("personal_name") != author_name else ""
 
     # Description handling (can be str or dict)
     desc = work.get("description", "")
@@ -91,7 +91,7 @@ def fetch_info_from_olid(ol_id: str, date: str = None):
         "genre": [s for s in work.get("subjects", []) if isinstance(s, str) and len(s) < 50 and "book" not in s.lower()],
         "synopsis": desc,
         "cover": cover,
-        "language": languages,
+        "languages": languages,
         "date": date or work.get("created", {}).get("value"),
     }
     
@@ -141,7 +141,7 @@ def fetch_book_by_isbn(isbn: str) -> dict:
         "publisher": ", ".join(data.get("publishers", [])),
         "page_count": data.get("number_of_pages"),
         "format": data.get("physical_format"),
-        "language": language,
+        "languages": language,
         "cover": cover,
         "publish_date": data.get("publish_date"),
     }
@@ -181,7 +181,7 @@ def search_openlibrary(query, limit=10):
     """
     try:
         response = requests.get(
-            OPENLIBRARY_SEARCH_URL,
+            OL_SEARCH_URL,
             params={"q": query, "limit": limit},
             timeout=10
         )

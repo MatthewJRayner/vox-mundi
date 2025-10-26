@@ -33,7 +33,7 @@ export default function ReviewModal({
           rows={6}
           value={review}
           onChange={(e) => setReview(e.target.value)}
-          placeholder="Share your thoughts about this film..."
+          placeholder="Share your thoughts..."
         />
         <div className="flex justify-end gap-2">
           <button

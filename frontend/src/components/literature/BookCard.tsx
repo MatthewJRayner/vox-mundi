@@ -13,7 +13,7 @@ export default function BookCard({ book }: BookProps) {
     const userBook = book.userbook ?? null
 
     return (
-        <Link href={`/${culture}/books/${book.id}`}>
+        <Link href={`/${culture}/literature/${book.id}`}>
             <div className="relative group w-full aspect-[2/3] rounded overflow-hidden shadow cursor-pointer h-fit">
                 {userBook?.cover ? (
                     <img 

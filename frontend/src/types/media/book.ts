@@ -1,6 +1,7 @@
 import { AbstractMedia } from "./abstract";
 import { AbstractUserTracking } from "./abstract";
 import { UniversalItem } from "../universal";
+import { Period } from "../culture";
 
 export interface Book extends AbstractMedia {
   isbn?: string;
@@ -10,7 +11,7 @@ export interface Book extends AbstractMedia {
   synopsis?: string;
   industry_rating?: number;
   genre?: string[];
-  language?: string;
+  languages?: string[];
   universal_item?: UniversalItem;
   ol_id?: string;
   userbook?: UserBook;
@@ -32,6 +33,8 @@ export interface UserBook extends AbstractUserTracking {
   read?: boolean;
   readlist?: boolean;
   favourite?: boolean;
+  isbn?: string;
+  period?: Period;
 }
 
 export interface BookPageData {
