@@ -1,34 +1,24 @@
 "use client";
 
-import { UserHistoryEvent } from "@/types/history";
+import { UserMusicComposer } from "@/types/media/music";
 import { useMemo, useState, useEffect, useRef } from "react";
 
 interface TimelineProps {
-  events: UserHistoryEvent[];
-  onEventClick: (event: UserHistoryEvent) => void;
-  onEventHover: (event: UserHistoryEvent | null) => void;
+  events: UserMusicComposer[];
+  onEventClick: (event: UserMusicComposer) => void;
+  onEventHover: (event: UserMusicComposer | null) => void;
 }
 
-export default function HistoryTimeline({
+export default function MusicTimeline({
   events,
   onEventClick,
   onEventHover,
 }: TimelineProps) {
   const sortedEvents = useMemo(() => {
     return [...events].sort((a, b) => {
-      const aDate = a.date?.date_known
-        ? new Date(a.date.date || "").getTime()
-        : a.date?.date_estimate_start
-        ? new Date(a.date.date_estimate_start).getTime()
-        : Infinity;
-
-      const bDate = b.date?.date_known
-        ? new Date(b.date.date || "").getTime()
-        : b.date?.date_estimate_start
-        ? new Date(b.date.date_estimate_start).getTime()
-        : Infinity;
-
-      return aDate - bDate;
+      const aYear = a.birth_year ?? Infinity;
+      const bYear = b.birth_year ?? Infinity;
+      return aYear - bYear;
     });
   }, [events]);
 
@@ -152,7 +142,7 @@ export default function HistoryTimeline({
                     : ""
                   : idx % 2 === 0
                   ? "left-1/6"
-                  : "left-1/9"
+                  : "right-1/9"
               } ${isMobile ? "opacity-50" : ""}`}
               onClick={() => !isMobile && onEventClick(event)}
               onMouseEnter={() => !isMobile && onEventHover(event)}

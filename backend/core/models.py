@@ -180,6 +180,7 @@ class PageContent(TimestampedModel):
     intro_text = models.TextField(blank=True, null=True)
     overview_text = models.TextField(blank=True, null=True)
     extra_text = models.TextField(blank=True, null=True)
+    lists = models.JSONField(default=list, blank=True, null=True)
 
     def __str__(self):
         return f"{self.category.display_name} Page ({self.culture.name})"
@@ -558,32 +559,25 @@ class UserFilm(AbstractUserTrackingModel):
         indexes = [models.Index(fields=['user', 'universal_item'], name='user_film_idx')]
 
 # ---- MUSIC PIECE ----
-class MusicPiece(AbstractMedia):
-    instrument = models.CharField(max_length=100, blank=True)
-    recording = models.URLField(blank=True, null=True)
-    sheet_music = models.URLField(blank=True, null=True)
-    musicbrainz_id = models.CharField(max_length=36, null=True, blank=True, unique=True)
-    universal_item = GenericRelation(UniversalItem, related_query_name="music")
-
-    class Meta:
-        verbose_name_plural = "Music Pieces"
-        indexes = [models.Index(fields=['musicbrainz_id'], name='music_musicbrainz_idx')]
-
 class UserMusicPiece(AbstractUserTrackingModel):
-    universal_item = models.ForeignKey(UniversalItem, on_delete=models.CASCADE, related_name="user_music_pieces")
+    title = models.CharField(max_length=200, blank=True, null=True)
+    artist = models.CharField(max_length=200, blank=True, null=True)
+    instrument = models.CharField(max_length=100, blank=True, null=True)
+    recording = models.URLField(blank=True, null=True)
+    sheet_music = models.JSONField(default=list, blank=True, null=True)
     learned = models.BooleanField(default=False)
+    release_year = models.IntegerField(blank=True, null=True)
     
     def __str__(self):
         culture_names = ", ".join(culture.name for culture in self.cultures.all())
-        return f"{self.universal_item.title} ({culture_names})"
+        return f"{self.title} ({culture_names})"
 
     class Meta:
         verbose_name_plural = "User Music Pieces"
-        indexes = [models.Index(fields=['user', 'universal_item'], name='user_music_idx')]
+        indexes = [models.Index(fields=['user'], name='user_music_idx')]
         
 class UserMusicArtist(AbstractUserTrackingModel):
     name = models.CharField(max_length=200)
-    person = models.ForeignKey(Person, on_delete=models.CASCADE, related_name="user_music_artists")
     bio = models.TextField(blank=True, null=True)
     photo = models.URLField(blank=True, null=True)
     genres = models.JSONField(default=list, blank=True, null=True)
@@ -598,43 +592,34 @@ class UserMusicArtist(AbstractUserTrackingModel):
 
     def __str__(self):
         culture_names = ", ".join(culture.name for culture in self.cultures.all())
-        return f"{self.person.full_name()} ({culture_names})"
+        return f"{self.name} ({culture_names})"
 
     class Meta:
         verbose_name_plural = "User Music Artists"
-        indexes = [models.Index(fields=['user', 'person'], name='user_music_artist_idx')]
-
-# ---- ARTWORK ----
-class Artwork(AbstractMedia):
-    group = models.CharField(max_length=100, choices=[("artwork", "Artwork"), ("artifact", "Artifact")])
-    location = models.CharField(max_length=200, blank=True, null=True)
-    associated_culture = models.CharField(max_length=200, blank=True, null=True)
+        indexes = [models.Index(fields=['user'], name='user_music_artist_idx')]
+        
+class UserMusicComposer(AbstractUserTrackingModel):
+    name = models.CharField(max_length=200)
+    alt_name = models.CharField(max_length=200, null=True, blank=True)
+    occupations = models.JSONField(default=list, blank=True, null=True)
+    birth_year = models.IntegerField(blank=True, null=True)
+    death_year = models.IntegerField(blank=True, null=True)
+    period = models.ForeignKey(Period, on_delete=models.SET_NULL, null=True, blank=True, related_name="composers")
     photo = models.URLField(blank=True, null=True)
-    model_3d = models.URLField(blank=True, null=True)
-    type = models.CharField(max_length=100, null=True, blank=True)
-    medium = models.CharField(max_length=100, null=True, blank=True)
-    owner = models.CharField(max_length=200, null=True, blank=True)
-    wikidata_id = models.CharField(max_length=20, null=True, blank=True, unique=True)
-    universal_item = GenericRelation(UniversalItem, related_query_name="artwork")
-
-    class Meta:
-        verbose_name_plural = "Artworks"
-        indexes = [models.Index(fields=['wikidata_id'], name='artwork_wikidata_idx')]
-
-class UserArtwork(AbstractUserTrackingModel):
-    universal_item = models.ForeignKey(UniversalItem, on_delete=models.CASCADE, related_name="user_artworks")
-    photo = models.URLField(blank=True, null=True)
-    themes = models.TextField(blank=True, null=True)
-    owned = models.BooleanField(default=False)
+    summary = models.TextField(blank=True, null=True)
+    famous = models.JSONField(default=list, blank=True, null=True)
+    themes = models.JSONField(default=list, null=True, blank=True)
+    instruments = models.JSONField(default=list, blank=True, null=True)
     
+
     def __str__(self):
         culture_names = ", ".join(culture.name for culture in self.cultures.all())
-        return f"{self.universal_item.title} ({culture_names})"
+        return f"{self.name} ({culture_names})"
 
     class Meta:
-        verbose_name_plural = "User Artworks"
-        indexes = [models.Index(fields=['user', 'universal_item'], name='user_artwork_idx')]
-        
+        verbose_name_plural = "User Composers"
+        indexes = [models.Index(fields=['user'], name='user_composer_idx')]
+
 # ---- LISTS ----
 class List(TimestampedModel):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="lists")

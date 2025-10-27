@@ -321,7 +321,7 @@ export default function BookDetailPage() {
                 {book.volume ? ` (#${book.volume})` : ""}
               </span>
             )}
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold font-playfair flex items-center flex-wrap">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold font-garamond flex items-center flex-wrap">
               {book.title ?? ""}
               {book.alt_title ? (
                 <span className="text-sm sm:text-base text-foreground/50 sm:ml-4 font-normal mb-2 sm:mb-0">

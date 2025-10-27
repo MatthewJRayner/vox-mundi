@@ -1,28 +1,33 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
-import { UserHistoryEvent } from "@/types/history";
+import { UserMusicComposer } from "@/types/media/music";
 import { Culture, Period } from "@/types/culture";
 import api from "@/lib/api";
 import { ParamValue } from "next/dist/server/request/params";
+import { SVGPath } from "@/utils/path";
 
-type HistoryEventFormProps = {
-  initialData?: UserHistoryEvent;
+type ComposerFormProps = {
+  initialData?: UserMusicComposer;
   onSuccess: () => void;
   currentCultureCode: ParamValue;
 };
 
-export default function HistoryEventForm({
+export default function ComposerForm({
   initialData,
   onSuccess,
   currentCultureCode,
-}: HistoryEventFormProps) {
-  const [formData, setFormData] = useState<UserHistoryEvent>(
+}: ComposerFormProps) {
+  const [formData, setFormData] = useState<UserMusicComposer>(
     initialData || {
-      title: "",
+      name: "",
       cultures: [],
       visibility: "private",
-      type: "",
+      period: undefined,
+      occupations: [],
+      famous: [],
+      themes: [],
+      instruments: [],
     }
   );
 
@@ -36,7 +41,7 @@ export default function HistoryEventForm({
     try {
       setLoading(true);
       const [periodRes, cultureRes] = await Promise.all([
-        api.get(`/periods/?code=${currentCultureCode}&key=history`),
+        api.get(`/periods/?code=${currentCultureCode}&key=music`),
         api.get(`/cultures/?code=${currentCultureCode}`),
       ]);
 
@@ -59,40 +64,21 @@ export default function HistoryEventForm({
     >
   ) => {
     const { name, value, type } = e.target;
-    const checked =
-      e.target instanceof HTMLInputElement ? e.target.checked : undefined;
-
     setFormData((prev) => ({
       ...prev,
       [name]:
-        type === "checkbox"
-          ? checked
-          : type === "number"
-          ? parseFloat(value)
+        type === "number"
+          ? value === ""
+            ? undefined
+            : parseInt(value)
           : value,
     }));
   };
 
-  const handleDateChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
-    const { name, value, type } = e.target;
-    const checked =
-      e.target instanceof HTMLInputElement ? e.target.checked : undefined;
-
-    setFormData((prev) => ({
-      ...prev,
-      date: {
-        ...prev.date,
-        [name]:
-          type === "checkbox"
-            ? checked
-            : type === "number"
-            ? parseFloat(value)
-            : value,
-      },
-    }));
-  };
+  const [occupationInput, setOccupationInput] = useState((formData.occupations || []).join(", "));
+  const [instrumentsInput, setInstrumentsInput] = useState((formData.instruments || []).join(", "));
+  const [famousInput, setFamousInput] = useState((formData.famous || []).join(", "));
+  const [themesInput, setThemesInput] = useState((formData.themes || []).join(", "));
 
   const toggleCulture = (culture: Culture) => {
     setFormData((prev) => {
@@ -111,20 +97,28 @@ export default function HistoryEventForm({
     try {
       const payload = {
         ...formData,
+        occupations: occupationInput
+            .split(",")
+            .map((o) => o.trim()),
+        instruments: instrumentsInput
+            .split(",")
+            .map((i) => i.trim())
+            .filter(Boolean),
+        famous: famousInput
+            .split(",")
+            .map((w) => w.trim())
+            .filter(Boolean),
+        themes: themesInput
+            .split(",")
+            .map((t) => t.trim())
+            .filter(Boolean),
         culture_ids: formData.cultures.map((c) => c.id),
         period_id: formData.period_id ?? null,
-        date: {
-          date_known: formData.date?.date_known,
-          date: formData.date?.date,
-          date_estimate_start: formData.date?.date_estimate_start,
-          date_estimate_end: formData.date?.date_estimate_end,
-          date_precision: formData.date?.date_precision,
-        },
       };
 
       const url = initialData
-        ? `/user-history-events/${initialData.id}/`
-        : `/user-history-events/`;
+        ? `/user-composers/${initialData.id}/`
+        : `/user-composers/`;
 
       if (initialData) {
         await api.put(url, payload);
@@ -149,33 +143,33 @@ export default function HistoryEventForm({
         <form onSubmit={handleSubmit} className="space-y-3">
           <input
             type="text"
-            name="title"
-            placeholder="Event Title"
-            value={formData.title || ""}
+            name="name"
+            placeholder="Composer Name"
+            value={formData.name || ""}
             onChange={handleChange}
             className="bg-extra shadow p-2 w-full rounded text-sm sm:text-base"
           />
           <input
             type="text"
-            name="alt_title"
-            placeholder="Original Language Title"
-            value={formData.alt_title || ""}
+            name="alt_name"
+            placeholder="Alternate Name"
+            value={formData.alt_name || ""}
             onChange={handleChange}
             className="bg-extra shadow p-2 w-full rounded text-sm sm:text-base"
           />
           <input
-            type="text"
-            name="type"
-            placeholder="Type"
-            value={formData.type || ""}
+            type="number"
+            name="birth_year"
+            placeholder="Birth Year"
+            value={formData.birth_year ?? ""}
             onChange={handleChange}
             className="bg-extra shadow p-2 w-full rounded text-sm sm:text-base"
           />
           <input
-            type="text"
-            name="location"
-            placeholder="Location"
-            value={formData.location || ""}
+            type="number"
+            name="death_year"
+            placeholder="Death Year (Optional)"
+            value={formData.death_year ?? ""}
             onChange={handleChange}
             className="bg-extra shadow p-2 w-full rounded text-sm sm:text-base"
           />
@@ -203,7 +197,20 @@ export default function HistoryEventForm({
                   "None selected"}
               </span>
               <span className="text-xs text-gray-500">
-                {showCultureSelect ? "▲" : "▼"}
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox={SVGPath.chevron.viewBox}
+                  fill="currentColor"
+                  className={`w-4 h-4 transition-transform ${
+                    showCultureSelect ? "rotate-180" : ""
+                  }`}
+                >
+                  <path
+                    fillRule="evenodd"
+                    d={SVGPath.chevron.path}
+                    clipRule="evenodd"
+                  />
+                </svg>
               </span>
             </div>
             {showCultureSelect && (
@@ -231,54 +238,38 @@ export default function HistoryEventForm({
               </div>
             )}
           </div>
-          <label className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              name="date_known"
-              checked={formData.date?.date_known || false}
-              onChange={handleDateChange}
-            />
-            <span>Date Known</span>
-          </label>
-          <div className="bg-extra flex shadow p-2 space-x-2">
-            <label>Date:</label>
-            <input
-              type="date"
-              name="date"
-              value={formData.date?.date || ""}
-              onChange={handleDateChange}
-              className=" w-full rounded text-sm sm:text-base"
-            />
-          </div>
           <input
-            type="number"
-            name="date_estimate_start"
-            placeholder="Estimated Start Year"
-            value={formData.date?.date_estimate_start || ""}
-            onChange={handleDateChange}
+            type="text"
+            name="occupations"
+            placeholder="Occupations (comma-separated)"
+            value={occupationInput}
+            onChange={(e) => setOccupationInput(e.target.value)}
             className="bg-extra shadow p-2 w-full rounded text-sm sm:text-base"
           />
           <input
-            type="number"
-            name="date_estimate_end"
-            placeholder="Estimated End Year (If Needed)"
-            value={formData.date?.date_estimate_end || ""}
-            onChange={handleDateChange}
+            type="text"
+            name="instruments"
+            placeholder="Instruments (comma-separated)"
+            value={instrumentsInput}
+            onChange={(e) => setInstrumentsInput(e.target.value)}
             className="bg-extra shadow p-2 w-full rounded text-sm sm:text-base"
           />
-          <select
-            name="date_precision"
-            value={formData.date?.date_precision || "unknown"}
-            onChange={handleDateChange}
+          <input
+            type="text"
+            name="famous"
+            placeholder="Famous Works (comma-separated)"
+            value={famousInput}
+            onChange={(e) => setFamousInput(e.target.value)}
             className="bg-extra shadow p-2 w-full rounded text-sm sm:text-base"
-          >
-            <option value="exact">Exact</option>
-            <option value="year">Year</option>
-            <option value="decade">Decade</option>
-            <option value="century">Century</option>
-            <option value="millennium">Millennium</option>
-            <option value="unknown">Unknown</option>
-          </select>
+          />
+          <input
+            type="text"
+            name="themes"
+            placeholder="Themes (comma-separated)"
+            value={themesInput}
+            onChange={(e) => setThemesInput(e.target.value)}
+            className="bg-extra shadow p-2 w-full rounded text-sm sm:text-base"
+          />
           <textarea
             name="summary"
             placeholder="Summary"
@@ -293,7 +284,7 @@ export default function HistoryEventForm({
               </p>
               <img
                 src={formData.photo}
-                alt="Cover preview"
+                alt="Composer photo preview"
                 className="object-contain rounded max-w-[200px] sm:max-w-[300px] md:max-w-[400px] lg:max-w-[500px]"
               />
             </div>
@@ -315,19 +306,16 @@ export default function HistoryEventForm({
             <option value="public">Public</option>
             <option value="private">Private</option>
           </select>
-          <textarea
-            name="notes"
-            placeholder="Notes"
-            value={formData.notes || ""}
-            onChange={handleChange}
-            className="bg-extra shadow p-2 w-full rounded text-sm sm:text-base"
-          />
           <button
             type="submit"
             disabled={loading}
             className="bg-foreground text-background w-full md:w-1/4 px-4 py-2 rounded text-sm sm:text-base hover:bg-extra-mid hover:scale-105 transition cursor-pointer"
           >
-            {loading ? "Saving..." : initialData ? "Update Event" : "Add Event"}
+            {loading
+              ? "Saving..."
+              : initialData
+              ? "Update Composer"
+              : "Add Composer"}
           </button>
         </form>
       </div>

@@ -9,7 +9,7 @@ import BookCard from "@/components/literature/BookCard";
 import SearchBar from "@/components/SearchBar";
 import BookListCreationModal from "@/components/literature/BookListCreationModal";
 import { SVGPath } from "@/utils/path";
-import ReactMarkdown from "react-markdown";
+import ExpandableSummary from "@/components/ExpandableSummary";
 import Link from "next/link";
 
 type SortOption = "date-desc" | "date-asc" | "rating-desc" | "rating-asc";
@@ -187,46 +187,15 @@ export default function BookListPage() {
           </div>
           <div className="w-full flex-col justify-between items-start md:space-x-4">
             {list.description ? (
-              <div className="relative w-full md:w-3/4">
-                <div
-                  className={`text-sm/[1.75] sm:text-base/[1.75] leading-relaxed text-foreground/50 transition-all duration-300 ${
-                    showFullDesc
-                      ? "max-h-none"
-                      : "max-h-52 md:max-h-42 overflow-hidden"
-                  }`}
-                >
-                  <ReactMarkdown>{list.description}</ReactMarkdown>
-                </div>
-                {!showFullDesc && list.description && list.description.length > 300 && (
-                  <div className="absolute bottom-5 left-0 w-full h-10 sm:h-12 bg-gradient-to-t from-background via-background/90 to-transparent pointer-events-none" />
-                )}
-                {list.description && list.description.length > 300 && (
-                  <button
-                    onClick={() => setShowFullDesc(!showFullDesc)}
-                    className="mt-1 cursor-pointer z-10 flex items-center font-lora sm:text-base"
-                    aria-expanded={showFullDesc}
-                  >
-                    <span className="mr-1 font-bold transition hover:text-main">
-                      {showFullDesc ? "Show Less" : "Show More"}
-                    </span>
-                    <span
-                      className={`transition-transform duration-300 ${
-                        showFullDesc ? "rotate-180" : "rotate-0"
-                      }`}
-                    >
-                      <svg
-                        viewBox={SVGPath.chevron.viewBox}
-                        className="size-5 fill-current cursor-pointer transition-transform"
-                      >
-                        <path d={SVGPath.chevron.path} />
-                      </svg>
-                    </span>
-                  </button>
-                )}
-              </div>
+              <ExpandableSummary
+                text={list.description}
+                maxHeight="max-h-52"
+                blurBottom="bottom-7"
+              />
             ) : (
               <p className="text-foreground/50">
-                There&apos;s currently no description saved for this list. Click the edit button to change this.
+                There&apos;s currently no description saved for this list. Click
+                the edit button to change this.
               </p>
             )}
             <div className="w-full md:w-1/3 mt-4 ">

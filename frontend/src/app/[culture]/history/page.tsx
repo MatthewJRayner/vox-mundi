@@ -12,6 +12,7 @@ import PeriodSelector from "@/components/PeriodSelector";
 import SearchBar from "@/components/SearchBar";
 import { formatYears } from "@/utils/formatters/formatYears";
 import ReactMarkdown from "react-markdown";
+import ExpandableSummary from "@/components/ExpandableSummary";
 import { formatDateEstimate } from "@/utils/formatters/formatDateEstimate";
 
 export default function HistoryPage() {
@@ -30,20 +31,23 @@ export default function HistoryPage() {
   const [loading, setLoading] = useState(true);
   const [showFullDesc, setShowFullDesc] = useState(false);
 
-  const handleSearch = useCallback(async (query: string) => {
-    if (!query.trim()) {
-      setResults(activeEvents);
-      return;
-    }
-    try {
-      const userHistoryRest = await api.get(
-        `/user-history-events/?code=${culture}&q=${encodeURIComponent(query)}`
-      );
-      setResults(userHistoryRest.data);
-    } catch (error) {
-      console.error("Error fetching search results:", error);
-    }
-  }, [culture, activeEvents]);
+  const handleSearch = useCallback(
+    async (query: string) => {
+      if (!query.trim()) {
+        setResults(activeEvents);
+        return;
+      }
+      try {
+        const userHistoryRest = await api.get(
+          `/user-history-events/?code=${culture}&q=${encodeURIComponent(query)}`
+        );
+        setResults(userHistoryRest.data);
+      } catch (error) {
+        console.error("Error fetching search results:", error);
+      }
+    },
+    [culture, activeEvents]
+  );
 
   const fetchData = useCallback(async () => {
     if (!culture) return;
@@ -118,42 +122,11 @@ export default function HistoryPage() {
             : ""}
         </h3>
         {activePeriod.desc && (
-          <div className="mb-8 relative">
-            <div
-              className={`text-sm/[1.75] sm:text-base/[1.75] leading-relaxed font-serif font-medium transition-all duration-300 ${
-                showFullDesc
-                  ? "max-h-none"
-                  : "max-h-52 md:max-h-42 overflow-hidden"
-              }`}
-            >
-              <ReactMarkdown>{activePeriod.desc}</ReactMarkdown>
-            </div>
-            {!showFullDesc && activePeriod.desc.length > 300 && (
-              <div className="absolute bottom-5 left-0 w-full h-10 sm:h-12 bg-gradient-to-t from-background via-background/90 to-transparent pointer-events-none" />
-            )}
-            {activePeriod.desc.length > 300 && (
-              <button
-                onClick={() => setShowFullDesc(!showFullDesc)}
-                className="mt-1 cursor-pointer z-10 flex items-center font-lora sm:text-base"
-              >
-                <span className="mr-1 font-bold transition hover:text-main">
-                  {showFullDesc ? "Show Less" : "Show More"}
-                </span>
-                <span
-                  className={`transition-transform duration-300 ${
-                    showFullDesc ? "rotate-180" : "rotate-0"
-                  }`}
-                >
-                  <svg
-                    viewBox={SVGPath.chevron.viewBox}
-                    className="size-5 fill-current cursor-pointer transition-transform"
-                  >
-                    <path d={SVGPath.chevron.path} />
-                  </svg>
-                </span>
-              </button>
-            )}
-          </div>
+          <ExpandableSummary
+            text={activePeriod.desc}
+            maxHeight="max-h-52 md:max-h-42"
+            blurBottom="bottom-5"
+          />
         )}
 
         <div className="w-full">
@@ -172,15 +145,21 @@ export default function HistoryPage() {
           />
         </div>
 
-        <div className="flex w-full items-center mt-8">
-          <div className="w-1/3">
+        <div className="flex flex-col md:flex-row w-full items-start mt-8">
+          <div className="w-full md:w-1/3">
             <HistoryTimeline
-              events={results.length > 0 ? results.filter((r) => r.period?.title == activePeriod?.title) : activeEvents}
+              events={
+                results.length > 0
+                  ? results.filter(
+                      (r) => r.period?.title == activePeriod?.title
+                    )
+                  : activeEvents
+              }
               onEventClick={(e) => setActiveEvent(e)}
               onEventHover={(e) => setHoveredEvent(e)}
             />
           </div>
-          <div className="w-2/3 md:ml-4">
+          <div className="w-full md:w-2/3 md:ml-4">
             <HistoryEventDisplay event={hoveredEvent || activeEvent} />
           </div>
         </div>

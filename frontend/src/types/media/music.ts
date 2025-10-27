@@ -1,19 +1,17 @@
-import { AbstractMedia } from "./abstract";
 import { AbstractUserTracking } from "./abstract";
-import { UniversalItem } from "../universal";
 import { Person } from "../person";
+import { Period } from "../culture";
 
-export interface MusicPiece extends AbstractMedia {
-    instrument?: string;
-    recording?: string;
-    sheet_music?: string;
-    musicbrainz_id?: string;
-    universal_item?: UniversalItem;
-}
 
 export interface UserMusicPiece extends AbstractUserTracking {
-    universal_item: UniversalItem;
-    learned?: boolean;
+    title?: string;
+    artist?: string;
+    instrument?: string;
+    recording?: string;
+    sheet_music?: string[];
+    learned: boolean;
+    culture_ids?: number[];
+    release_year?: number;
 }
 
 interface Album {
@@ -41,4 +39,21 @@ export interface UserMusicArtist extends AbstractUserTracking {
     favourite?: boolean;
     best_albums?: Album[];
     best_songs?: Song[];
+    culture_ids?: number[];
+}
+
+export interface UserMusicComposer extends AbstractUserTracking {
+    name: string;
+    alt_name?: string;
+    occupations?: string[];
+    birth_year?: number;
+    death_year?: number;
+    period?: Period;
+    photo?: string;
+    summary?: string;
+    famous?: string[];
+    themes?: string[];
+    instruments?: string[];
+    period_id?: number;
+    culture_ids?: number[];
 }

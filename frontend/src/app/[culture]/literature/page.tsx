@@ -16,6 +16,7 @@ import BookListCreationModal from "@/components/literature/BookListCreationModal
 import BookListDisplayModal from "@/components/literature/BookListDisplayModal";
 import { SVGPath } from "@/utils/path";
 import ReactMarkdown from "react-markdown";
+import ExpandableSummary from "@/components/ExpandableSummary";
 
 export default function BookPage() {
   const { culture } = useParams();
@@ -180,46 +181,11 @@ export default function BookPage() {
               Overview
             </h1>
             {pageContent?.overview_text ? (
-              <div className="relative">
-                <div
-                  className={`text-sm/[1.75] sm:text-base/[1.75] leading-relaxed font-medium transition-all duration-300 ${
-                    showFullDesc
-                      ? "max-h-none"
-                      : "max-h-52 md:max-h-52 overflow-hidden"
-                  }`}
-                >
-                  <ReactMarkdown>{pageContent.overview_text}</ReactMarkdown>
-                </div>
-                {!showFullDesc &&
-                  pageContent.overview_text &&
-                  pageContent.overview_text.length > 300 && (
-                    <div className="absolute bottom-7 left-0 w-full h-10 sm:h-12 bg-gradient-to-t from-background via-background/90 to-transparent pointer-events-none" />
-                  )}
-                {pageContent.overview_text &&
-                  pageContent.overview_text.length > 300 && (
-                    <button
-                      onClick={() => setShowFullDesc(!showFullDesc)}
-                      className="mt-1 cursor-pointer z-10 flex items-center font-lora sm:text-base"
-                      aria-expanded={showFullDesc}
-                    >
-                      <span className="mr-1 font-bold transition hover:text-main">
-                        {showFullDesc ? "Show Less" : "Show More"}
-                      </span>
-                      <span
-                        className={`transition-transform duration-300 ${
-                          showFullDesc ? "rotate-180" : "rotate-0"
-                        }`}
-                      >
-                        <svg
-                          viewBox={SVGPath.chevron.viewBox}
-                          className="size-5 fill-current cursor-pointer transition-transform"
-                        >
-                          <path d={SVGPath.chevron.path} />
-                        </svg>
-                      </span>
-                    </button>
-                  )}
-              </div>
+              <ExpandableSummary
+                text={pageContent?.overview_text}
+                maxHeight="max-h-52"
+                blurBottom="bottom-7"
+              />
             ) : (
               <p className="text-foreground/50">
                 {`There's currently no overview saved for this culture's book history or style.\n

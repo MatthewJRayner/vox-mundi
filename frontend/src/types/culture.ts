@@ -1,5 +1,9 @@
 import { User } from "./user";
 
+interface PageContentItem {
+    name: string;
+}
+
 export interface Culture {
     id?: number;
     user?: User;
@@ -36,6 +40,7 @@ export interface PageContent {
     intro_text?: string;
     overview_text?: string;
     extra_text?: string;
+    lists?: PageContentItem[];
 }
 
 export interface Profile {

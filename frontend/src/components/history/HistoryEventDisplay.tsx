@@ -1,7 +1,7 @@
 "use client";
 
 import { UserHistoryEvent } from "@/types/history";
-import ReactMarkdown from "react-markdown";
+import ExpandableSummary from "../ExpandableSummary";
 import { formatDateEstimate } from "@/utils/formatters/formatDateEstimate";
 
 interface EventDisplayProps {
@@ -9,7 +9,12 @@ interface EventDisplayProps {
 }
 
 export default function HistoryEventDisplay({ event }: EventDisplayProps) {
-  if (!event) return <div className="w-full p-6 text-foreground/50">Click an event to view details.</div>;
+  if (!event)
+    return (
+      <div className="w-full p-6 text-foreground/50">
+        Click an event to view details.
+      </div>
+    );
 
   return (
     <div className="w-full p-4 md:p-6 bg-extra text-foreground shadow-xl rounded">
@@ -35,16 +40,20 @@ export default function HistoryEventDisplay({ event }: EventDisplayProps) {
         </div>
       )}
       {event.summary && (
-        <div className="text-sm md:text-base">
-          <h3 className="font-bold mb-1 mt-2">Summary:</h3>
-          <ReactMarkdown>{event.summary}</ReactMarkdown>
-        </div>
+        <ExpandableSummary
+          text={event.summary}
+          maxHeight="max-h-36"
+          blurBottom="bottom-6"
+          extraBackground={true}
+        />
       )}
       {event.notes && (
-        <div className="mt-3 text-sm md:text-base text-muted-foreground">
-          <h3 className="font-bold mb-1">Notes:</h3>
-          <ReactMarkdown>{event.notes}</ReactMarkdown>
-        </div>
+        <ExpandableSummary
+          text={event.notes}
+          maxHeight="max-h-36"
+          blurBottom="bottom-6"
+          extraBackground={true}
+        />
       )}
     </div>
   );

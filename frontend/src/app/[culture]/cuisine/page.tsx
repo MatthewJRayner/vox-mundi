@@ -8,6 +8,7 @@ import { PageContent } from "@/types/culture";
 import { Recipe } from "@/types/media/recipe";
 import { SVGPath } from "@/utils/path";
 import ReactMarkdown from "react-markdown";
+import ExpandableSummary from "@/components/ExpandableSummary";
 import SearchBar from "@/components/SearchBar";
 import RecipeCard from "@/components/cuisine/RecipeCard";
 
@@ -33,7 +34,9 @@ export default function CuisinePage() {
         api.get(`/recipes/?code=${culture}`),
         api.get(`/page-contents/?code=${culture}&?key=cuisine`),
       ]);
-      const shuffledRecipes = [...recipeRes.data].sort(() => 0.5 - Math.random());
+      const shuffledRecipes = [...recipeRes.data].sort(
+        () => 0.5 - Math.random()
+      );
       setRecipes(shuffledRecipes);
       setFilteredRecipes(shuffledRecipes);
       setPageContent(contentRes.data[0]);
@@ -63,7 +66,9 @@ export default function CuisinePage() {
           (!query.trim() ||
             recipe.name.toLowerCase().includes(lowerQuery) ||
             recipe.course.toLowerCase().includes(lowerQuery) ||
-            recipe.ingredients?.some((i) => i.name.toLowerCase().includes(lowerQuery))) &&
+            recipe.ingredients?.some((i) =>
+              i.name.toLowerCase().includes(lowerQuery)
+            )) &&
           (!filterType || (recipe.types && recipe.types.includes(filterType)))
       );
       setFilteredRecipes(filtered);
@@ -76,11 +81,14 @@ export default function CuisinePage() {
     setFilterType(newFilterType);
     const filtered = recipes.filter(
       (recipe) =>
-        (!newFilterType || (recipe.types && recipe.types.includes(newFilterType))) &&
+        (!newFilterType ||
+          (recipe.types && recipe.types.includes(newFilterType))) &&
         (!query.trim() ||
           recipe.name.toLowerCase().includes(query.toLowerCase()) ||
           recipe.course.toLowerCase().includes(query.toLowerCase()) ||
-          recipe.ingredients?.some((i) => i.name.toLowerCase().includes(query.toLowerCase())))
+          recipe.ingredients?.some((i) =>
+            i.name.toLowerCase().includes(query.toLowerCase())
+          ))
     );
     setFilteredRecipes(filtered);
   };
@@ -92,7 +100,9 @@ export default function CuisinePage() {
     if (hours < 11) course = "Breakfast";
     else if (hours < 16) course = "Lunch";
 
-    const courseRecipes = filteredRecipes.filter((recipe) => recipe.course.toLowerCase() === course);
+    const courseRecipes = filteredRecipes.filter(
+      (recipe) => recipe.course.toLowerCase() === course
+    );
     if (courseRecipes.length === 0) return null;
     return courseRecipes[Math.floor(Math.random() * courseRecipes.length)];
   }, [filteredRecipes]);
@@ -141,58 +151,27 @@ export default function CuisinePage() {
         <div className="flex flex-col space-y-4 w-full md:w-3/4">
           <div className="flex flex-col h-full justify-between">
             <div className="flex flex-col">
-              <h1 className="font-lora text-lg md:text-2xl font-bold text-main">Overview</h1>
+              <h1 className="font-lora text-lg md:text-2xl font-bold text-main">
+                Overview
+              </h1>
               {pageContent?.overview_text ? (
-                <div className="mb-8 relative">
-                  <div
-                    className={`text-sm/[1.75] sm:text-base/[1.75] leading-relaxed font-medium transition-all duration-300 ${
-                      showFullDesc
-                        ? "max-h-none"
-                        : "max-h-52 md:max-h-42 overflow-hidden"
-                    }`}
-                  >
-                    <ReactMarkdown>{pageContent.overview_text}</ReactMarkdown>
-                  </div>
-                  {!showFullDesc &&
-                    pageContent.overview_text &&
-                    pageContent.overview_text.length > 300 && (
-                      <div className="absolute bottom-5 left-0 w-full h-10 sm:h-12 bg-gradient-to-t from-background via-background/90 to-transparent pointer-events-none" />
-                    )}
-                  {pageContent.overview_text &&
-                    pageContent.overview_text.length > 300 && (
-                      <button
-                        onClick={() => setShowFullDesc(!showFullDesc)}
-                        className="mt-1 cursor-pointer z-10 flex items-center font-lora sm:text-base"
-                        aria-expanded={showFullDesc}
-                      >
-                        <span className="mr-1 font-bold transition hover:text-main">
-                          {showFullDesc ? "Show Less" : "Show More"}
-                        </span>
-                        <span
-                          className={`transition-transform duration-300 ${
-                            showFullDesc ? "rotate-180" : "rotate-0"
-                          }`}
-                        >
-                          <svg
-                            viewBox={SVGPath.chevron.viewBox}
-                            className="size-5 fill-current cursor-pointer transition-transform"
-                          >
-                            <path d={SVGPath.chevron.path} />
-                          </svg>
-                        </span>
-                      </button>
-                    )}
-                </div>
+                <ExpandableSummary
+                  text={pageContent?.overview_text}
+                  maxHeight="max-h-52"
+                  blurBottom="bottom-7"
+                />
               ) : (
                 <p className="text-foreground/50">
-                  There&apos;s currently no overview saved for this cuisine, please
-                  edit the page to add your own personal summary of the
+                  There&apos;s currently no overview saved for this cuisine,
+                  please edit the page to add your own personal summary of the
                   cuisine&apos;s history and style.
                 </p>
               )}
             </div>
             <div className="flex flex-col mt-4 md:mt-2">
-              <h1 className="font-lora text-lg md:text-2xl font-bold text-main">Types</h1>
+              <h1 className="font-lora text-lg md:text-2xl font-bold text-main">
+                Types
+              </h1>
               <div className="flex flex-wrap gap-2 mt-2">
                 {allTypes.map((type) => (
                   <button
@@ -272,12 +251,16 @@ export default function CuisinePage() {
               </h1>
             </>
           ) : (
-            <p className="text-foreground/50">No {getRandomRecipeByCourse()?.course || "recipes"} available</p>
+            <p className="text-foreground/50">
+              No {getRandomRecipeByCourse()?.course || "recipes"} available
+            </p>
           )}
         </div>
       </section>
       <section className="flex flex-col space-y-4">
-        <h1 className="font-lora text-lg md:text-2xl font-bold text-main">Featured Recipes</h1>
+        <h1 className="font-lora text-lg md:text-2xl font-bold text-main">
+          Featured Recipes
+        </h1>
         {getRandomFiveRecipes.length > 0 ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 md:gap-4">
             {getRandomFiveRecipes.map((recipe) => (
@@ -285,7 +268,9 @@ export default function CuisinePage() {
             ))}
           </div>
         ) : (
-          <p className="text-foreground/50">No recipes match the current filters.</p>
+          <p className="text-foreground/50">
+            No recipes match the current filters.
+          </p>
         )}
       </section>
     </main>
