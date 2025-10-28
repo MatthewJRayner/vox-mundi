@@ -159,5 +159,6 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CONFIG = {
     'TMDB_KEY': os.getenv('TMDB_KEY'),
     'TMDB_READ_TOKEN': os.getenv('TMDB_READ_TOKEN'),
-    'GOOGLE_BOOKS_API_KEY': os.getenv('GOOGLE_BOOKS_API_KEY'),
+    'GOOGLE_SEARCH_API_KEY': os.getenv('GOOGLE_SEARCH_API_KEY'),
+    'GOOGLE_SEARCH_ID': os.getenv('GOOGLE_SEARCH_ID'),
 }

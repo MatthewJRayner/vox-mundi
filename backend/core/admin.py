@@ -2,7 +2,7 @@ from django.contrib import admin
 from .models import (
     Profile, Culture, Category, Period, PageContent, Recipe, LangLesson, CalendarDate,
     Person, MapBorder, MapPin, LanguageTable, UniversalItem, Book, Film, UserMusicArtist,
-    UserBook, UserFilm, UserMusicPiece, UserHistoryEvent, UserMusicComposer, List
+    UserBook, UserFilm, UserMusicPiece, UserHistoryEvent, UserMusicComposer, UserComposerSearch, List
 )
 
 # Register your models here.
@@ -84,3 +84,7 @@ class UserMusicPieceAdmin(admin.ModelAdmin):
 @admin.register(UserMusicArtist)
 class UserMusicArtistAdmin(admin.ModelAdmin):
     list_display = ('name', 'user')
+    
+@admin.register(UserComposerSearch)
+class UserComposerSearchAdMin(admin.ModelAdmin):
+    list_display = ('user', 'culture', 'composer_list', 'saved_location')

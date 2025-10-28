@@ -251,6 +251,7 @@ class CalendarDate(AbstractUserTrackingModel):
     class Meta:
         verbose_name_plural = "Calendar Dates"
         indexes = [models.Index(fields=['user'])]
+        unique_together = [("holiday_name", "calendar_date")]
              
 class UserHistoryEvent(AbstractUserTrackingModel):
     title = models.CharField(max_length=200)
@@ -619,6 +620,17 @@ class UserMusicComposer(AbstractUserTrackingModel):
     class Meta:
         verbose_name_plural = "User Composers"
         indexes = [models.Index(fields=['user'], name='user_composer_idx')]
+        
+class UserComposerSearch(TimestampedModel):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    culture = models.ForeignKey("Culture", on_delete=models.CASCADE)
+    composer_list = models.JSONField(default=list, null=True, blank=True)
+    saved_location = models.JSONField(default=dict, blank=True, null=True)
+    
+    class Meta:
+        verbose_name_plural = "User Composer Searches"
+        indexes = [models.Index(fields=["user", "culture"], name="user_composer_search_idx")]
+        unique_together = [("user", "culture")]
 
 # ---- LISTS ----
 class List(TimestampedModel):

@@ -9,6 +9,7 @@ from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.exceptions import ValidationError
 from core.services.tmdb_import import import_films_from_list
 from core.services.openlibrary_import import create_book_from_openlibrary, fetch_works_by_title, search_openlibrary, update_userbook_with_isbn
+from core.services.composer_search import search_many_composers
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.db.models import Q, Avg, Count
@@ -16,7 +17,7 @@ from django.shortcuts import get_object_or_404
 from .models import (
     Profile, Culture, Category, Period, PageContent, Recipe, LangLesson,
     CalendarDate, Person, MapBorder, MapPin, LanguageTable, UniversalItem,
-    Book, Film, UserBook, UserFilm, UserMusicComposer,
+    Book, Film, UserBook, UserFilm, UserMusicComposer, UserComposerSearch,
     UserMusicPiece, UserMusicArtist, UserHistoryEvent, Visibility, List
 )
 from .serializers import (
@@ -24,7 +25,7 @@ from .serializers import (
     PageContentSerializer, RecipeSerializer, LangLessonSerializer, CalendarDateSerializer,
     PersonSerializer, MapBorderSerializer, MapPinSerializer, LanguageTableSerializer,
     UniversalItemSerializer, BookSerializer, FilmSerializer,
-    UserBookSerializer, UserFilmSerializer, UserMusicComposerSerializer,
+    UserBookSerializer, UserFilmSerializer, UserMusicComposerSerializer, UserComposerSearchSerializer,
     UserMusicPieceSerializer, UserMusicArtistSerializer, UserHistoryEventSerializer, RegisterSerializer, UserSerializer, ListSerializer,
     FilmSimpleSerializer, BookSimpleSerializer
 )
@@ -1518,6 +1519,66 @@ class UserMusicComposerViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
         
+class UserComposerSearchViewSet(viewsets.ModelViewSet):
+    serializer_class = UserComposerSearchSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get_queryset(self):
+        user = self.request.user
+        code = self.request.query_params.get("code", None)
+        
+        qs = UserComposerSearch.objects.filter(user=user)
+        
+        if code:
+            qs = qs.filter(culture__code=code)
+            
+        return qs
+            
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+        
+class ComposerSearchView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        """Search upcoming concerts for the user's saved composers."""
+        # ------------------------------------------------------------------
+        # 1. Get the user's composer list
+        # ------------------------------------------------------------------
+        try:
+            user_search = UserComposerSearch.objects.get(user=request.user)
+            composers = user_search.composer_list or []
+        except UserComposerSearch.DoesNotExist:
+            composers = []
+
+        if not composers:
+            return Response(
+                {"detail": "No composers set for this user."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # ------------------------------------------------------------------
+        # 2. Run the (now map-free) search
+        # ------------------------------------------------------------------
+        results = search_many_composers(composers)
+
+        return Response({"results": results})
+
+    def get(self, request):
+        """Return the saved composer list (and location if you ever need it)."""
+        try:
+            user_search = UserComposerSearch.objects.get(user=request.user)
+        except UserComposerSearch.DoesNotExist:
+            return Response(
+                {"detail": "No composer search found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        return Response({
+            "composer_list": user_search.composer_list,
+            "saved_location": user_search.saved_location,   # kept for future use
+        })
+        
 class ListViewSet(viewsets.ModelViewSet):
     serializer_class = ListSerializer
     permission_classes = [IsAuthenticatedOrReadOnly, IsOwnerOrPublic]
@@ -1790,3 +1851,5 @@ def search_books_view(request):
         )
 
     return Response({"results": results}, status=status.HTTP_200_OK)
+
+# MUSIC API VIEWS

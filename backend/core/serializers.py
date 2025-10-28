@@ -6,7 +6,7 @@ from taggit.serializers import TagListSerializerField
 from .models import (
     Profile, Culture, Category, Period, PageContent, Recipe, LangLesson,
     CalendarDate, Person, MapBorder, MapPin, LanguageTable, UniversalItem,
-    Book, Film, UserBook, UserFilm, UserMusicComposer,
+    Book, Film, UserBook, UserFilm, UserMusicComposer, UserComposerSearch,
     UserMusicPiece, UserMusicArtist, UserHistoryEvent, DateEstimate, Visibility, List
 )
 
@@ -46,6 +46,9 @@ class CultureSerializer(serializers.ModelSerializer):
         fields = ['id', 'user', 'name', 'code', 'colour', 'picture', 'created_at', 'updated_at', 'shared_group_key', 'visibility']
         
     def create(self, validated_data):
+        request = self.context['request']
+        validated_data['user'] = request.user
+        
         culture = super().create(validated_data)
         
         default_category = ["Literature", "Film", "Music", "Cuisine", "History", "Calendar"]
@@ -63,6 +66,13 @@ class CultureSerializer(serializers.ModelSerializer):
                 culture=culture,
                 category=Category.objects.get(culture=culture, key=cat.lower())
             ) for cat in default_category
+        ])
+        
+        UserComposerSearch.objects.bulk_create([
+            UserComposerSearch(
+                user=request.user,
+                culture=culture
+            )
         ])
         
         return culture
@@ -554,6 +564,14 @@ class UserMusicComposerSerializer(serializers.ModelSerializer):
             instance.cultures.set(cultures)
         instance.save()
         return instance
+    
+class UserComposerSearchSerializer(serializers.ModelSerializer):
+    user = UserSerializer(read_only=True)
+    culture = CultureSimpleSerializer(read_only=True)
+    
+    class Meta:
+        model = UserComposerSearch
+        fields = ['id', 'user', 'culture', 'saved_location', 'composer_list']
     
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=True, validators=[validate_password])

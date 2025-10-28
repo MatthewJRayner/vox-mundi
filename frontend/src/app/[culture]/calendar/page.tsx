@@ -13,15 +13,18 @@ import { CalendarSystem } from "@/components/calendar/CalendarAdapter";
 
 export default function CalendarPage() {
   const [calendarDates, setCalendarDates] = useState<CalendarDate[]>([]);
-  const [selectedDate, setSelectedDate] = useState<dayjs.Dayjs | undefined>(undefined);
+  const [selectedDate, setSelectedDate] = useState<dayjs.Dayjs | undefined>(
+    undefined
+  );
   const [showModal, setShowModal] = useState(false);
   const [calendarType, setCalendarType] = useState<CalendarSystem>("gregorian"); // ✅ Track active system
+  const [showAll, setShowAll] = useState(true);
   const { culture } = useParams();
 
   // --- Fetch events ---
   const fetchCalendarDates = async () => {
     try {
-      const res = await api.get(`/calendar-dates/?code=${culture}`);
+      const res = await api.get(`/calendar-dates/`);
       setCalendarDates(res.data);
     } catch (err) {
       console.error("Error loading calendar dates:", err);
@@ -44,6 +47,8 @@ export default function CalendarPage() {
     fetchCalendarDates(); // refresh events in case of new additions
   };
 
+  const filteredDates = showAll ? calendarDates.filter((date) => date.cultures.some((cult) => cult.code === culture?.toLocaleString() || "")) : calendarDates
+
   return (
     <main className="min-h-screen p-4 flex flex-col items-center">
       {/* --- Page Header --- */}
@@ -57,12 +62,19 @@ export default function CalendarPage() {
             <path d={SVGPath.edit.path} />
           </svg>
         </Link>
+        <button
+          onClick={() => setShowAll(!showAll)}
+          className="bg-extra px-2 py-1 rounded-md shadow-md hover:shadow-lg cursor-pointer hover:bg-extra/80"
+          title="Toggle Dates filter"
+        >
+          {showAll ? "Specific" : "All"}
+        </button>
       </div>
 
       {/* --- Calendar Grid --- */}
       <CalendarDisplay
         culture={culture?.toString() || ""}
-        events={calendarDates}
+        events={filteredDates}
         onDateClick={handleDateClick}
       />
 

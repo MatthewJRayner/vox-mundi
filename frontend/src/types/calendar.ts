@@ -1,5 +1,6 @@
 import { AbstractUserTracking } from "./media/abstract";
 import { Person } from "./person";
+import { Culture } from "./culture";
 
 export interface CalendarDate extends AbstractUserTracking {
     holiday_name: string;
@@ -12,4 +13,5 @@ export interface CalendarDate extends AbstractUserTracking {
     isAnnual: boolean;
     type?: string;
     reference_system?: "gregorian" | "egyptian" | "islamic";
+    cultures: Culture[];
 }

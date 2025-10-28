@@ -1,6 +1,8 @@
 import { AbstractUserTracking } from "./abstract";
 import { Person } from "../person";
 import { Period } from "../culture";
+import { User } from "../user"; 
+import { Culture } from "../culture";
 
 
 export interface UserMusicPiece extends AbstractUserTracking {
@@ -56,4 +58,17 @@ export interface UserMusicComposer extends AbstractUserTracking {
     instruments?: string[];
     period_id?: number;
     culture_ids?: number[];
+}
+
+interface SavedLocation {
+    lat: number;
+    lng: number;
+}
+
+export interface UserComposerSearch {
+    id?: number;
+    user: User;
+    culture: Culture;
+    composer_list: string[];
+    saved_location: SavedLocation;
 }

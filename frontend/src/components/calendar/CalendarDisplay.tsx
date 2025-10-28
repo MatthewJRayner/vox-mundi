@@ -181,8 +181,6 @@ export default function CalendarDisplay({
             aria-label="Select calendar system"
           >
             <option value="gregorian">Gregorian</option>
-            <option value="egyptian">Egyptian</option>
-            <option value="islamic">Islamic</option>
           </select>
         </div>
       </div>

@@ -5,10 +5,10 @@ from .views import (
     ProfileViewSet, CultureViewSet, CategoryViewSet, PeriodViewSet, PageContentViewSet,
     RecipeViewSet, LangLessonViewSet, CalendarDateViewSet, PersonViewSet,
     MapBorderViewSet, MapPinViewSet, LanguageTableViewSet, UniversalItemViewSet,
-    BookViewSet, FilmViewSet, UserMusicComposerViewSet,          
+    BookViewSet, FilmViewSet, UserMusicComposerViewSet, UserComposerSearchViewSet,        
     UserBookViewSet, UserFilmViewSet, UserMusicPieceViewSet, UserMusicArtistViewSet,
     UserHistoryEventViewSet, RegisterView, CurrentUserView, FilmSimpleViewSet, ListViewSet, BookSimpleViewSet,
-    import_films_view, update_film_image, fetch_tmdb_images, import_books_view, update_userbook_isbn, search_books_view
+    import_films_view, update_film_image, fetch_tmdb_images, import_books_view, update_userbook_isbn, search_books_view, ComposerSearchView
 )
 
 router = DefaultRouter()
@@ -31,6 +31,7 @@ router.register(r'user-books', UserBookViewSet, basename='userbook')
 router.register(r'user-films', UserFilmViewSet, basename='userfilm')
 router.register(r'user-music-pieces', UserMusicPieceViewSet, basename='usermusicpiece')
 router.register(r'user-composers', UserMusicComposerViewSet, basename='usercomposers')
+router.register(r'user-composer-search', UserComposerSearchViewSet, basename='usercomposersearch')
 router.register(r'user-artists', UserMusicArtistViewSet, basename="userartists")
 router.register(r'user-history-events', UserHistoryEventViewSet, basename='userhistoryevent')
 router.register(r'simple-films', FilmSimpleViewSet, basename='simplefilm'),
@@ -48,5 +49,6 @@ urlpatterns = [
     path('api/films/<int:tmdb_id>/images/', fetch_tmdb_images, name="fetch_tmdb_images"),
     path('api/import-books/', import_books_view, name="import-books"),
     path('api/update-userbook/', update_userbook_isbn, name="update-userbook"),
-    path('api/search-books/', search_books_view, name="search-books")
+    path('api/search-books/', search_books_view, name="search-books"),
+    path('api/composer-search/', ComposerSearchView.as_view(), name="search-composers")
 ]
