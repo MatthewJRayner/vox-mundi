@@ -1,7 +1,7 @@
 from django.contrib import admin
 from .models import (
     Profile, Culture, Category, Period, PageContent, Recipe, LangLesson, CalendarDate,
-    Person, MapBorder, MapPin, LanguageTable, UniversalItem, Book, Film, UserMusicArtist,
+    Person, UserMapPreferences, MapPin, LanguageTable, UniversalItem, Book, Film, UserMusicArtist,
     UserBook, UserFilm, UserMusicPiece, UserHistoryEvent, UserMusicComposer, UserComposerSearch, List
 )
 
@@ -88,3 +88,11 @@ class UserMusicArtistAdmin(admin.ModelAdmin):
 @admin.register(UserComposerSearch)
 class UserComposerSearchAdMin(admin.ModelAdmin):
     list_display = ('user', 'culture', 'composer_list', 'saved_location')
+    
+@admin.register(MapPin)
+class MapPinAdmin(admin.ModelAdmin):
+    list_display = ('user', 'loc', 'title', 'type', 'period__title')
+
+@admin.register(UserMapPreferences)
+class UserMapPreferencesAdmin(admin.ModelAdmin):
+    list_display = ('user', 'culture', 'zoom', 'center')

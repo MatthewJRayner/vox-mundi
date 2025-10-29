@@ -5,7 +5,7 @@ from django.contrib.contenttypes.models import ContentType
 from taggit.serializers import TagListSerializerField
 from .models import (
     Profile, Culture, Category, Period, PageContent, Recipe, LangLesson,
-    CalendarDate, Person, MapBorder, MapPin, LanguageTable, UniversalItem,
+    CalendarDate, Person, UserMapPreferences, MapPin, LanguageTable, UniversalItem,
     Book, Film, UserBook, UserFilm, UserMusicComposer, UserComposerSearch,
     UserMusicPiece, UserMusicArtist, UserHistoryEvent, DateEstimate, Visibility, List
 )
@@ -70,6 +70,13 @@ class CultureSerializer(serializers.ModelSerializer):
         
         UserComposerSearch.objects.bulk_create([
             UserComposerSearch(
+                user=request.user,
+                culture=culture
+            )
+        ])
+        
+        UserMapPreferences.objects.bulk_create([
+            UserMapPreferences(
                 user=request.user,
                 culture=culture
             )
@@ -232,33 +239,64 @@ class CalendarDateSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
 
-class MapBorderSerializer(serializers.ModelSerializer):
-    culture_id = serializers.PrimaryKeyRelatedField(queryset=Culture.objects.all(), source='culture', write_only=True, required=False)
-    period_id = serializers.PrimaryKeyRelatedField(queryset=Period.objects.all(), source='period', write_only=True, required=False)
+class UserMapPreferencesSerializer(serializers.ModelSerializer):
+    culture = CultureSimpleSerializer(read_only=True)
+    user = UserSerializer(read_only=True)
 
     class Meta:
-        model = MapBorder
-        fields = ['id', 'culture_id', 'period_id', 'borders', 'created_at', 'updated_at']
+        model = UserMapPreferences
+        fields = ['id', 'user', 'culture', 'center', 'zoom', 'created_at', 'updated_at']
 
 class MapPinSerializer(serializers.ModelSerializer):
     date = DateEstimateSerializer(read_only=True)
     date_id = serializers.PrimaryKeyRelatedField(queryset=DateEstimate.objects.all(), source='date', write_only=True, required=False)
-    culture_id = serializers.PrimaryKeyRelatedField(queryset=Culture.objects.all(), source='culture', write_only=True, required=False)
+    culture_ids = serializers.PrimaryKeyRelatedField(queryset=Culture.objects.all(), many=True, source='cultures', write_only=True, required=False)
     period_id = serializers.PrimaryKeyRelatedField(queryset=Period.objects.all(), source='period', write_only=True, required=False)
+    cultures = CultureSimpleSerializer(read_only=True, many=True)
+    period = PeriodSimpleSerializer(read_only=True)
 
     class Meta:
         model = MapPin
-        fields = ['id', 'culture_id', 'period_id', 'date', 'date_id', 'type', 'loc', 'external_links', 'created_at', 'updated_at', 'title', 'photo', 'location', 'happened', 'significance']
+        fields = ['id', 'cultures', 'culture_ids', 'period', 'period_id', 'date', 'date_id', 'type', 'loc', 'external_links', 'created_at', 'updated_at', 'title', 'photo', 'location', 'happened', 'significance']
     
-    def validate_loc(self, value): 
-        if not isinstance(value, dict): 
-            raise serializers.ValidationError("loc must be a GeoJSON object") 
-        if value.get("type") != "Point": 
-            raise serializers.ValidationError("loc.type must be 'Point'") 
-        coords = value.get("coordinates") 
-        if not (isinstance(coords, (list, tuple)) and len(coords) == 2): 
-            raise serializers.ValidationError("loc.coordinates must be [lng, lat]") 
+    def validate_culture_ids(self, value):
+        user = self.context['request'].user
+        for culture in value:
+            if culture.user != user:
+                raise serializers.ValidationError("All cultures must belong to the authenticated user.")
         return value
+    
+    def create(self, validated_data):
+        cultures = validated_data.pop('cultures', [])
+        date_data = validated_data.pop('date', None)
+        instance = MapPin.objects.create(**validated_data)
+        instance.cultures.set(cultures)
+
+        if date_data:
+            date_instance = DateEstimate.objects.create(**date_data)
+            instance.date = date_instance
+            instance.save()
+
+        return instance
+
+    def update(self, instance, validated_data):
+        cultures = validated_data.pop('cultures', None)
+        date_data = validated_data.pop('date', None)
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        
+        if cultures is not None:
+            instance.cultures.set(cultures)
+            instance.save()
+        if date_data:
+            if instance.date:
+                for attr, value in date_data.items():
+                    setattr(instance.date, attr, value)
+                instance.date.save()
+            else:
+                instance.date = DateEstimate.objects.create(**date_data)
+                instance.save()
+        return instance
 
 class LanguageTableSerializer(serializers.ModelSerializer):
     culture_id = serializers.PrimaryKeyRelatedField(queryset=Culture.objects.all(), source='culture', write_only=True, required=False)

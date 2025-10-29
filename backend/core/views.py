@@ -1,5 +1,6 @@
 import requests
 import random
+from datetime import datetime
 from rest_framework import viewsets, status, generics
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly, SAFE_METHODS, BasePermission, AllowAny
 from rest_framework.views import APIView
@@ -16,14 +17,14 @@ from django.db.models import Q, Avg, Count
 from django.shortcuts import get_object_or_404
 from .models import (
     Profile, Culture, Category, Period, PageContent, Recipe, LangLesson,
-    CalendarDate, Person, MapBorder, MapPin, LanguageTable, UniversalItem,
+    CalendarDate, Person, UserMapPreferences, MapPin, LanguageTable, UniversalItem,
     Book, Film, UserBook, UserFilm, UserMusicComposer, UserComposerSearch,
     UserMusicPiece, UserMusicArtist, UserHistoryEvent, Visibility, List
 )
 from .serializers import (
     ProfileSerializer, CultureSerializer, CategorySerializer, PeriodSerializer,
     PageContentSerializer, RecipeSerializer, LangLessonSerializer, CalendarDateSerializer,
-    PersonSerializer, MapBorderSerializer, MapPinSerializer, LanguageTableSerializer,
+    PersonSerializer, UserMapPreferencesSerializer, MapPinSerializer, LanguageTableSerializer,
     UniversalItemSerializer, BookSerializer, FilmSerializer,
     UserBookSerializer, UserFilmSerializer, UserMusicComposerSerializer, UserComposerSearchSerializer,
     UserMusicPieceSerializer, UserMusicArtistSerializer, UserHistoryEventSerializer, RegisterSerializer, UserSerializer, ListSerializer,
@@ -264,6 +265,8 @@ class CalendarDateViewSet(viewsets.ModelViewSet):
         shared = self.request.query_params.get("shared") == "true"
         code = self.request.query_params.get("code")
         q = self.request.query_params.get("q")
+        start = self.request.query_params.get("start")
+        end = self.request.query_params.get("end")
 
         if not user.is_authenticated:
             return CalendarDate.objects.none()
@@ -298,6 +301,12 @@ class CalendarDateViewSet(viewsets.ModelViewSet):
                 Q(holiday_name__icontains=q) |
                 Q(type__icontains=q)
             )
+            
+        if start:
+            qs = qs.filter(calendar_date__gte=datetime.strptime(start, "%Y-%m-%d").date())
+            
+        if end:
+            qs = qs.filter(calendar_date__lte=end)
             
         return qs.distinct()
 
@@ -338,20 +347,19 @@ class PersonViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save()
 
-class MapBorderViewSet(viewsets.ModelViewSet):
-    serializer_class = MapBorderSerializer
+class UserMapPreferencesViewSet(viewsets.ModelViewSet):
+    serializer_class = UserMapPreferencesSerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
 
     def get_queryset(self):
         user = self.request.user
         code = self.request.query_params.get("code")
-        period_title = self.request.query_params.get("period")
         shared = self.request.query_params.get("shared") == "true"
 
         if not user.is_authenticated:
-            return MapBorder.objects.none()
+            return UserMapPreferences.objects.none()
 
-        qs = MapBorder.objects.select_related("culture", "period")
+        qs = UserMapPreferences.objects.select_related("culture")
 
         if shared:
             if code:
@@ -376,30 +384,10 @@ class MapBorderViewSet(viewsets.ModelViewSet):
             qs = qs.filter(culture__user=user)
             if code:
                 qs = qs.filter(culture__code=code)
-
-        if period_title:
-            qs = qs.filter(
-                period__title=period_title,
-                period__category__key="history"
-            )
+                
+        
 
         return qs.distinct()
-
-    def perform_create(self, serializer):
-        user = self.request.user
-        culture_id = self.request.data.get("culture_id")
-        period_id = self.request.data.get("period_id")
-
-        try:
-            culture = Culture.objects.get(id=culture_id, user=user)
-        except Culture.DoesNotExist:
-            raise ValidationError({"culture": "Invalid or unauthorized culture."})
-
-        period = None
-        if period_id:
-            period = Period.objects.filter(id=period_id, culture=culture).first()
-
-        serializer.save(culture=culture, period=period)
 
 class MapPinViewSet(viewsets.ModelViewSet):
     serializer_class = MapPinSerializer
@@ -414,32 +402,26 @@ class MapPinViewSet(viewsets.ModelViewSet):
         if not user.is_authenticated:
             return MapPin.objects.none()
         
-        qs = MapPin.objects.select_related("culture", "period")
+        qs = MapPin.objects.select_related("period").prefetch_related("cultures")
         
         if shared:
             if code:
                 try:
                     user_culture = Culture.objects.get(user=user, code=code)
+                    group_key = user_culture.shared_group_key
+                    qs = qs.filter(
+                        visibility=Visibility.PUBLIC,
+                        cultures__shared_group_key=group_key
+                    ).exclude(user=user)
                 except Culture.DoesNotExist:
                     return qs.none()
-                group_key = user_culture.shared_group_key
-                
-                qs = qs.filter(
-                    culture__shared_group_key=group_key,
-                    culture__visibility=Visibility.PUBLIC,
-                    visibility=Visibility.PUBLIC
-                ).exclude(culture__user=user)
-            
             else:
-                qs = qs.filter(
-                    culture__visibility=Visibility.PUBLIC,
-                    visibility=Visibility.PUBLIC    
-                ).exclude(culture__user=user)
+                qs = qs.filter(visibility=Visibility.PUBLIC).exclude(user=user)
         
         else:
-            qs = qs.filter(culture__user=user)
+            qs = qs.filter(user=user)
             if code:
-                qs = qs.filter(culture__code=code)
+                qs = qs.filter(cultures__code__iexact=code)
                 
         if period_title:
             qs = qs.filter(
@@ -450,20 +432,7 @@ class MapPinViewSet(viewsets.ModelViewSet):
         return qs.distinct()
 
     def perform_create(self, serializer):
-        user = self.request.user
-        culture_id = self.request.data.get("culture_id")
-        period_id = self.request.data.get("period_id")
-
-        try:
-            culture = Culture.objects.get(id=culture_id, user=user)
-        except Culture.DoesNotExist:
-            raise ValidationError({"culture": "Invalid or unauthorized culture."})
-
-        period = None
-        if period_id:
-            period = Period.objects.filter(id=period_id, culture=culture).first()
-
-        serializer.save(culture=culture, period=period)
+        serializer.save(user=self.request.user)
 
 class LanguageTableViewSet(viewsets.ModelViewSet):
     serializer_class = LanguageTableSerializer

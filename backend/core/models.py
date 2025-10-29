@@ -305,20 +305,20 @@ class Person(TimestampedModel):
         verbose_name_plural = "People"
         indexes = [models.Index(fields=['family_name', 'given_name'], name='person_name_idx'), models.Index(fields=['wikidata_id'], name='person_wikidata_idx')]
 
-class MapBorder(TimestampedModel):
-    culture = models.ForeignKey(Culture, on_delete=models.CASCADE, related_name="map_borders")
-    period = models.ForeignKey(Period, on_delete=models.CASCADE, related_name="map_borders")
-    borders = models.JSONField()
+class UserMapPreferences(TimestampedModel):
+    culture = models.ForeignKey(Culture, on_delete=models.CASCADE, related_name="map_preferences")
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="map_preferences")
+    center = models.JSONField(default=dict, null=True, blank=True)  # {"lat": ..., "lng": ...}
+    zoom = models.PositiveIntegerField(default=5, null=True, blank=True)
 
     def __str__(self):
-        return f"Borders of {self.culture.name} ({self.period})"
+        return f"Map Preferences of {self.culture.name}"
 
     class Meta:
-        verbose_name_plural = "Map Borders"
+        verbose_name_plural = "Map Preferences"
 
-class MapPin(TimestampedModel):
-    culture = models.ForeignKey(Culture, on_delete=models.CASCADE, related_name="map_pins")
-    period = models.ForeignKey(Period, on_delete=models.CASCADE, related_name="map_pins")
+class MapPin(AbstractUserTrackingModel):
+    period = models.ForeignKey(Period, on_delete=models.CASCADE, related_name="map_pins", null=True, blank=True)
     type = models.CharField(max_length=50)
     loc = models.JSONField()
     external_links = models.JSONField(default=list, blank=True)
@@ -329,13 +329,13 @@ class MapPin(TimestampedModel):
     )
     title = models.CharField(max_length=200, null=True, blank=True)
     photo = models.URLField(null=True, blank=True)
-    date = models.ForeignKey('DateEstimate', on_delete=models.SET_NULL, null=True, blank=True)
+    date = models.OneToOneField(DateEstimate, on_delete=models.CASCADE, null=True, blank=True, related_name="user_map_pin")
     location = models.CharField(max_length=200, null=True, blank=True)
     happened = models.TextField(blank=True, null=True)
     significance = models.TextField(blank=True, null=True)
 
     def __str__(self):
-        return f"{self.type} Pin ({self.culture.name})"
+        return f"{self.type} Pin"
 
     class Meta:
         verbose_name_plural = "Map Pins"

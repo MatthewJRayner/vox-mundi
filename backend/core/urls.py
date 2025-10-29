@@ -4,7 +4,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from .views import (
     ProfileViewSet, CultureViewSet, CategoryViewSet, PeriodViewSet, PageContentViewSet,
     RecipeViewSet, LangLessonViewSet, CalendarDateViewSet, PersonViewSet,
-    MapBorderViewSet, MapPinViewSet, LanguageTableViewSet, UniversalItemViewSet,
+    UserMapPreferencesViewSet, MapPinViewSet, LanguageTableViewSet, UniversalItemViewSet,
     BookViewSet, FilmViewSet, UserMusicComposerViewSet, UserComposerSearchViewSet,        
     UserBookViewSet, UserFilmViewSet, UserMusicPieceViewSet, UserMusicArtistViewSet,
     UserHistoryEventViewSet, RegisterView, CurrentUserView, FilmSimpleViewSet, ListViewSet, BookSimpleViewSet,
@@ -21,7 +21,7 @@ router.register(r'recipes', RecipeViewSet, basename='recipe')
 router.register(r'lang-lessons', LangLessonViewSet, basename='langlesson')
 router.register(r'calendar-dates', CalendarDateViewSet, basename='calendardate')
 router.register(r'people', PersonViewSet, basename='person')
-router.register(r'map-borders', MapBorderViewSet, basename='mapborder')
+router.register(r'map-preferences', UserMapPreferencesViewSet, basename='mappreferences')
 router.register(r'map-pins', MapPinViewSet, basename='mappin')
 router.register(r'language-tables', LanguageTableViewSet, basename='languagetable')
 router.register(r'universal-items', UniversalItemViewSet, basename='universalitem')
