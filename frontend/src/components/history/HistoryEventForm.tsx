@@ -5,6 +5,7 @@ import { UserHistoryEvent } from "@/types/history";
 import { Culture, Period } from "@/types/culture";
 import api from "@/lib/api";
 import { ParamValue } from "next/dist/server/request/params";
+import { SVGPath } from "@/utils/path";
 
 type HistoryEventFormProps = {
   initialData?: UserHistoryEvent;
@@ -202,8 +203,15 @@ export default function HistoryEventForm({
                 {formData.cultures.map((c) => c.name).join(", ") ||
                   "None selected"}
               </span>
-              <span className="text-xs text-gray-500">
-                {showCultureSelect ? "▲" : "▼"}
+              <span className="text-xs text-foreground/50">
+                <svg
+                  viewBox={SVGPath.chevron.viewBox}
+                  className={`size-5 fill-current transition hover:scale-105 active:scale-95 ${
+                    showCultureSelect ? "transform rotate-180" : ""
+                  }`}
+                >
+                  <path d={SVGPath.chevron.path} />
+                </svg>
               </span>
             </div>
             {showCultureSelect && (
@@ -238,7 +246,7 @@ export default function HistoryEventForm({
               checked={formData.date?.date_known || false}
               onChange={handleDateChange}
             />
-            <span>Date Known</span>
+            <span>Exact Date Known</span>
           </label>
           <div className="bg-extra flex shadow p-2 space-x-2">
             <label>Date:</label>

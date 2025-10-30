@@ -248,8 +248,7 @@ class UserMapPreferencesSerializer(serializers.ModelSerializer):
         fields = ['id', 'user', 'culture', 'center', 'zoom', 'created_at', 'updated_at']
 
 class MapPinSerializer(serializers.ModelSerializer):
-    date = DateEstimateSerializer(read_only=True)
-    date_id = serializers.PrimaryKeyRelatedField(queryset=DateEstimate.objects.all(), source='date', write_only=True, required=False)
+    date = DateEstimateSerializer(required=False)
     culture_ids = serializers.PrimaryKeyRelatedField(queryset=Culture.objects.all(), many=True, source='cultures', write_only=True, required=False)
     period_id = serializers.PrimaryKeyRelatedField(queryset=Period.objects.all(), source='period', write_only=True, required=False)
     cultures = CultureSimpleSerializer(read_only=True, many=True)
@@ -257,7 +256,7 @@ class MapPinSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = MapPin
-        fields = ['id', 'cultures', 'culture_ids', 'period', 'period_id', 'date', 'date_id', 'type', 'loc', 'external_links', 'created_at', 'updated_at', 'title', 'photo', 'location', 'happened', 'significance']
+        fields = ['id', 'cultures', 'culture_ids', 'period', 'period_id', 'date', 'type', 'filter','loc', 'external_link', 'created_at', 'updated_at', 'title', 'photo', 'location', 'happened', 'significance']
     
     def validate_culture_ids(self, value):
         user = self.context['request'].user

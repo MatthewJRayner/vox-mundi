@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { MapPin } from "@/types/map";
 import { Culture, Period } from "@/types/culture";
 import api from "@/lib/api";
+import { SVGPath } from "@/utils/path";
 
 interface MapPinFormModalProps {
   initialData?: MapPin;
@@ -149,9 +150,17 @@ export default function MapPinFormModal({
   if (loading) return <main className="p-4">Loading...</main>;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
-        <h2 className="text-xl font-bold mb-4">Add Map Pin</h2>
+    <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-extra rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-4 md:p-6 relative">
+        <span className="absolute top-4 right-2 text-w">
+          <svg
+            viewBox={SVGPath.close.viewBox}
+            className="size-5 fill-current text-foreground cursor-pointer hover:scale-110 hover:fill-red-400 active:scale-95 transition"
+          >
+            <path d={SVGPath.close.path} />
+          </svg>
+        </span>
+        <h2 className="text-xl font-bold mb-4 mt-2">Add Map Pin</h2>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Title */}
@@ -161,7 +170,7 @@ export default function MapPinFormModal({
             placeholder="Title"
             value={formData.title || ""}
             onChange={handleChange}
-            className="w-full border rounded px-3 py-2 text-sm"
+            className="bg-background shadow p-2 w-full rounded text-sm sm:text-base"
           />
 
           {/* Type */}
@@ -171,16 +180,38 @@ export default function MapPinFormModal({
             placeholder="Type (e.g. Battle, Treaty)"
             value={formData.type || ""}
             onChange={handleChange}
-            className="w-full border rounded px-3 py-2 text-sm"
-            required
+            className="bg-background shadow p-2 w-full rounded text-sm sm:text-base"
           />
+
+          <div className="space-y-1">
+            <label className="block text-sm font-medium text-gray-700">
+              Filter
+            </label>
+            <select
+              name="filter"
+              value={formData.filter || "other"}
+              onChange={handleChange}
+              className="w-full bg-background rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              required
+            >
+              <option value="landmark">Landmark</option>
+              <option value="event">Event</option>
+              <option value="travel">Travel</option>
+              <option value="figure">Figure</option>
+              <option value="artwork">Artwork</option>
+              <option value="other">Other</option>
+            </select>
+            <p className="text-xs text-gray-500 mt-1">
+              Categorize this pin for better filtering on the map.
+            </p>
+          </div>
 
           {/* Period */}
           <select
             name="period_id"
             value={formData.period_id || ""}
             onChange={handleChange}
-            className="bg-extra shadow p-2 w-full rounded text-sm sm:text-base"
+            className="bg-background shadow p-2 w-full rounded text-sm sm:text-base"
           >
             <option value="">-- Select Period --</option>
             {periods.map((p) => (
@@ -191,7 +222,7 @@ export default function MapPinFormModal({
           </select>
 
           {/* Cultures */}
-          <div className="bg-extra shadow p-2 rounded text-sm sm:text-base">
+          <div className="bg-background shadow p-2 rounded text-sm sm:text-base">
             <div
               className="flex justify-between items-center cursor-pointer"
               onClick={() => setShowCultureSelect(!showCultureSelect)}
@@ -202,7 +233,14 @@ export default function MapPinFormModal({
                   "None selected"}
               </span>
               <span className="text-xs text-gray-500">
-                {showCultureSelect ? "▲" : "▼"}
+                <svg
+                  viewBox={SVGPath.chevron.viewBox}
+                  className={`size-5 fill-current transition hover:scale-105 active:scale-95 ${
+                    showCultureSelect ? "transform rotate-180" : ""
+                  }`}
+                >
+                  <path d={SVGPath.chevron.path} />
+                </svg>
               </span>
             </div>
             {showCultureSelect && (
@@ -238,7 +276,7 @@ export default function MapPinFormModal({
             placeholder="Location Name"
             value={formData.location || ""}
             onChange={handleChange}
-            className="w-full border rounded px-3 py-2 text-sm"
+            className="bg-background shadow p-2 w-full rounded text-sm sm:text-base"
           />
 
           {/* Description */}
@@ -248,8 +286,21 @@ export default function MapPinFormModal({
             value={formData.happened || ""}
             onChange={handleChange}
             rows={3}
-            className="w-full border rounded px-3 py-2 text-sm"
+            className="bg-background shadow p-2 w-full rounded text-sm sm:text-base"
           />
+
+          {formData.photo && (
+            <div className="mb-3 flex flex-col items-center">
+              <p className="text-xs sm:text-sm text-silver mb-1 w-full text-left">
+                Current Photo Preview:
+              </p>
+              <img
+                src={formData.photo}
+                alt="Cover preview"
+                className="object-contain rounded max-w-[200px] sm:max-w-[300px] md:max-w-[400px] lg:max-w-[500px]"
+              />
+            </div>
+          )}
 
           {/* Photo URL */}
           <input
@@ -258,7 +309,17 @@ export default function MapPinFormModal({
             placeholder="Photo URL"
             value={formData.photo || ""}
             onChange={handleChange}
-            className="w-full border rounded px-3 py-2 text-sm"
+            className="bg-background shadow p-2 w-full rounded text-sm sm:text-base"
+          />
+
+          
+          <input
+            type="url"
+            name="external_link"
+            placeholder="Link URL (for more info)"
+            value={formData.external_link || ""}
+            onChange={handleChange}
+            className="bg-background shadow p-2 w-full rounded text-sm sm:text-base"
           />
 
           <label className="flex items-center space-x-2">
@@ -268,9 +329,9 @@ export default function MapPinFormModal({
               checked={formData.date?.date_known || false}
               onChange={handleDateChange}
             />
-            <span>Date Known</span>
+            <span>Exact Date Known</span>
           </label>
-          <div className="bg-extra flex shadow p-2 space-x-2">
+          <div className="bg-background flex shadow p-2 space-x-2">
             <label>Date:</label>
             <input
               type="date"
@@ -286,7 +347,7 @@ export default function MapPinFormModal({
             placeholder="Estimated Start Year"
             value={formData.date?.date_estimate_start || ""}
             onChange={handleDateChange}
-            className="bg-extra shadow p-2 w-full rounded text-sm sm:text-base"
+            className="bg-background shadow p-2 w-full rounded text-sm sm:text-base"
           />
           <input
             type="number"
@@ -294,13 +355,13 @@ export default function MapPinFormModal({
             placeholder="Estimated End Year (If Needed)"
             value={formData.date?.date_estimate_end || ""}
             onChange={handleDateChange}
-            className="bg-extra shadow p-2 w-full rounded text-sm sm:text-base"
+            className="bg-background shadow p-2 w-full rounded text-sm sm:text-base"
           />
           <select
             name="date_precision"
             value={formData.date?.date_precision || "unknown"}
             onChange={handleDateChange}
-            className="bg-extra shadow p-2 w-full rounded text-sm sm:text-base"
+            className="bg-background shadow p-2 w-full rounded text-sm sm:text-base"
           >
             <option value="exact">Exact</option>
             <option value="year">Year</option>
@@ -317,7 +378,7 @@ export default function MapPinFormModal({
             value={formData.significance || ""}
             onChange={handleChange}
             rows={2}
-            className="w-full border rounded px-3 py-2 text-sm"
+            className="bg-background shadow p-2 w-full rounded text-sm sm:text-base"
           />
 
           {/* Visibility */}
@@ -349,16 +410,16 @@ export default function MapPinFormModal({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 border rounded hover:bg-gray-50"
+              className="px-4 py-2 bg-foreground text-background rounded hover:bg-red-400 cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+              className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 cursor-pointer"
             >
-              {loading ? "Saving..." : "Add Pin"}
+              {loading ? "Saving..." : initialData ? "Update Pin" : "Add Pin"}
             </button>
           </div>
         </form>

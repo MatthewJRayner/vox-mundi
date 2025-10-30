@@ -1,16 +1,20 @@
 "use client";
 
 import { useEffect } from "react";
-import L, { Icon } from "leaflet";
+import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
-/**
- * Hook to patch Leaflet’s default marker icons in Next.js (avoids broken images)
- * Runs once on mount, fully typed, no 'any'.
- */
+declare module "leaflet" {
+  export interface IconDefault {
+    _getIconUrl?: () => string;
+  }
+}
+
 export default function useLeafletIcons() {
   useEffect(() => {
-    const DefaultIcon = L.icon({
+    delete (L.Icon.Default.prototype as unknown as { _getIconUrl?: unknown })._getIconUrl;
+
+    L.Icon.Default.mergeOptions({
       iconRetinaUrl:
         "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
       iconUrl:
@@ -22,9 +26,5 @@ export default function useLeafletIcons() {
       popupAnchor: [1, -34],
       shadowSize: [41, 41],
     });
-
-    // Apply globally
-    (Icon.Default as typeof Icon.Default).prototype.options =
-      DefaultIcon.options;
   }, []);
 }

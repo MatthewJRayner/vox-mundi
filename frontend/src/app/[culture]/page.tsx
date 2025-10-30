@@ -9,6 +9,7 @@ import { MapPin, MapPreferences } from "@/types/map";
 import { Period } from "@/types/culture";
 import CultureCalendarWeek from "@/components/mainCulturePage/CultureCalenderWeek";
 import MapPinFormModal from "@/components/mainCulturePage/MapPinForm";
+import MapPinDetailModal from "@/components/mainCulturePage/MapPinDetailModal";
 import { SVGPath } from "@/utils/path";
 import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
 import type { Map as LeafletMap, LeafletMouseEvent } from "leaflet";
@@ -29,7 +30,7 @@ export default function CulturePage() {
   const [error, setError] = useState<string | null>(null);
 
   // Filters
-  const [selectedType, setSelectedType] = useState<string | null>(null);
+  const [selectedFilter, setSelectedFilter] = useState<string | null>(null);
   const [selectedPeriod, setSelectedPeriod] = useState<number | null>(null);
 
   // Pin placement
@@ -39,6 +40,8 @@ export default function CulturePage() {
     lng: number;
   } | null>(null);
   const [showPinModal, setShowPinModal] = useState(false);
+  const [selectedPin, setSelectedPin] = useState<MapPin | null>(null);
+  const [showPinDetailModal, setShowPinDetailModal] = useState(false);
 
   const mapRef = useRef<LeafletMap | null>(null);
 
@@ -69,17 +72,20 @@ export default function CulturePage() {
 
   // Filters
   const filteredPins = mapPins.filter((pin) => {
-    const typeOk = !selectedType || pin.type === selectedType;
+    const filterOk = !selectedFilter || pin.filter === selectedFilter;
     const periodOk = !selectedPeriod || pin.period?.id === selectedPeriod;
-    return typeOk && periodOk;
+    return filterOk && periodOk;
   });
 
-  const handleTypeFilter = (type: string) =>
-    setSelectedType((prev) => (prev === type ? null : type));
+  const handleFilterFilter = (filter: string) =>
+    setSelectedFilter((prev) => (prev === filter ? null : filter));
   const handlePeriodFilter = (id: number) =>
     setSelectedPeriod((prev) => (prev === id ? null : id));
 
-  const handlePinClick = (pin: MapPin) => console.log("Pin:", pin);
+  const handlePinClick = (pin: MapPin) => {
+    setSelectedPin(pin);
+    setShowPinDetailModal(true);
+  };
 
   // Save map center
   const handleSetCenter = async () => {
@@ -126,21 +132,48 @@ export default function CulturePage() {
 
       <div className="flex flex-col lg:flex-row gap-4">
         {/* Sidebar */}
-        <aside className="w-full lg:w-1/4 bg-white rounded-xl shadow p-4">
-          <h3 className="font-semibold mb-2">Pin Filters</h3>
-          <ul className="space-y-2">
-            {Array.from(new Set(mapPins.map((p) => p.type))).map((type) => (
-              <li key={type}>
-                <button
-                  onClick={() => handleTypeFilter(type)}
-                  className={`w-full text-center rounded-md px-2 py-1 transition cursor-pointer ${
-                    selectedType === type ? "bg-blue-200" : "hover:bg-gray-100"
-                  }`}
-                >
-                  {type}
-                </button>
-              </li>
-            ))}
+        <aside className="w-full lg:w-1/4 bg-extra rounded-xl shadow p-4">
+          <h3 className="font-semibold mb-2">Filters</h3>
+          <ul className="space-y-2 flex flex-col items-center lg:items-start w-full">
+            {[
+              { value: "landmark", label: "Landmark" },
+              { value: "event", label: "Event" },
+              { value: "travel", label: "Travel" },
+              { value: "figure", label: "Figure" },
+              { value: "artwork", label: "Artwork" },
+              { value: "other", label: "Other" },
+            ].map(({ value, label }) => {
+              // Count how many pins have this filter value
+              const count = mapPins.filter((p) => p.filter === value).length;
+              const isSelected = selectedFilter === value;
+              const hasNoPins = count === 0;
+
+              return (
+                <li key={value} className="w-full">
+                  <button
+                    onClick={() => handleFilterFilter(value)}
+                    className={`w-full text-left rounded-md px-3 py-1.5 transition flex items-center justify-between cursor-pointer ${
+                      isSelected
+                        ? hasNoPins
+                          ? "bg-red-200/20 text-red-400"
+                          : "bg-primary/20 text-primary"
+                        : "hover:bg-extra/80"
+                    }`}
+                    // disabled={hasNoPins && !isSelected}
+                  >
+                    <span>{label}</span>
+                    {isSelected && hasNoPins && (
+                      <svg
+                        viewBox={SVGPath.close.viewBox}
+                        className={`size-4 fill-current transition hover:scale-105 active:scale-95`}
+                      >
+                        <path d={SVGPath.close.path} />
+                      </svg>
+                    )}
+                  </button>
+                </li>
+              );
+            })}
           </ul>
         </aside>
 
@@ -153,7 +186,7 @@ export default function CulturePage() {
                 : [0, 0]
             }
             zoom={mapPreferences?.zoom ?? 5}
-            className="h-[600px] rounded-b-xl z-0"
+            className="h-[600px] rounded-xl z-0"
             ref={mapRef as React.MutableRefObject<LeafletMap>}
           >
             <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
@@ -208,13 +241,16 @@ export default function CulturePage() {
             onClick={() => handlePeriodFilter(p.id || 0)}
             className={`px-3 py-2 rounded-md transition text-sm cursor-pointer ${
               selectedPeriod === p.id
-                ? "bg-blue-300"
-                : "bg-gray-100 hover:bg-gray-200"
+                ? "bg-primary text-white"
+                : "bg-extra hover:bg-extra/80"
             }`}
           >
             {p.title}
           </button>
         ))}
+        {!periods && (
+          <p className="text-foreground/50">No periods available.</p>
+        )}
       </div>
 
       {/* Map Pin Form Modal */}
@@ -228,6 +264,21 @@ export default function CulturePage() {
             setNewPinLocation(null);
           }}
           onSuccess={handleAddPinSuccess}
+        />
+      )}
+
+      {showPinDetailModal && selectedPin && (
+        <MapPinDetailModal
+          pin={selectedPin}
+          cultureCode={culture?.toString() || "eng"}
+          onClose={() => {
+            setSelectedPin(null);
+            setShowPinDetailModal(false);
+          }}
+          onSuccess={() => {
+            setShowPinDetailModal(false);
+            fetchData(); // Refresh pins after editing
+          }}
         />
       )}
     </main>

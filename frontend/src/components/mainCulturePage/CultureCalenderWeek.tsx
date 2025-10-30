@@ -62,7 +62,7 @@ export default function CultureCalendarWeek({ cultureCode }: Props) {
     <>
       {/* Week bar */}
       <div className="flex justify-center mb-6">
-        <div className="bg-white rounded-xl shadow-md p-4 flex gap-3">
+        <div className="bg-extra rounded-lg shadow-md p-2 flex gap-3">
           {weekDates.map((date) => {
             const iso = date.toISOString().split("T")[0];
             const hasEvent = calendarDates.some((cd) => cd.calendar_date === iso);
@@ -71,8 +71,8 @@ export default function CultureCalendarWeek({ cultureCode }: Props) {
               <button
                 key={iso}
                 onClick={() => handleDateClick(date)}
-                className={`w-10 h-10 flex items-center justify-center rounded-lg transition-colors
-                  ${hasEvent ? "bg-yellow-300 hover:bg-yellow-400" : "bg-gray-100 hover:bg-gray-200"}
+                className={`w-10 h-10 flex items-center text-shadow-sm hover:scale-105 transition duration-300 justify-center rounded-lg cursor-pointer
+                  ${hasEvent ? "text-main" : ""}
                 `}
               >
                 {date.getDate()}

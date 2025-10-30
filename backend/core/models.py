@@ -319,9 +319,17 @@ class UserMapPreferences(TimestampedModel):
 
 class MapPin(AbstractUserTrackingModel):
     period = models.ForeignKey(Period, on_delete=models.CASCADE, related_name="map_pins", null=True, blank=True)
-    type = models.CharField(max_length=50)
+    type = models.CharField(max_length=50, null=True, blank=True)
+    filter = models.CharField(max_length=50, choices=[
+        ("landmark", "Landmark"),
+        ("event", "Event"),
+        ("travel", "Travel"),
+        ("figure", "Figure"),
+        ("artwork", "Artwork"),
+        ("other", "Other"),
+    ], default="other")
     loc = models.JSONField()
-    external_links = models.JSONField(default=list, blank=True)
+    external_link = models.URLField(null=True, blank=True)
     visibility = models.CharField(
         max_length=20,
         choices=Visibility.choices,

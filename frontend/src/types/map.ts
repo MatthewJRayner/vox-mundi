@@ -19,6 +19,7 @@ export interface MapPin {
     cultures: Culture[];
     period?: Period;
     type: string;
+    filter?: string;
     loc: Location;
     visibility: 'public' | 'private';
     title?: string;
@@ -29,4 +30,5 @@ export interface MapPin {
     significance?: string;
     period_id?: number;
     culture_ids?: number[];
+    external_link?: string;
 }
