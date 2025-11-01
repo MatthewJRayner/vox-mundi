@@ -10,6 +10,7 @@ import CalendarDateModal from "@/components/calendar/CalendarDateModal";
 import SearchBar from "@/components/SearchBar";
 import dayjs from "dayjs";
 import { SVGPath } from "@/utils/path";
+import Link from "next/link";
 
 export default function CalendarEditPage() {
   const { culture } = useParams();
@@ -93,6 +94,14 @@ export default function CalendarEditPage() {
 
   return (
     <main className="flex flex-col max-w-3xl mx-auto p-2 md:p-6 space-y-8">
+      <Link className="" href={`/${culture}/calendar`} title="Back to Calendar">
+        <svg
+          viewBox={SVGPath.arrow.viewBox}
+          className="size-5 fill-current text-foreground cursor-pointer hover:scale-110 hover:opacity-80 active:scale-95 transition"
+        >
+          <path d={SVGPath.arrow.path} />
+        </svg>
+      </Link>
       <CategoryHeader
         displayName={displayName}
         setDisplayName={setDisplayName}

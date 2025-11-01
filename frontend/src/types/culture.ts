@@ -52,4 +52,5 @@ export interface Profile {
     website?: string;
     preferred_cultures: Culture[];
     display_reviews_publicly: boolean;
+    preferred_culture_ids?: number[];
 }

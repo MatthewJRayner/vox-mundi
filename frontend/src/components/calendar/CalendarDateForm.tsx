@@ -251,8 +251,6 @@ export default function CalendarDateForm({
           className="text-sm md:text-base bg-extra shadow-lg p-2 w-full rounded"
         >
           <option value="gregorian">Gregorian</option>
-          <option value="egyptian">Ancient Egyptian</option>
-          <option value="islamic">Islamic</option>
         </select>
         <select
           name="visibility"

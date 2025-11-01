@@ -410,7 +410,7 @@ export default function MapPinFormModal({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 bg-foreground text-background rounded hover:bg-red-400 cursor-pointer"
+              className="px-4 py-2 bg-foreground text-background rounded hover:bg-red-400 hover:text-white cursor-pointer"
             >
               Cancel
             </button>

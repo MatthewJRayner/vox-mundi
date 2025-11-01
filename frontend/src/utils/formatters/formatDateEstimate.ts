@@ -58,7 +58,7 @@ export function formatDateEstimate(dateEstimate: DateEstimate | undefined): stri
 }
 
 function formatYear(year: number): string {
-  return year < 0 ? `${Math.abs(year)} BC` : `${year} AD`;
+  return year < 0 ? `${Math.abs(year)} BC` : year < 1000 ? `${year} AD` : `${year}`;
 }
 
 function getEra(year: number): string {

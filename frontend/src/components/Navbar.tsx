@@ -32,7 +32,9 @@ export default function Navbar({ culture, categories = [] }: NavbarProps) {
   const toggleDropdown = () => setDropdownOpen((prev) => !prev);
 
   return (
-    <nav className={`flex justify-between items-center px-4 py-2 w-full relative`}>
+    <nav
+      className={`flex justify-between items-center px-4 py-2 w-full relative`}
+    >
       <Link
         href={`/${culture?.code || ""}`}
         className="text-2xl md:text-4xl font-bold font-garamond text-main hover:opacity-80 transition duration-300"
@@ -63,7 +65,7 @@ export default function Navbar({ culture, categories = [] }: NavbarProps) {
         </Link>
 
         <ThemeToggle />
- 
+
         {isAuthenticated ? (
           <div className="relative">
             <button
@@ -90,7 +92,7 @@ export default function Navbar({ culture, categories = [] }: NavbarProps) {
             {dropdownOpen && (
               <div className="absolute right-0 mt-2 w-40 bg-extra rounded shadow-md z-50 animate-fade-in">
                 <Link
-                  href="/profile"
+                  href={`/profile/${user?.username}`}
                   className="block px-4 py-2 text-sm hover:bg-background/80 cursor-pointer"
                 >
                   <span className="text-foreground">Profile</span>
@@ -110,31 +112,36 @@ export default function Navbar({ culture, categories = [] }: NavbarProps) {
           </Link>
         )}
 
-        <button onClick={toggleMobile} className="md:hidden focus:outline-none">
-          {mobileOpen ? (
-            <svg
-              viewBox={SVGPath.close.viewBox}
-              className="size-5 fill-current text-foreground cursor-pointer hover:scale-110 hover:opacity-80 active:scale-95 transition"
-            >
-              <path d={SVGPath.close.path} />
-            </svg>
-          ) : (
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth={2}
-              stroke="currentColor"
-              className="size-5"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"
-              />
-            </svg>
-          )}
-        </button>
+        {categories && categories.length > 0 && (
+          <button
+            onClick={toggleMobile}
+            className="md:hidden focus:outline-none"
+          >
+            {mobileOpen ? (
+              <svg
+                viewBox={SVGPath.close.viewBox}
+                className="size-5 fill-current text-foreground cursor-pointer hover:scale-110 hover:opacity-80 active:scale-95 transition"
+              >
+                <path d={SVGPath.close.path} />
+              </svg>
+            ) : (
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={2}
+                stroke="currentColor"
+                className="size-5"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"
+                />
+              </svg>
+            )}
+          </button>
+        )}
       </div>
 
       <div

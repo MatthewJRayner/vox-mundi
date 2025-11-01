@@ -78,7 +78,8 @@ class CultureSerializer(serializers.ModelSerializer):
         UserMapPreferences.objects.bulk_create([
             UserMapPreferences(
                 user=request.user,
-                culture=culture
+                culture=culture,
+                center={'lat': 0.0, 'lng': 0.0},
             )
         ])
         
@@ -96,7 +97,7 @@ class ProfileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Profile
-        fields = ['user', 'bio', 'avatar', 'location', 'website',
+        fields = ['user', 'id', 'bio', 'avatar', 'location', 'website',
                   'preferred_cultures', 'preferred_culture_ids', 'display_reviews_publicly', 'created_at', 'updated_at']
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -623,6 +624,9 @@ class RegisterSerializer(serializers.ModelSerializer):
             email=validated_data['email'],
             password=validated_data['password']
         )
+        
+        Profile.objects.create(user=user)
+        
         return user
     
 class ListSerializer(serializers.ModelSerializer):

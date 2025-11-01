@@ -8,6 +8,8 @@ import CategoryHeader from "@/components/CategoryHeader";
 import PeriodList from "@/components/PeriodList";
 import PeriodForm from "@/components/PeriodForm";
 import ComposersSection from "@/components/music/ComposersSection";
+import { SVGPath } from "@/utils/path";
+import Link from "next/link";
 
 export default function HistoryEditPage() {
   const { culture } = useParams();
@@ -119,7 +121,16 @@ export default function HistoryEditPage() {
   if (loading) return <main className="p-4">Loading...</main>;
 
   return (
-    <main className="flex flex-col max-w-3xl mx-auto p-6 space-y-8">
+    <main className="flex flex-col max-w-3xl mx-auto p-4 md:p-6 space-y-8">
+      
+      <Link className="" href={`/${culture}/music`} title="Back to Music">
+        <svg
+          viewBox={SVGPath.arrow.viewBox}
+          className="size-5 fill-current text-foreground cursor-pointer hover:scale-110 hover:opacity-80 active:scale-95 transition"
+        >
+          <path d={SVGPath.arrow.path} />
+        </svg>
+      </Link>
       <CategoryHeader
         displayName={displayName}
         setDisplayName={setDisplayName}

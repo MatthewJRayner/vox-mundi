@@ -80,7 +80,20 @@ class ProfileViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticatedOrReadOnly]
 
     def get_queryset(self):
-        return Profile.objects.select_related('user').prefetch_related('preferred_cultures')
+        user = self.request.user
+        username = self.request.query_params.get('username', None)
+        
+        qs = Profile.objects.select_related('user').prefetch_related('preferred_cultures')
+        
+        if username:
+            qs = qs.filter(user__username=username)
+            return qs
+        else:
+            qs = qs.filter(user=user)
+            return qs
+        
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
 
 class CultureViewSet(viewsets.ModelViewSet):
     serializer_class = CultureSerializer

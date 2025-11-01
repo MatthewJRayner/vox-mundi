@@ -7,9 +7,9 @@ import api from "@/lib/api";
 import useLeafletIcons from "@/utils/useLeafletIcons";
 import { MapPin, MapPreferences } from "@/types/map";
 import { Period } from "@/types/culture";
-import CultureCalendarWeek from "@/components/mainCulturePage/CultureCalenderWeek";
-import MapPinFormModal from "@/components/mainCulturePage/MapPinForm";
-import MapPinDetailModal from "@/components/mainCulturePage/MapPinDetailModal";
+import CultureCalendarWeek from "@/components/cultures/CultureCalenderWeek";
+import MapPinFormModal from "@/components/cultures/MapPinForm";
+import MapPinDetailModal from "@/components/cultures/MapPinDetailModal";
 import { SVGPath } from "@/utils/path";
 import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
 import type { Map as LeafletMap, LeafletMouseEvent } from "leaflet";
@@ -131,52 +131,6 @@ export default function CulturePage() {
       <CultureCalendarWeek cultureCode={culture?.toString() || "eng"} />
 
       <div className="flex flex-col lg:flex-row gap-4">
-        {/* Sidebar */}
-        <aside className="w-full lg:w-1/4 bg-extra rounded-xl shadow p-4">
-          <h3 className="font-semibold mb-2">Filters</h3>
-          <ul className="space-y-2 flex flex-col items-center lg:items-start w-full">
-            {[
-              { value: "landmark", label: "Landmark" },
-              { value: "event", label: "Event" },
-              { value: "travel", label: "Travel" },
-              { value: "figure", label: "Figure" },
-              { value: "artwork", label: "Artwork" },
-              { value: "other", label: "Other" },
-            ].map(({ value, label }) => {
-              // Count how many pins have this filter value
-              const count = mapPins.filter((p) => p.filter === value).length;
-              const isSelected = selectedFilter === value;
-              const hasNoPins = count === 0;
-
-              return (
-                <li key={value} className="w-full">
-                  <button
-                    onClick={() => handleFilterFilter(value)}
-                    className={`w-full text-left rounded-md px-3 py-1.5 transition flex items-center justify-between cursor-pointer ${
-                      isSelected
-                        ? hasNoPins
-                          ? "bg-red-200/20 text-red-400"
-                          : "bg-primary/20 text-primary"
-                        : "hover:bg-extra/80"
-                    }`}
-                    // disabled={hasNoPins && !isSelected}
-                  >
-                    <span>{label}</span>
-                    {isSelected && hasNoPins && (
-                      <svg
-                        viewBox={SVGPath.close.viewBox}
-                        className={`size-4 fill-current transition hover:scale-105 active:scale-95`}
-                      >
-                        <path d={SVGPath.close.path} />
-                      </svg>
-                    )}
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        </aside>
-
         {/* Map */}
         <section className="flex-1 bg-white rounded-xl shadow relative">
           <MapContainer
@@ -231,6 +185,51 @@ export default function CulturePage() {
             </button>
           </div>
         </section>
+        {/* Sidebar */}
+        <aside className="w-full lg:w-1/4 bg-extra rounded-xl shadow p-4">
+          <h3 className="font-semibold mb-2">Filters</h3>
+          <ul className="space-y-2 flex flex-col items-center lg:items-start w-full">
+            {[
+              { value: "landmark", label: "Landmark" },
+              { value: "event", label: "Event" },
+              { value: "travel", label: "Travel" },
+              { value: "figure", label: "Figure" },
+              { value: "artwork", label: "Artwork" },
+              { value: "other", label: "Other" },
+            ].map(({ value, label }) => {
+              // Count how many pins have this filter value
+              const count = mapPins.filter((p) => p.filter === value).length;
+              const isSelected = selectedFilter === value;
+              const hasNoPins = count === 0;
+
+              return (
+                <li key={value} className="w-full">
+                  <button
+                    onClick={() => handleFilterFilter(value)}
+                    className={`w-full text-left rounded-md px-3 py-1.5 transition flex items-center justify-between cursor-pointer ${
+                      isSelected
+                        ? hasNoPins
+                          ? "bg-red-200/20 text-red-400"
+                          : "bg-primary/20 text-primary"
+                        : "hover:bg-extra/80"
+                    }`}
+                    // disabled={hasNoPins && !isSelected}
+                  >
+                    <span>{label}</span>
+                    {isSelected && hasNoPins && (
+                      <svg
+                        viewBox={SVGPath.close.viewBox}
+                        className={`size-4 fill-current transition hover:scale-105 active:scale-95`}
+                      >
+                        <path d={SVGPath.close.path} />
+                      </svg>
+                    )}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </aside>
       </div>
 
       {/* Period Filter */}

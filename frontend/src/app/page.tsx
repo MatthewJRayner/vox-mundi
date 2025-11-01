@@ -1,14 +1,22 @@
-import Image from "next/image";
+"use client";
+
 import AuthGuard from "../components/auth/AuthGuard";
 import Navbar from "@/components/Navbar";
-import CulturesList from "../components/cultures/CultureList";
+import CultureGateway from "@/components/cultures/CultureGateway";
+import { motion } from "framer-motion";
 
 export default function Home() {
   return (
     <AuthGuard>
       <main className="flex flex-col items-center justify-center">
+        <motion.div
+          className="absolute inset-0"
+          animate={{ opacity: [0.6, 0.9, 0.6] }}
+          transition={{ repeat: Infinity, duration: 8, ease: "easeInOut" }}
+        />
+
         <Navbar />
-        <CulturesList />
+        <CultureGateway />
       </main>
     </AuthGuard>
   );

@@ -8,6 +8,8 @@ import CategoryHeader from "@/components/CategoryHeader";
 import PeriodList from "@/components/PeriodList";
 import PeriodForm from "@/components/PeriodForm";
 import HistoryEventsSection from "@/components/history/HistoryEventsSection";
+import { SVGPath } from "@/utils/path";
+import Link from "next/link";
 
 export default function HistoryEditPage() {
   const { culture } = useParams();
@@ -15,7 +17,9 @@ export default function HistoryEditPage() {
   const [category, setCategory] = useState<Category | null>(null);
   const [displayName, setDisplayName] = useState("");
   const [periods, setPeriods] = useState<Period[]>([]);
-  const [userHistoryEvents, setUserHistoryEvents] = useState<UserHistoryEvent[]>([]);
+  const [userHistoryEvents, setUserHistoryEvents] = useState<
+    UserHistoryEvent[]
+  >([]);
   const [activePeriod, setActivePeriod] = useState<Period | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -31,12 +35,14 @@ export default function HistoryEditPage() {
     if (!culture) return;
     try {
       setLoading(true);
-      const [catRes, periodRes, userHistoryRes, cultureRes] = await Promise.all([
-        api.get(`/categories/?key=history&code=${culture}`),
-        api.get(`/periods/?code=${culture}`),
-        api.get(`/user-history-events/?code=${culture}`),
-        api.get(`/cultures/?code=${culture}`),
-      ]);
+      const [catRes, periodRes, userHistoryRes, cultureRes] = await Promise.all(
+        [
+          api.get(`/categories/?key=history&code=${culture}`),
+          api.get(`/periods/?code=${culture}`),
+          api.get(`/user-history-events/?code=${culture}`),
+          api.get(`/cultures/?code=${culture}`),
+        ]
+      );
 
       const categoryData = catRes.data[0];
       setCategory(categoryData);
@@ -59,7 +65,9 @@ export default function HistoryEditPage() {
   const handleSaveDisplayName = async () => {
     if (!category) return;
     try {
-      await api.patch(`/categories/${category.id}/`, { display_name: displayName });
+      await api.patch(`/categories/${category.id}/`, {
+        display_name: displayName,
+      });
       setCategory((prev) => prev && { ...prev, display_name: displayName });
     } catch (error) {
       console.error("Error updating display name:", error);
@@ -69,7 +77,13 @@ export default function HistoryEditPage() {
   };
 
   const handleAddNewPeriod = () => {
-    setPeriodForm({ id: null, title: "", start_year: "", end_year: "", desc: "" });
+    setPeriodForm({
+      id: null,
+      title: "",
+      start_year: "",
+      end_year: "",
+      desc: "",
+    });
     setActivePeriod(null);
   };
 
@@ -89,7 +103,9 @@ export default function HistoryEditPage() {
     try {
       const payload = {
         ...periodForm,
-        start_year: periodForm.start_year ? Number(periodForm.start_year) : null,
+        start_year: periodForm.start_year
+          ? Number(periodForm.start_year)
+          : null,
         end_year: periodForm.end_year ? Number(periodForm.end_year) : null,
         culture_id: cultureCurrent?.id,
         category_id: category?.id,
@@ -97,13 +113,24 @@ export default function HistoryEditPage() {
 
       if (periodForm.id) {
         const res = await api.patch(`/periods/${periodForm.id}/`, payload);
-        setPeriods((prev) => prev.map((p) => (p.id === res.data.id ? res.data : p)));
+        setPeriods((prev) =>
+          prev.map((p) => (p.id === res.data.id ? res.data : p))
+        );
       } else {
-        const res = await api.post(`/periods/`, { ...payload, culture_code: culture });
+        const res = await api.post(`/periods/`, {
+          ...payload,
+          culture_code: culture,
+        });
         setPeriods((prev) => [...prev, res.data]);
       }
 
-      setPeriodForm({ id: null, title: "", start_year: "", end_year: "", desc: "" });
+      setPeriodForm({
+        id: null,
+        title: "",
+        start_year: "",
+        end_year: "",
+        desc: "",
+      });
     } catch (error) {
       console.error("Error saving period:", error);
     }
@@ -120,6 +147,14 @@ export default function HistoryEditPage() {
 
   return (
     <main className="flex flex-col max-w-3xl mx-auto p-6 space-y-8">
+      <Link className="" href={`/${culture}/history`} title="Back to History">
+        <svg
+          viewBox={SVGPath.arrow.viewBox}
+          className="size-5 fill-current text-foreground cursor-pointer hover:scale-110 hover:opacity-80 active:scale-95 transition"
+        >
+          <path d={SVGPath.arrow.path} />
+        </svg>
+      </Link>
       <CategoryHeader
         displayName={displayName}
         setDisplayName={setDisplayName}
@@ -136,7 +171,10 @@ export default function HistoryEditPage() {
         setPeriodForm={setPeriodForm}
         onSubmit={handleSubmitPeriod}
       />
-      <HistoryEventsSection groupedEvents={groupedEvents} culture={culture as string} />
+      <HistoryEventsSection
+        groupedEvents={groupedEvents}
+        culture={culture as string}
+      />
     </main>
   );
 }

@@ -50,7 +50,7 @@ export default function CalendarPage() {
   const filteredDates = showAll ? calendarDates.filter((date) => date.cultures.some((cult) => cult.code === culture?.toLocaleString() || "")) : calendarDates
 
   return (
-    <main className="min-h-screen p-4 flex flex-col items-center">
+    <main className="min-h-screen flex flex-col items-center">
       {/* --- Page Header --- */}
       <div className="flex space-x-4 items-center w-fit mb-4">
         <h1 className="text-3xl font-bold font-garamond">Calendar</h1>

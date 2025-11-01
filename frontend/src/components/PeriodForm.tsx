@@ -29,7 +29,7 @@ export default function PeriodForm({
       </h4>
 
       <div className="w-full flex space-x-2 items-center">
-        <h3 className="font-lora text-xl">Title:</h3>
+        <h3 className="font-lora md:text-xl">Title:</h3>
         <input
           type="text"
           value={periodForm.title}
@@ -37,13 +37,13 @@ export default function PeriodForm({
             setPeriodForm((prev) => ({ ...prev, title: e.target.value }))
           }
           placeholder="Enter here..."
-          className="p-2 rounded bg-extra w-full shadow-md"
+          className="p-2 rounded bg-extra w-full text-sm shadow-md"
         />
       </div>
 
       <div className="w-full flex flex-col md:flex-row md:space-x-4 space-y-3 md:space-y-0">
         <div className="w-full md:w-1/2 flex space-x-2 items-center">
-          <h3 className="font-lora text-xl">Start:</h3>
+          <h3 className="font-lora md:text-xl">Start:</h3>
           <input
             type="text"
             value={periodForm.start_year}
@@ -51,11 +51,11 @@ export default function PeriodForm({
               setPeriodForm((prev) => ({ ...prev, start_year: e.target.value }))
             }
             placeholder="Year (Optional)"
-            className="p-2 rounded bg-extra shadow-md w-full"
+            className="p-2 rounded bg-extra shadow-md w-full text-sm"
           />
         </div>
         <div className="w-full md:w-1/2 flex space-x-2 items-center">
-          <h3 className="font-lora text-xl">End:</h3>
+          <h3 className="font-lora md:text-xl">End:</h3>
           <input
             type="text"
             value={periodForm.end_year}
@@ -63,13 +63,13 @@ export default function PeriodForm({
               setPeriodForm((prev) => ({ ...prev, end_year: e.target.value }))
             }
             placeholder="Year (Optional)"
-            className="p-2 rounded bg-extra shadow-md w-full"
+            className="p-2 rounded bg-extra shadow-md w-full text-sm"
           />
         </div>
       </div>
 
       <div className="w-full flex flex-col space-y-1">
-        <h3 className="font-lora text-xl">Description:</h3>
+        <h3 className="font-lora md:text-xl">Description:</h3>
         <textarea
           value={periodForm.desc}
           onChange={(e) =>
@@ -77,7 +77,7 @@ export default function PeriodForm({
           }
           placeholder="Enter description for this period/category..."
           rows={4}
-          className="p-2 rounded bg-extra shadow-md w-full resize-y"
+          className="p-2 rounded bg-extra shadow-md w-full resize-y text-sm"
         />
       </div>
 

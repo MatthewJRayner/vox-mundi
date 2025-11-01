@@ -116,7 +116,7 @@ class Culture(TimestampedModel):
     name = models.CharField(max_length=100)
     code = models.SlugField(max_length=3)
     colour = ColorField(default='#FFFFFF')
-    picture = models.URLField(blank=True, null=True)
+    picture = models.URLField(max_length=500, blank=True, null=True)
     shared_group_key = models.SlugField(
         max_length=50,
         blank=True,
@@ -251,7 +251,7 @@ class CalendarDate(AbstractUserTrackingModel):
     class Meta:
         verbose_name_plural = "Calendar Dates"
         indexes = [models.Index(fields=['user'])]
-        unique_together = [("holiday_name", "calendar_date")]
+        unique_together = [("holiday_name", "calendar_date", "user")]
              
 class UserHistoryEvent(AbstractUserTrackingModel):
     title = models.CharField(max_length=200)

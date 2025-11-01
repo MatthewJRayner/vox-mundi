@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { MapPin } from "@/types/map";
-import MapPinFormModal from "@/components/mainCulturePage/MapPinForm";
+import MapPinFormModal from "@/components/cultures/MapPinForm";
 import { SVGPath } from "@/utils/path";
 import { formatDateEstimate } from "@/utils/formatters/formatDateEstimate";
 import ExpandableSummary from "../ExpandableSummary";
@@ -126,7 +126,7 @@ export default function MapPinDetailModal({
         <div className="flex justify-end mt-6 gap-3 items-center">
           <button
             onClick={onClose}
-            className="px-4 py-2 bg-foreground text-background rounded hover:bg-red-400 cursor-pointer"
+            className="px-4 py-2 bg-foreground text-background rounded hover:bg-red-400 hover:text-white cursor-pointer"
           >
             Close
           </button>

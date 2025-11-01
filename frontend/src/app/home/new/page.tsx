@@ -5,13 +5,17 @@ import api from "@/lib/api";
 import Navbar from "@/components/Navbar";
 
 export default function CreateCulturePage() {
-  const [form, setForm] = useState({ name: "", code: "", colour: "#ffffff", picture: "" });
+  const [form, setForm] = useState({
+    name: "",
+    code: "",
+    colour: "#ffffff",
+    picture: "",
+  });
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
   const handleCreateCulture = async () => {
     if (!form.name || !form.code) {
-      alert("Please fill in all fields");
       return;
     }
 
@@ -22,7 +26,6 @@ export default function CreateCulturePage() {
       router.push("/");
     } catch (err) {
       console.error("Error creating culture:", err);
-      alert("Failed to create culture.");
     } finally {
       setLoading(false);
     }
@@ -41,6 +44,7 @@ export default function CreateCulturePage() {
           value={form.name}
           onChange={(e) => setForm({ ...form, name: e.target.value })}
           className="border-b-2 border-b-foreground p-2 rounded-t w-1/2"
+          required
         />
         <input
           type="text"
@@ -50,6 +54,7 @@ export default function CreateCulturePage() {
             setForm({ ...form, code: e.target.value.toLowerCase() })
           }
           className="border-b-2 p-2 rounded-t w-1/6"
+          required
         />
         <h3 className="font-garamond font-medium text-xl mt-12">
           {"Choose a colour to represent your culture".toLocaleUpperCase()}
@@ -61,7 +66,12 @@ export default function CreateCulturePage() {
             onChange={(e) => setForm({ ...form, colour: e.target.value })}
             className="w-16 h-10 cursor-pointer"
           />
-          <h3 className={`font-lora text-xl font-medium`} style={{ color: form.colour }}>{form?.name.toUpperCase()}</h3>
+          <h3
+            className={`font-lora text-xl font-medium`}
+            style={{ color: form.colour }}
+          >
+            {form?.name.toUpperCase()}
+          </h3>
         </div>
         <h3 className="font-garamond font-medium text-xl mt-12">
           {"Save a link as an icon for your culture".toLocaleUpperCase()}
@@ -75,11 +85,13 @@ export default function CreateCulturePage() {
           }
           className="border-b-2 p-2 rounded-t w-1/2"
         />
-        <img 
-            src={`${form?.picture.length > 1 ? form.picture : null}`}
+        {form?.picture && (
+          <img
+            src={form.picture || ""}
             className="h-48 w-48 mt-2 object-cover shadow border-2"
             alt="Culture Icon Preview"
-        />
+          />
+        )}
         <button
           onClick={handleCreateCulture}
           disabled={loading}

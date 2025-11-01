@@ -83,7 +83,38 @@ export default function HistoryPage() {
 
   if (loading) return <main className="p-4">Loading...</main>;
   if (!activePeriod)
-    return <main className="p-4">No periods yet for this culture.</main>;
+    return (
+      <main className="min-h-screen flex flex-col mt-4 w-full">
+        <div className="flex w-full items-center relative">
+          <SearchBar
+            onSearch={(query) => handleSearch(query)}
+            className="w-1/4"
+          />
+
+          <Link href={`/${culture}/history/new`} title="Add Composer">
+            <svg
+              viewBox={SVGPath.add.viewBox}
+              className="size-4 md:size-5 fill-current text-foreground ml-4 cursor-pointer hover:scale-110 hover:opacity-80 active:scale-95 transition"
+            >
+              <path d={SVGPath.add.path} />
+            </svg>
+          </Link>
+
+          <Link href={`/${culture}/history/edit`} title="Edit Periods">
+            <svg
+              viewBox={SVGPath.edit.viewBox}
+              className="size-4 md:size-5 fill-current text-foreground ml-4 cursor-pointer hover:fill-primary hover:scale-105 hover:opacity-80 active:scale-95 transition"
+            >
+              <path d={SVGPath.edit.path} />
+            </svg>
+          </Link>
+        </div>
+        <div className="mt-20 text-center">
+          <h3 className="font-semibold">Welcome to the history section!</h3>
+          <p className="text-sm mt-2 text-foreground/50">{`It looks like there aren't any periods created for this section yet, click the edit button to create periods to add any historical events you'd like to track.`}</p>
+        </div>
+      </main>
+    );
 
   return (
     <main className="min-h-screen flex flex-col mt-4 w-full">

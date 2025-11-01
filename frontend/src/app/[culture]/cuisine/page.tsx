@@ -11,6 +11,7 @@ import ReactMarkdown from "react-markdown";
 import ExpandableSummary from "@/components/ExpandableSummary";
 import SearchBar from "@/components/SearchBar";
 import RecipeCard from "@/components/cuisine/RecipeCard";
+import { all } from "axios";
 
 export default function CuisinePage() {
   const { culture } = useParams();
@@ -168,111 +169,127 @@ export default function CuisinePage() {
                 </p>
               )}
             </div>
-            <div className="flex flex-col mt-4 md:mt-2">
-              <h1 className="font-lora text-lg md:text-2xl font-bold text-main">
-                Types
-              </h1>
-              <div className="flex flex-wrap gap-2 mt-2">
-                {allTypes.map((type) => (
-                  <button
-                    key={type}
-                    onClick={() => handleTypeFilter(type)}
-                    className={`px-4 py-2 text-xs md:text-sm rounded-md font-medium transition duration-300 cursor-pointer ${
-                      filterType === type
-                        ? "bg-foreground text-background"
-                        : "bg-extra text-foreground hover:bg-primary hover:text-white"
-                    }`}
-                    aria-pressed={filterType === type}
-                  >
-                    {type}
-                  </button>
-                ))}
+            {allTypes.length > 0 && (
+              <div className="flex flex-col mt-4 md:mt-2">
+                <h1 className="font-lora text-lg md:text-2xl font-bold text-main">
+                  Types
+                </h1>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {allTypes.map((type) => (
+                    <button
+                      key={type}
+                      onClick={() => handleTypeFilter(type)}
+                      className={`px-4 py-2 text-xs md:text-sm rounded-md font-medium transition duration-300 cursor-pointer ${
+                        filterType === type
+                          ? "bg-foreground text-background"
+                          : "bg-extra text-foreground hover:bg-primary hover:text-white"
+                      }`}
+                      aria-pressed={filterType === type}
+                    >
+                      {type}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+        {recipes.length > 0 && (
+          <div className="p-4 md:p-6 min-h-full w-full md:w-1/4 flex flex-col items-center bg-extra shadow-md rounded-md mt-4 md:mt-0">
+            <div className="flex items-center w-full mb-4">
+              <div className="flex w-full justify-center items-center">
+                <h3 className="text-xs md:text-sm">
+                  Feeling like{" "}
+                  <span className="font-semibold text-main">
+                    {randomRecipe?.course || "something delicious"}
+                  </span>
+                  ?
+                </h3>
+                <button
+                  onClick={fetchData}
+                  className="ml-4"
+                  aria-label="Refresh random recipe"
+                  disabled={refreshLoading}
+                >
+                  {refreshLoading ? (
+                    <svg
+                      className="animate-spin size-4 md:size-5 text-foreground"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      />
+                    </svg>
+                  ) : (
+                    <svg
+                      viewBox={SVGPath.refresh.viewBox}
+                      className="size-4 md:size-5 fill-current text-foreground cursor-pointer hover:fill-primary hover:scale-105 hover:opacity-80 active:scale-95 transition"
+                    >
+                      <path d={SVGPath.refresh.path} />
+                    </svg>
+                  )}
+                </button>
               </div>
             </div>
+            {randomRecipe ? (
+              <>
+                <img
+                  src={randomRecipe.photo || ""}
+                  className="w-24 object-contain mb-2"
+                  alt={randomRecipe.name}
+                />
+                <h1 className="text-lg md:text-xl font-lora font-semibold">
+                  {randomRecipe.name}
+                </h1>
+              </>
+            ) : (
+              <p className="text-foreground/50">
+                No {getRandomRecipeByCourse()?.course || "recipes"} available
+              </p>
+            )}
           </div>
-        </div>
-        <div className="p-4 md:p-6 min-h-full w-full md:w-1/4 flex flex-col items-center bg-extra shadow-md rounded-md mt-4 md:mt-0">
-          <div className="flex items-center w-full mb-4">
-            <div className="flex w-full justify-center items-center">
-              <h3 className="text-xs md:text-sm">
-                Feeling like{" "}
-                <span className="font-semibold text-main">
-                  {randomRecipe?.course || "something delicious"}
-                </span>
-                ?
-              </h3>
-              <button
-                onClick={fetchData}
-                className="ml-4"
-                aria-label="Refresh random recipe"
-                disabled={refreshLoading}
-              >
-                {refreshLoading ? (
-                  <svg
-                    className="animate-spin size-4 md:size-5 text-foreground"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    />
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    />
-                  </svg>
-                ) : (
-                  <svg
-                    viewBox={SVGPath.refresh.viewBox}
-                    className="size-4 md:size-5 fill-current text-foreground cursor-pointer hover:fill-primary hover:scale-105 hover:opacity-80 active:scale-95 transition"
-                  >
-                    <path d={SVGPath.refresh.path} />
-                  </svg>
-                )}
-              </button>
-            </div>
-          </div>
-          {randomRecipe ? (
-            <>
-              <img
-                src={randomRecipe.photo || ""}
-                className="w-24 object-contain mb-2"
-                alt={randomRecipe.name}
-              />
-              <h1 className="text-lg md:text-xl font-lora font-semibold">
-                {randomRecipe.name}
-              </h1>
-            </>
-          ) : (
-            <p className="text-foreground/50">
-              No {getRandomRecipeByCourse()?.course || "recipes"} available
-            </p>
-          )}
-        </div>
-      </section>
-      <section className="flex flex-col space-y-4">
-        <h1 className="font-lora text-lg md:text-2xl font-bold text-main">
-          Featured Recipes
-        </h1>
-        {getRandomFiveRecipes.length > 0 ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 md:gap-4">
-            {getRandomFiveRecipes.map((recipe) => (
-              <RecipeCard key={recipe.id} recipe={recipe} />
-            ))}
-          </div>
-        ) : (
-          <p className="text-foreground/50">
-            No recipes match the current filters.
-          </p>
         )}
       </section>
+      {recipes.length > 0 && (
+        <section className="flex flex-col space-y-4">
+          <h1 className="font-lora text-lg md:text-2xl font-bold text-main">
+            Featured Recipes
+          </h1>
+          {getRandomFiveRecipes.length > 0 ? (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 md:gap-4">
+              {getRandomFiveRecipes.map((recipe) => (
+                <RecipeCard key={recipe.id} recipe={recipe} />
+              ))}
+            </div>
+          ) : (
+            <p className="text-foreground/50">
+              No recipes match the current filters.
+            </p>
+          )}
+        </section>
+      )}
+      {recipes.length === 0 && (
+        <section className="text-center p-8">
+          <h2 className="text-xl md:text-2xl font-bold mb-4">
+            No Recipes Found 
+          </h2>
+          <p className="text-foreground/50 mb-4">
+            It looks like there are no recipes added for this cuisine yet. Click the + button to add your first recipe!
+          </p>
+        </section>
+      )}
     </main>
   );
 }

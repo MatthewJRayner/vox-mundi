@@ -109,7 +109,51 @@ export default function MusicPage() {
             </svg>
           </Link>
         </div>
-        <span className="mt-4">No periods yet for this culture.</span>
+        <div className="w-full gap-2 mt-4 flex flex-col md:flex-row md:max-h-[100px] justify-center mb-8 md:mb-0">
+          <Link
+            href={`/${culture}/music/composer-search/`}
+            aria-label="Composer Search"
+            className={`font-bold flex space-x-1 rounded-lg items-center justify-center py-2 w-full border-2 cursor-pointer transition-all duration-300 hover:scale-105 active:scale-95`}
+          >
+            <svg
+              viewBox={SVGPath.search.viewBox}
+              className={`size-6 transition hover:scale-105 active:scale-95 fill-foreground`}
+            >
+              <path d={SVGPath.search.path} />
+            </svg>
+            <span className={`text-sm ml-1`}>Composer Search</span>
+          </Link>
+          <Link
+            href={`/${culture}/music/sheet/`}
+            aria-label="Sheet Music"
+            className={`font-bold flex space-x-1 rounded-lg items-center justify-center py-2 w-full border-2 cursor-pointer transition-all duration-300 hover:scale-105 active:scale-95`}
+          >
+            <svg
+              viewBox={SVGPath.guitar.viewBox}
+              className={`size-6 transition hover:scale-105 active:scale-95 fill-foreground`}
+            >
+              <path d={SVGPath.guitar.path} />
+            </svg>
+            <span className={`text-sm ml-1`}>Sheet Music</span>
+          </Link>
+          <Link
+            href={`/${culture}/music/artists/`}
+            aria-label="Favourite Artists"
+            className={`font-bold flex space-x-1 rounded-lg items-center justify-center py-2 w-full border-2 cursor-pointer transition-all duration-300 hover:scale-105 active:scale-95`}
+          >
+            <svg
+              viewBox={SVGPath.music.viewBox}
+              className={`size-6 transition hover:scale-105 active:scale-95 fill-foreground`}
+            >
+              <path d={SVGPath.music.path} />
+            </svg>
+            <span className={`text-sm ml-1`}>Favourite Artists</span>
+          </Link>
+        </div>
+        <div className="mt-20 text-center">
+          <h3 className="font-semibold">Welcome to the music section!</h3>
+          <p className="text-sm mt-2 text-foreground/50">{`It looks like there aren't any periods created for this section yet, click the + button up top to create any periods to add your favourite composers, or feel free to use the buttons on top for the other features of the music section.`}</p>
+        </div>
       </main>
     );
 
