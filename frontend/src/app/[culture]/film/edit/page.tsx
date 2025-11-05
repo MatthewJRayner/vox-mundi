@@ -2,13 +2,11 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
-import Link from "next/link";
+
 import api from "@/lib/api";
 import { Culture, Category, PageContent, Period } from "@/types/culture";
-import { UserFilm } from "@/types/media/film";
+
 import CategoryHeader from "@/components/CategoryHeader";
-import SearchBar from "@/components/SearchBar";
-import { SVGPath } from "@/utils/path";
 import PeriodList from "@/components/PeriodList";
 import PeriodForm from "@/components/PeriodForm";
 
@@ -21,7 +19,6 @@ export default function FilmEditPage() {
   const [overviewText, setOverviewText] = useState("");
   const [periods, setPeriods] = useState<Period[]>([]);
   const [activePeriod, setActivePeriod] = useState<Period | null>(null);
-  const [userFilms, setUserFilms] = useState<UserFilm[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [periodForm, setPeriodForm] = useState({
@@ -36,22 +33,17 @@ export default function FilmEditPage() {
     if (!culture) return;
     try {
       setLoading(true);
-      const [catRes, contentRes, cultureRes, periodRes, userFilmRes] =
-        await Promise.all([
-          api.get(`/categories/?key=film&code=${culture}`),
-          api.get(`/page-contents/?code=${culture}&key=film`),
-          api.get(`/cultures/?code=${culture}`),
-          api.get(`/periods/?code=${culture}&key=film`),
-          api.get(`/user-films/?code=${culture}`),
-        ]);
-
+      const [catRes, contentRes, cultureRes, periodRes] = await Promise.all([
+        api.get(`/categories/?key=film&code=${culture}`),
+        api.get(`/page-contents/?code=${culture}&key=film`),
+        api.get(`/cultures/?code=${culture}`),
+        api.get(`/periods/?code=${culture}&key=film`),
+      ]);
       const categoryData = catRes.data[0];
       setCategory(categoryData);
       setDisplayName(categoryData?.display_name || "");
       setCultureCurrent(cultureRes.data[0]);
       setPeriods(periodRes.data);
-      setUserFilms(userFilmRes.data);
-
       if (contentRes.data[0]) {
         setPageContent(contentRes.data[0]);
         setOverviewText(contentRes.data[0].overview_text || "");
@@ -153,7 +145,6 @@ export default function FilmEditPage() {
         });
         setPeriods((prev) => [...prev, res.data]);
       }
-
       setPeriodForm({
         id: null,
         title: "",
@@ -175,6 +166,7 @@ export default function FilmEditPage() {
         setDisplayName={setDisplayName}
         onSave={handleSaveDisplayName}
       />
+
       <section className="flex flex-col space-y-4">
         <h2 className="text-2xl text-main font-garamond">Overview Text</h2>
         <textarea
@@ -191,12 +183,14 @@ export default function FilmEditPage() {
           Save Overview
         </button>
       </section>
+
       <PeriodList
         periods={periods}
         activePeriod={activePeriod}
         onAddNew={handleAddNewPeriod}
         onEdit={handleEditPeriod}
       />
+
       <PeriodForm
         periodForm={periodForm}
         setPeriodForm={setPeriodForm}

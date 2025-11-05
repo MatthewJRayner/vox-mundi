@@ -1,31 +1,32 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
-import { lazy, useEffect, useState, useCallback } from "react";
-import axios, { AxiosError } from "axios";
-import api from "@/lib/api";
+import { useEffect, useState, useCallback } from "react";
+import ReactMarkdown from "react-markdown";
+import axios from "axios";
 import { useParams } from "next/navigation";
-import { Culture } from "@/types/culture";
-import { Film, UserFilm } from "@/types/media/film";
-import StarRating from "@/components/StarRating";
-import ReviewModal from "@/components/ReviewModal";
 import Link from "next/link";
+
+import api from "@/lib/api";
 import { formatDate } from "@/utils/formatters/formatDate";
 import { formatRuntime } from "@/utils/formatters/formatRuntime";
+import { SVGPath } from "@/utils/path";
+import { getLanguageName, getCountryName } from "@/utils/iso";
+import { Culture } from "@/types/culture";
+import { Film, UserFilm } from "@/types/media/film";
+
+import StarRating from "@/components/StarRating";
+import ReviewModal from "@/components/ReviewModal";
 import FilmPosterModal from "@/components/film/FilmPosterModal";
 import DateWatchedModal from "@/components/film/FilmDateWatched";
 import UserFilmAssignmentForm from "@/components/film/UserFilmAssignmentForm";
-import ReactMarkdown from "react-markdown";
-import { SVGPath } from "@/utils/path";
-import { getLanguageName, getCountryName } from "@/utils/iso";
 
 export default function FilmDetailPage() {
   const { culture, id } = useParams();
   const [currentCulture, setCurrentCulture] = useState<Culture | null>(null);
   const [film, setFilm] = useState<Film | null>(null);
   const [userFilm, setUserFilm] = useState<UserFilm | null>(null);
-  const [showModal, setShowModal] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
-  const [selectedDate, setSelectedDate] = useState<string>("");
   const [showDateModal, setShowDateModal] = useState(false);
   const [showAssignmentModal, setShowAssignmentModal] = useState(false);
   const [rating, setRating] = useState(0);
@@ -128,78 +129,63 @@ export default function FilmDetailPage() {
     const handleResize = () => {
       setIsSmallScreen(window.innerWidth < 768);
     };
-
     handleResize();
-
     window.addEventListener("resize", handleResize);
-
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   const updateReview = async (newReview: string) => {
     if (!userFilm?.id) return;
-
     const uf = await ensureUserFilm();
-
     const res = await api.patch(`/user-films/${uf.id}/`, {
       notes: newReview,
     });
-
     setUserFilm(res.data);
   };
 
   const updateRating = async (newValue: number) => {
     if (!userFilm?.id) return;
-
     setRating(newValue);
-
     const uf = await ensureUserFilm();
-
     const res = await api.patch(`/user-films/${uf.id}/`, {
       rating: newValue,
     });
-
     setUserFilm(res.data);
   };
 
   const updateDateWatched = async (date: string | null) => {
     if (!userFilm?.id) return;
-
     const uf = await ensureUserFilm();
-
-    setSelectedDate(date || "");
+    const res = await api.patch(`/user-films/${uf.id}/`, {
+      date_watched: new Date(date || "1970-01-01").toISOString().split("T")[0],
+    });
+    setUserFilm(res.data);
   };
 
   const toggleSeen = async () => {
     if (!film) return;
     const uf = await ensureUserFilm();
-
     const res = await api.patch(`/user-films/${uf.id}/`, {
       seen: !uf.seen,
     });
-
     setUserFilm(res.data);
   };
 
   const toggleWatchlist = async () => {
     if (!film) return;
     const uf = await ensureUserFilm();
-
     const res = await api.patch(`/user-films/${uf.id}/`, {
       watchlist: !uf.watchlist,
     });
-
     setUserFilm(res.data);
   };
 
   const toggleFavourite = async () => {
     if (!film) return;
     const uf = await ensureUserFilm();
-
     const res = await api.patch(`/user-films/${uf.id}/`, {
       favourite: !uf.favourite,
     });
-
     setUserFilm(res.data);
   };
 
@@ -209,8 +195,18 @@ export default function FilmDetailPage() {
 
   const handleAssignmentSuccess = () => {
     setShowAssignmentModal(false);
-    fetchFilm(); // Refresh film data to reflect updated cultures/period
+    fetchFilm();
   };
+
+  const handlePosterModalOpen = async () => {
+    if (!film) return;
+    const uf = await ensureUserFilm();
+    if (uf) {
+      setShowImageModal(true);
+    } else {
+      return;
+    }
+  }
 
   if (!film)
     return <p className="p-4 sm:p-6 font-sans text-gray-400">Loading...</p>;
@@ -225,11 +221,13 @@ export default function FilmDetailPage() {
               alt={`${film?.title || "Film"} Backdrop`}
               className="h-full w-full object-cover object-top"
             />
+            {/* Blur from bottom */}
             <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-background"></div>
           </div>
         </div>
       )}
 
+      {/* div to bring down contents */}
       <div className="h-[150px] sm:h-[42vh]"></div>
 
       <div className="flex flex-col w-full max-w-[900px] sm:max-w-[1150px] items-center justify-center mx-auto">
@@ -238,7 +236,7 @@ export default function FilmDetailPage() {
             {(userFilm?.poster || film?.poster) && (
               <div
                 className="relative cursor-pointer group"
-                onClick={() => setShowImageModal(true)}
+                onClick={handlePosterModalOpen}
               >
                 <img
                   src={userFilm?.poster || film?.poster}
@@ -259,12 +257,17 @@ export default function FilmDetailPage() {
               )}
               <button
                 onClick={toggleFavourite}
-                className={`text-base cursor-pointer transition-all duration-300 hover:text-red-500/50 hover:scale-105 active:scale-90 ${
+                className={`text-base cursor-pointer transition-all duration-300 ${
                   userFilm?.favourite ? "text-red-500" : "text-neutral-mid"
                 }`}
                 title="Favourite"
               >
-                ❤︎
+                <svg
+                  viewBox={SVGPath.heart.viewBox}
+                  className={`size-6 fill-current transition hover:text-red-500/50 hover:scale-105 active:scale-90`}
+                >
+                  <path d={SVGPath.heart.path} />
+                </svg>
               </button>
               <button
                 onClick={() => setShowDateModal(true)}
@@ -363,13 +366,11 @@ export default function FilmDetailPage() {
                     {film.blurb.toUpperCase()}
                   </h6>
                 )}
-
                 {film.synopsis && (
                   <div className="text-md font-inter text-gray-400 leading-relaxed">
                     <ReactMarkdown>{film.synopsis}</ReactMarkdown>
                   </div>
                 )}
-
                 <div className="rounded-lg block md:hidden w-full md:w-2/5 h-fit mt-4 md:mt-0">
                   <div className="w-full text-center border-y-foreground/20 border-y-1 pt-3 flex sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4">
                     <div className="w-full sm:w-1/2 flex flex-col items-center">
@@ -777,12 +778,18 @@ export default function FilmDetailPage() {
                     )}
                     {film.languages && (
                       <p>
-                        <strong>Languages:</strong> {film.languages?.map(lang => getLanguageName(lang)).join(", ")}
+                        <strong>Languages:</strong>{" "}
+                        {film.languages
+                          ?.map((lang) => getLanguageName(lang))
+                          .join(", ")}
                       </p>
                     )}
                     {film.countries && (
                       <p>
-                        <strong>Countries:</strong> {film.countries?.map(code => getCountryName(code)).join(", ")}
+                        <strong>Countries:</strong>{" "}
+                        {film.countries
+                          ?.map((code) => getCountryName(code))
+                          .join(", ")}
                       </p>
                     )}
                   </div>

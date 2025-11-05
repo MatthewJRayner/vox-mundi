@@ -2,11 +2,13 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useParams } from "next/navigation";
+
 import api from "@/lib/api";
+import { SVGPath } from "@/utils/path";
 import { Film } from "@/types/media/film";
+
 import FilmCard from "@/components/film/FilmCard";
 import SearchBar from "@/components/SearchBar";
-import { SVGPath } from "@/utils/path";
 
 type SortOption = "date-desc" | "date-asc" | "rating-desc" | "rating-asc";
 
@@ -20,9 +22,9 @@ export default function FilmSearchPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<SortOption>("date-desc");
-  const [searchQuery, setSearchQuery] = useState("");
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(true);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [total, setTotal] = useState(0);
   const limit = 20;
 
@@ -232,7 +234,7 @@ export default function FilmSearchPage() {
           {hasMore && !loading && (
             <div className="mt-4 sm:mt-6 text-sm sm:text-base text-center">
               <button
-                onClick={() => fetchFilms(false)} // ✅ don’t reset, just load next
+                onClick={() => fetchFilms(false)}
                 disabled={loading || !hasMore}
                 className="font-sans bg-primary text-white px-4 py-2 rounded hover:bg-neutral-mid hover:text-background cursor-pointer"
               >

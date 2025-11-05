@@ -1,9 +1,10 @@
 "use client";
 
+import { motion } from "framer-motion";
+
 import AuthGuard from "../components/auth/AuthGuard";
 import Navbar from "@/components/Navbar";
 import CultureGateway from "@/components/cultures/CultureGateway";
-import { motion } from "framer-motion";
 
 export default function Home() {
   return (

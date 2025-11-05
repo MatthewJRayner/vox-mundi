@@ -1,11 +1,13 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+
 import api from "@/lib/api";
-import { Recipe, Ingredient, Instruction } from "@/types/media/recipe";
 import { SVGPath } from "@/utils/path";
+import { Recipe, Ingredient, Instruction } from "@/types/media/recipe";
 
 export default function CuisineIDPage() {
   const { culture, id } = useParams();
@@ -45,20 +47,64 @@ export default function CuisineIDPage() {
   };
 
   const convertUnits = (ingredient: Ingredient): Ingredient => {
-    if (ingredient.measurement === "Units" || ingredient.measurement === "Undefined" || ingredient.measurement === "Cans") {
-      return ingredient; // No conversion for Units or Undefined
+    if (
+      ingredient.measurement === "Units" ||
+      ingredient.measurement === "Undefined" ||
+      ingredient.measurement === "Cans"
+    ) {
+      return ingredient;
     }
 
     const conversions: {
-      [key: string]: { metricUnit: string; imperialUnit: string; toImperial: number; toMetric: number };
+      [key: string]: {
+        metricUnit: string;
+        imperialUnit: string;
+        toImperial: number;
+        toMetric: number;
+      };
     } = {
-      kg: { metricUnit: "kg", imperialUnit: "lb", toImperial: 2.204623, toMetric: 1 / 2.204623 },
-      g: { metricUnit: "g", imperialUnit: "oz", toImperial: 0.03527396, toMetric: 1 / 0.03527396 },
-      L: { metricUnit: "L", imperialUnit: "qt", toImperial: 1.056688, toMetric: 1 / 1.056688 },
-      mL: { metricUnit: "mL", imperialUnit: "fl oz", toImperial: 0.033814, toMetric: 1 / 0.033814 },
-      tsp: { metricUnit: "tsp", imperialUnit: "tsp", toImperial: 1, toMetric: 1 },
-      tbsp: { metricUnit: "tbsp", imperialUnit: "tbsp", toImperial: 1, toMetric: 1 },
-      cup: { metricUnit: "mL", imperialUnit: "cup", toImperial: 0.00416667, toMetric: 1 / 0.00416667 }, // 1 cup ≈ 240 mL
+      kg: {
+        metricUnit: "kg",
+        imperialUnit: "lb",
+        toImperial: 2.204623,
+        toMetric: 1 / 2.204623,
+      },
+      g: {
+        metricUnit: "g",
+        imperialUnit: "oz",
+        toImperial: 0.03527396,
+        toMetric: 1 / 0.03527396,
+      },
+      L: {
+        metricUnit: "L",
+        imperialUnit: "qt",
+        toImperial: 1.056688,
+        toMetric: 1 / 1.056688,
+      },
+      mL: {
+        metricUnit: "mL",
+        imperialUnit: "fl oz",
+        toImperial: 0.033814,
+        toMetric: 1 / 0.033814,
+      },
+      tsp: {
+        metricUnit: "tsp",
+        imperialUnit: "tsp",
+        toImperial: 1,
+        toMetric: 1,
+      },
+      tbsp: {
+        metricUnit: "tbsp",
+        imperialUnit: "tbsp",
+        toImperial: 1,
+        toMetric: 1,
+      },
+      cup: {
+        metricUnit: "mL",
+        imperialUnit: "cup",
+        toImperial: 0.00416667,
+        toMetric: 1 / 0.00416667,
+      },
     };
 
     const currentUnit = ingredient.measurement;
@@ -74,11 +120,9 @@ export default function CuisineIDPage() {
     let convertedMeasurement = ingredient.measurement;
 
     if (useImperial && conversion.metricUnit === currentUnit) {
-      // Convert from metric to imperial
       convertedQuantity *= conversion.toImperial;
       convertedMeasurement = conversion.imperialUnit;
     } else if (!useImperial && conversion.imperialUnit === currentUnit) {
-      // Convert from imperial to metric
       convertedQuantity *= conversion.toMetric;
       convertedMeasurement = conversion.metricUnit;
     }
@@ -141,7 +185,9 @@ export default function CuisineIDPage() {
             {recipe.region || "No region specified"}
           </h3>
           <h3 className="text-foreground/50 text-sm md:text-base">
-            {recipe.cooking_time ? `${recipe.cooking_time}m` : "No cooking time"}
+            {recipe.cooking_time
+              ? `${recipe.cooking_time}m`
+              : "No cooking time"}
           </h3>
           <div className="flex items-center space-x-2">
             <label
@@ -173,7 +219,9 @@ export default function CuisineIDPage() {
               type="button"
               onClick={() => setUseImperial(!useImperial)}
               className="bg-primary text-white px-2 py-1 rounded text-sm hover:bg-extra-mid transition cursor-pointer active:scale-95"
-              aria-label={`Switch to ${useImperial ? "metric" : "imperial"} units`}
+              aria-label={`Switch to ${
+                useImperial ? "metric" : "imperial"
+              } units`}
               title="Change System"
             >
               {useImperial ? "Imperial" : "Metric"}

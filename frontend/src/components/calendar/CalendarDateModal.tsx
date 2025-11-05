@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import CalendarDateForm from "./CalendarDateForm";
-import { CalendarDate } from "@/types/calendar";
-import dayjs from "dayjs";
 import ReactMarkdown from "react-markdown";
+import dayjs from "dayjs";
+
+import { CalendarDate } from "@/types/calendar";
 import { SVGPath } from "@/utils/path";
+
+import CalendarDateForm from "./CalendarDateForm";
 
 interface CalendarDateModalProps {
   selectedDate?: dayjs.Dayjs;
@@ -13,6 +15,24 @@ interface CalendarDateModalProps {
   culture: string;
   onClose: () => void;
 }
+
+/** 
+ * Modal to display calendar date details and edit/add events buttons.
+ * 
+ * @param selectedDate - The date selected in the calendar
+ * @param events - List of calendar events for the selected date
+ * @param culture - Culture code for the calendar
+ * @param onClose - Callback to close the modal
+ * @example
+ * <CalendarDateModal
+ *  selectedDate={selectedDate}
+ *  events={calendarDates.filter((e) =>
+ *    dayjs(e.calendar_date).isSame(selectedDate, "day")
+ *  )}
+ *  onClose={handleModalClose}
+ *  culture={culture?.toString() || ""}
+ * />
+*/
 
 export default function CalendarDateModal({
   selectedDate,

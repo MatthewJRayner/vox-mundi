@@ -2,9 +2,11 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Recipe } from "@/types/media/recipe";
-import RecipeForm from "@/components/cuisine/RecipeForm";
+
 import api from "@/lib/api";
+import { Recipe } from "@/types/media/recipe";
+
+import RecipeForm from "@/components/cuisine/RecipeForm";
 
 export default function EditRecipePage() {
   const { culture, id } = useParams();

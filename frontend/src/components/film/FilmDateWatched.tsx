@@ -1,7 +1,26 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+
 import api from "@/lib/api";
+
+/**
+ * Modal component for selecting and updating the date a film was watched.
+ * 
+ * @param userFilmId - ID of the user film to update
+ * @param initialValue - Initial date watched value
+ * @param onSave - Callback when date is saved
+ * @param onClose - Callback to close the modal
+ * @param isOpen - Whether the modal is open
+ * @example
+ * <DateWatchedModal
+ *   userFilmId={userFilmId}
+ *   initialValue={initialDate}
+ *   onSave={(date) => console.log("Date saved:", date)}
+ *   onClose={() => setShowModal(false)}
+ *   isOpen={showModal}
+ * />
+ */
 
 interface DateWatchedModalProps {
   userFilmId: number;
@@ -21,19 +40,33 @@ export default function DateWatchedModal({
   const [selectedDate, setSelectedDate] = useState<string>(initialValue || "");
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (initialValue) {
+      const date = new Date(initialValue);
+      const formatted = date.toISOString().split("T")[0]; // "2025-04-05"
+      setSelectedDate(formatted);
+    } else {
+      setSelectedDate("");
+    }
+  }, [initialValue]);
+
   const handleSave = async () => {
     if (!userFilmId) {
       setError("No user film available to update date watched.");
       return;
     }
-
     try {
       const res = await api.patch(`/user-films/${userFilmId}/`, {
         date_watched: selectedDate || null,
-        seen: !!selectedDate, // Set seen to true if a date is selected, false if cleared
+        seen: !!selectedDate,
       });
-      onSave(selectedDate || null);
-      onClose();
+      if (res.data.date_watched) {
+        onSave(selectedDate || null);
+        onClose();
+      } else {
+        setError("Failed to update date watched.");
+        return;
+      }
     } catch (err: unknown) {
       console.error("Error updating date watched:", err);
       setError("Failed to update date watched.");
@@ -45,13 +78,12 @@ export default function DateWatchedModal({
       setError("No user film available to clear date watched.");
       return;
     }
-
     try {
       const res = await api.patch(`/user-films/${userFilmId}/`, {
         date_watched: null,
         seen: false,
       });
-      setSelectedDate("");
+      setSelectedDate(res.data.date_watched || "");
       onSave(null);
       onClose();
     } catch (err: unknown) {
@@ -74,7 +106,7 @@ export default function DateWatchedModal({
           value={selectedDate}
           onChange={(e) => setSelectedDate(e.target.value)}
           className="w-full p-2 rounded border border-gray-400 text-foreground bg-neutral focus:outline-none focus:ring-2 focus:ring-primary"
-          max={new Date().toISOString().split("T")[0]} // Prevent future dates
+          max={new Date().toISOString().split("T")[0]}
         />
         <div className="flex justify-end space-x-2 mt-4">
           <button

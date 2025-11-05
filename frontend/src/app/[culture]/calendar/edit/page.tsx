@@ -2,19 +2,20 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
+import Link from "next/link";
+import dayjs from "dayjs";
+
 import api from "@/lib/api";
-import { Culture, Category } from "@/types/culture";
+import { SVGPath } from "@/utils/path";
+import { Category } from "@/types/culture";
 import { CalendarDate } from "@/types/calendar";
+
 import CategoryHeader from "@/components/CategoryHeader";
 import CalendarDateModal from "@/components/calendar/CalendarDateModal";
 import SearchBar from "@/components/SearchBar";
-import dayjs from "dayjs";
-import { SVGPath } from "@/utils/path";
-import Link from "next/link";
 
 export default function CalendarEditPage() {
   const { culture } = useParams();
-  const [cultureCurrent, setCultureCurrent] = useState<Culture | null>(null);
   const [category, setCategory] = useState<Category | null>(null);
   const [displayName, setDisplayName] = useState("");
   const [calendarEvents, setCalendarEvents] = useState<CalendarDate[]>([]);
@@ -27,16 +28,14 @@ export default function CalendarEditPage() {
     if (!culture) return;
     try {
       setLoading(true);
-      const [catRes, eventsRes, cultureRes] = await Promise.all([
+      const [catRes, eventsRes] = await Promise.all([
         api.get(`/categories/?key=calendar&code=${culture}`),
         api.get(`/calendar-dates/?code=${culture}`),
-        api.get(`/cultures/?code=${culture}`),
       ]);
 
       const categoryData = catRes.data[0];
       setCategory(categoryData);
       setDisplayName(categoryData.display_name || "");
-      setCultureCurrent(cultureRes.data);
       setCalendarEvents(eventsRes.data);
       setFilteredEvents(eventsRes.data);
     } catch (error) {
@@ -102,11 +101,13 @@ export default function CalendarEditPage() {
           <path d={SVGPath.arrow.path} />
         </svg>
       </Link>
+
       <CategoryHeader
         displayName={displayName}
         setDisplayName={setDisplayName}
         onSave={handleSaveDisplayName}
       />
+
       <div className="w-full flex items-center">
         <SearchBar onSearch={handleSearch} />
         <button
@@ -116,12 +117,13 @@ export default function CalendarEditPage() {
         >
           <svg
             viewBox={SVGPath.add.viewBox}
-            className="size-5 fill-current transition hover:scale-105 active:scale-95"
+            className="size-5 fill-current transition hover:scale-105 active:scale-95 cursor-pointer"
           >
             <path d={SVGPath.add.path} />
           </svg>
         </button>
       </div>
+
       <section className="space-y-4">
         <h2 className="text-lg text-main">Calendar Events</h2>
         {filteredEvents.length === 0 ? (
@@ -160,10 +162,13 @@ export default function CalendarEditPage() {
           </ul>
         )}
       </section>
+
+      {/* Modals */}
       {showModal && (
         <CalendarDateModal
           selectedDate={
-            editingEvent ? dayjs(editingEvent.calendar_date) : dayjs() // fallback to today for new event
+            /** Fallback to today for new event */
+            editingEvent ? dayjs(editingEvent.calendar_date) : dayjs()
           }
           events={editingEvent ? [editingEvent] : []}
           culture={culture as string}

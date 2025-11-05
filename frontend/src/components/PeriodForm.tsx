@@ -1,4 +1,3 @@
-// components/history/PeriodForm.tsx
 "use client";
 
 import React from "react";
@@ -16,6 +15,19 @@ interface PeriodFormProps {
   setPeriodForm: React.Dispatch<React.SetStateAction<PeriodFormState>>;
   onSubmit: (e: React.FormEvent) => void;
 }
+
+/**
+ * Form for creating or editing a user period.
+ *
+ * Controlled via `periodForm` state and `setPeriodForm`. Submits via `onSubmit`.
+ *
+ * @param periodForm - Current form state (id, title, years, description)
+ * @param setPeriodForm - State updater for form values
+ * @param onSubmit - Form submission handler, will typically assign the period's type to the category it's used in
+ *
+ * @example
+ * <PeriodForm periodForm={form} setPeriodForm={setForm} onSubmit={handleSave} />
+ */
 
 export default function PeriodForm({
   periodForm,

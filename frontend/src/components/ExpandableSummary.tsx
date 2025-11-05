@@ -2,24 +2,44 @@
 
 import React, { useState } from "react";
 import ReactMarkdown from "react-markdown";
+
 import { SVGPath } from "@/utils/path";
 
 interface ExpandableSummaryProps {
   text: string;
-  maxHeight?: string;    // Tailwind class, e.g. "max-h-52"
-  blurBottom?: string;   // Tailwind class, e.g. "bottom-5"
+  maxHeight?: string;
+  blurBottom?: string;
   extraBackground?: boolean;
 }
 
+/**
+ * Truncates long text with a "Show More/Less" toggle and gradient fade.
+ *
+ * Ideal for summaries, descriptions, or any content that should be collapsible.
+ * Uses `ReactMarkdown` for rich text support.
+ *
+ * @param text - Markdown-formatted text to display
+ * @param maxHeight - Tailwind class for collapsed height (default: `"max-h-52"`)
+ * @param blurBottom - Tailwind class for gradient position (default: `"bottom-5"`)
+ * @param extraBackground - Use the `extra` color variable for gradient instead of the background (default: `false`)
+ *
+ * @example
+ * <ExpandableSummary
+ *  text={longDescription}
+ *  maxHeight="max-h-64"
+ *  blurBottom="bottom-6"
+ * />
+ */
+
 const ExpandableSummary: React.FC<ExpandableSummaryProps> = ({
   text,
-  maxHeight = "max-h-52",   // default height
-  blurBottom = "bottom-5",  // default blur bottom distance
+  maxHeight = "max-h-52",
+  blurBottom = "bottom-5",
   extraBackground = false,
 }) => {
   const [showFull, setShowFull] = useState(false);
   const isLong = text?.length > 300;
-  const backgroundColor = extraBackground ? "extra" : "background"
+  const backgroundColor = extraBackground ? "extra" : "background";
 
   return (
     <div className="mb-8 relative">

@@ -1,17 +1,18 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+
 import api from "@/lib/api";
+import { SVGPath } from "@/utils/path";
 import { PageContent } from "@/types/culture";
 import { Recipe } from "@/types/media/recipe";
-import { SVGPath } from "@/utils/path";
-import ReactMarkdown from "react-markdown";
+
 import ExpandableSummary from "@/components/ExpandableSummary";
 import SearchBar from "@/components/SearchBar";
 import RecipeCard from "@/components/cuisine/RecipeCard";
-import { all } from "axios";
 
 export default function CuisinePage() {
   const { culture } = useParams();
@@ -20,7 +21,6 @@ export default function CuisinePage() {
   const [pageContent, setPageContent] = useState<PageContent | null>(null);
   const [filterType, setFilterType] = useState("");
   const [query, setQuery] = useState("");
-  const [showFullDesc, setShowFullDesc] = useState(false);
   const [loading, setLoading] = useState(false);
   const [refreshLoading, setRefreshLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -283,10 +283,11 @@ export default function CuisinePage() {
       {recipes.length === 0 && (
         <section className="text-center p-8">
           <h2 className="text-xl md:text-2xl font-bold mb-4">
-            No Recipes Found 
+            No Recipes Found
           </h2>
           <p className="text-foreground/50 mb-4">
-            It looks like there are no recipes added for this cuisine yet. Click the + button to add your first recipe!
+            It looks like there are no recipes added for this cuisine yet. Click
+            the + button to add your first recipe!
           </p>
         </section>
       )}

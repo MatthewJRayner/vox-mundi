@@ -1,23 +1,20 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import dayjs from "dayjs";
+
 import api from "@/lib/api";
+import { SVGPath } from "@/utils/path";
 import { CalendarDate } from "@/types/calendar";
 import { Culture } from "@/types/culture";
-import { SVGPath } from "@/utils/path";
-import { CalendarSystem } from "./CalendarAdapter";
-import dayjs from "dayjs";
 
 interface CalendarFormProps {
   cultureCode: string;
   initialDate: Date;
   initialData?: CalendarDate;
-  referenceSystem?: CalendarSystem; // add this
   onClose: () => void;
   onSaved: () => void;
 }
-
-
 
 export default function CalendarDateForm({
   cultureCode,
@@ -25,7 +22,6 @@ export default function CalendarDateForm({
   onClose,
   onSaved,
   initialData,
-  referenceSystem,
 }: CalendarFormProps) {
   const [formData, setFormData] = useState<CalendarDate>(
     initialData || {
@@ -36,12 +32,16 @@ export default function CalendarDateForm({
       cultures: [],
       isAnnual: false,
       type: "",
-      calendar_date: initialDate ? dayjs(initialDate).format("YYYY-MM-DD") : dayjs().format("YYYY-MM-DD"),
+      calendar_date: initialDate
+        ? dayjs(initialDate).format("YYYY-MM-DD")
+        : dayjs().format("YYYY-MM-DD"),
       reference_system: "gregorian",
     }
   );
   const [selectedDate, setSelectedDate] = useState(
-    initialDate ? dayjs(initialDate).format("YYYY-MM-DD") : dayjs().format("YYYY-MM-DD")
+    initialDate
+      ? dayjs(initialDate).format("YYYY-MM-DD")
+      : dayjs().format("YYYY-MM-DD")
   );
   const [cultures, setCultures] = useState<Culture[]>([]);
   const [loading, setLoading] = useState(false);
@@ -106,10 +106,10 @@ export default function CalendarDateForm({
         photo: formData.photo,
         visibility: formData.visibility,
         culture_ids: formData.cultures.map((c) => c.id),
-        calendar_date: selectedDate, // Use selected date
+        calendar_date: selectedDate,
         isAnnual: formData.isAnnual,
         type: formData.type,
-        reference_system: formData.reference_system || 'gregorian',
+        reference_system: formData.reference_system || "gregorian",
       };
 
       const url = initialData
@@ -128,6 +128,21 @@ export default function CalendarDateForm({
       alert("Error saving calendar date.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!initialData) return;
+    const confirm = window.confirm(
+      "Are you sure you want to delete this event?"
+    );
+    if (!confirm) return;
+
+    try {
+      await api.delete(`/calendar-dates/${initialData.id}/`);
+      onSaved();
+    } catch (error) {
+      console.error("Error deleting calendar date:", error);
     }
   };
 
@@ -196,6 +211,7 @@ export default function CalendarDateForm({
           onChange={handleChange}
           className="text-sm md:text-base bg-extra shadow-lg p-2 w-full rounded"
         />
+        {/* Culture select dropdown */}
         <div className="bg-extra shadow-lg p-2 rounded">
           <div
             className="flex justify-between items-center cursor-pointer"
@@ -266,12 +282,18 @@ export default function CalendarDateForm({
           disabled={loading}
           className="bg-foreground text-background w-full md:w-1/3 cursor-pointer py-2 rounded hover:bg-primary  hover:text-white active:scale-90 transition"
         >
-          {loading
-            ? "Saving..."
-            : initialData
-            ? "Update Event"
-            : "Add Event"}
+          {loading ? "Saving..." : initialData ? "Update Event" : "Add Event"}
         </button>
+
+        {initialData && (
+          <button
+            onClick={handleDelete}
+            disabled={loading}
+            className="bg-red-400 text-white w-full md:w-1/3 cursor-pointer py-2 rounded hover:bg-red-500 active:scale-90 transition ml-2"
+          >
+            {loading ? "Deleting..." : "Delete Event"}
+          </button>
+        )}
       </form>
     </div>
   );

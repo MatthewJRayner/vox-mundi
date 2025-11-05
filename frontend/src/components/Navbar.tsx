@@ -1,10 +1,12 @@
 "use client";
+
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import ThemeToggle from "./ThemeToggle";
+
 import { useUser } from "@/context/UserProvider";
 import { SVGPath } from "@/utils/path";
+
+import ThemeToggle from "./ThemeToggle";
 
 interface Category {
   key: string;
@@ -21,8 +23,19 @@ interface NavbarProps {
   categories?: Category[];
 }
 
+/**
+ * Responsive navigation bar with culture name, category links, and user menu.
+ *
+ * Supports mobile hamburger menu, theme toggle, login/logout, and dropdown.
+ *
+ * @param culture - Current culture (code + name)
+ * @param categories - List of category links to display
+ *
+ * @example
+ * <Navbar culture={culture} categories={categories} />
+ */
+
 export default function Navbar({ culture, categories = [] }: NavbarProps) {
-  const router = useRouter();
   const { user, isAuthenticated, logout } = useUser();
 
   const [mobileOpen, setMobileOpen] = useState(false);

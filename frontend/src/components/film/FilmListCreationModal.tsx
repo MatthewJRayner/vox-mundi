@@ -1,13 +1,43 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { ParamValue } from "next/dist/server/request/params";
+
+import api from "@/lib/api";
+import { SVGPath } from "@/utils/path";
 import { Film } from "@/types/media/film";
 import { List } from "@/types/list";
 import { Culture } from "@/types/culture";
-import api from "@/lib/api";
-import { ParamValue } from "next/dist/server/request/params";
-import { SVGPath } from "@/utils/path";
+
+/**
+ * Full-featured modal for creating or editing a film list.
+ *
+ * Supports:
+ * - Name & description
+ * - Multi-film selection with search
+ * - Multi-culture assignment
+ * - Poster preview
+ * - Create / Update / Delete
+ *
+ * Auto-populates current culture and existing films when editing.
+ *
+ * @param isOpen - Controls modal visibility
+ * @param onClose - Close callback
+ * @param onCreated - Callback after successful create/update
+ * @param initialList - Existing list for edit mode (optional)
+ * @param currentCultureCode - Current culture from URL (auto-selected if creating)
+ *
+ * @example
+ * <FilmListCreationModal
+ *   isOpen={true}
+ *   onClose={closeModal}
+ *   onCreated={refreshLists}
+ *   initialList={existingList}
+ *   currentCultureCode="jp"
+ * />
+ */
 
 type Props = {
   isOpen: boolean;
@@ -82,7 +112,7 @@ export default function FilmListCreationModal({
     if (initialList?.id) {
       fetchExistingFilms();
       setName(initialList?.name);
-      setDescription(initialList?.description || "")
+      setDescription(initialList?.description || "");
     }
   }, [isOpen, fetchCultures, fetchExistingFilms, initialList]);
 
@@ -129,17 +159,14 @@ export default function FilmListCreationModal({
     const itemIds = selected
       .map((f) => f.universal_item?.id)
       .filter((id): id is number => !!id);
-
     if (!itemIds.length) {
       alert("Please select at least one valid film.");
       return;
     }
-
     if (!selectedCultures.length) {
       alert("Please select at least one culture.");
       return;
     }
-
     const payload = {
       name,
       description,
@@ -148,7 +175,6 @@ export default function FilmListCreationModal({
       culture_ids: selectedCultures.map((c) => c.id),
       visibility: initialList?.visibility || "private",
     };
-
     try {
       if (initialList?.id) {
         await api.patch(`/lists/${initialList.id}/`, payload);
@@ -360,7 +386,7 @@ export default function FilmListCreationModal({
           </button>
           <button
             onClick={onClose}
-            className="px-4 py-2 rounded bg-neutral-mid text-background hover:bg-neutral-dark transition cursor-pointer"
+            className="px-4 py-2 rounded bg-foreground text-background hover:bg-neutral-dark transition cursor-pointer"
           >
             Cancel
           </button>

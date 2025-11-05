@@ -1,13 +1,34 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
+import { ParamValue } from "next/dist/server/request/params";
+
+import api from "@/lib/api";
+import { SVGPath } from "@/utils/path";
 import { Recipe } from "@/types/media/recipe";
 import { Culture } from "@/types/culture";
-import api from "@/lib/api";
-import { ParamValue } from "next/dist/server/request/params";
+
 import IngredientsEditor from "./IngredientsEditor";
 import InstructionsEditor from "./InstructionsEditor";
-import { SVGPath } from "@/utils/path";
+
+/**
+ * Full recipe creation/edit form with all fields.
+ *
+ * Includes name, course, types, ingredients, instructions, photo, visibility,
+ * notes, and culture selection. Handles both create and update modes.
+ *
+ * @param initialData - Existing recipe for edit mode (optional)
+ * @param onSuccess - Callback after successful save
+ * @param currentCultureCode - Current culture code from URL
+ *
+ * @example
+ * <RecipeForm
+ *   initialData={recipe}
+ *   onSuccess={refreshList}
+ *   currentCultureCode="jp"
+ * />
+ */
 
 type RecipeFormProps = {
   initialData?: Recipe;
@@ -83,7 +104,6 @@ export default function RecipeForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-
     try {
       const payload = {
         ...formData,
@@ -93,15 +113,12 @@ export default function RecipeForm({
           .filter(Boolean),
         culture_ids: formData.cultures?.map((c) => c.id),
       };
-
       const url = initialData ? `/recipes/${initialData.id}/` : `/recipes/`;
-
       if (initialData) {
         await api.put(url, payload);
       } else {
         await api.post(url, payload);
       }
-
       onSuccess();
     } catch (error) {
       console.error("Failed to save:", error);

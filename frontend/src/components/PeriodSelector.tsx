@@ -8,6 +8,19 @@ interface PeriodSelectorProps {
   onSelect: (period: Period) => void;
 }
 
+/**
+ * Horizontal or grid-based selector for choosing a period.
+ *
+ * Highlights the active period and triggers `onSelect` on click.
+ *
+ * @param periods - Array of `Period` objects to display
+ * @param activePeriod - Currently selected period (or `null`)
+ * @param onSelect - Called when a period is clicked
+ *
+ * @example
+ * <PeriodSelector periods={periods} activePeriod={selected} onSelect={setSelected} />
+ */
+
 export default function PeriodSelector({
   periods,
   activePeriod,

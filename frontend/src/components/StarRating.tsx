@@ -7,6 +7,18 @@ type StarRatingProps = {
   onChange: (value: number) => void;
 };
 
+/**
+ * Interactive half-star rating system (1–10 scale).
+ *
+ * Supports hover preview and click-to-set. Uses SVG gradients for half-stars.
+ *
+ * @param value - Current rating (1–10)
+ * @param onChange - Called with new rating on click
+ *
+ * @example
+ * <StarRating value={rating} onChange={setRating} />
+ */
+
 export default function StarRating({ value, onChange }: StarRatingProps) {
   const [hoverValue, setHoverValue] = useState<number | null>(null);
 
@@ -23,13 +35,11 @@ export default function StarRating({ value, onChange }: StarRatingProps) {
       {[1, 2, 3, 4, 5].map((starIndex) => {
         const leftValue = starIndex * 2 - 1;
         const rightValue = starIndex * 2;
-
         let fill: string = baseColor;
-
         if (currentValue >= rightValue) {
           fill = isHovering ? hoverColor : savedColor;
         } else if (currentValue >= leftValue && currentValue < rightValue) {
-          fill = `url(#half-fill-${starIndex})`; 
+          fill = `url(#half-fill-${starIndex})`;
         }
 
         return (

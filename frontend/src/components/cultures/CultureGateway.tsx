@@ -1,11 +1,13 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import api from "@/lib/api";
-import { Culture } from "@/types/culture";
 import { motion } from "framer-motion";
+
+import api from "@/lib/api";
 import { SVGPath } from "@/utils/path";
+import { Culture } from "@/types/culture";
 
 export default function CultureGateway() {
   const [cultures, setCultures] = useState<Culture[]>([]);
@@ -20,7 +22,6 @@ export default function CultureGateway() {
   });
   const [saving, setSaving] = useState(false);
 
-  // 🔹 Fetch all cultures
   useEffect(() => {
     const fetchCultures = async () => {
       try {
@@ -36,7 +37,6 @@ export default function CultureGateway() {
     fetchCultures();
   }, []);
 
-  // 🖋️ Open edit modal
   const openEditModal = (culture: Culture) => {
     setSelectedCulture(culture);
     setForm({
@@ -48,7 +48,6 @@ export default function CultureGateway() {
     setShowEditModal(true);
   };
 
-  // 💾 Save changes
   const handleSave = async () => {
     if (!selectedCulture?.id) return;
     setSaving(true);
@@ -66,7 +65,6 @@ export default function CultureGateway() {
     }
   };
 
-  // 🗑 Delete culture
   const handleDelete = async () => {
     if (!selectedCulture?.id) return;
     if (!confirm(`Are you sure you want to delete ${selectedCulture.name}?`))
@@ -87,8 +85,6 @@ export default function CultureGateway() {
 
   return (
     <div className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden bg-gradient-to-br">
-
-      {/* 🌍 Header */}
       <div className="z-10 text-center mb-12 px-4">
         <h1 className="text-4xl md:text-5xl font-bold font-serif mb-2">
           Choose Your World
@@ -96,14 +92,14 @@ export default function CultureGateway() {
         <p className="text-foreground/50 font-light">
           Enter a culture to explore its language, art, and stories.
         </p>
-        { cultures.length === 0 && (
+        {cultures.length === 0 && (
           <p className="font-bold mt-4">
-            No cultures found. Click the + button below to add a new culture and get started.
+            No cultures found. Click the + button below to add a new culture and
+            get started.
           </p>
         )}
       </div>
 
-      {/* 🪐 Culture Grid */}
       {loading ? (
         <p className="text-neutral-400 text-lg animate-pulse z-10">
           Loading cultures...
@@ -175,7 +171,6 @@ export default function CultureGateway() {
         </div>
       )}
 
-      {/* ➕ Add New Culture */}
       <Link
         href="/home/new"
         className="fixed bottom-8 right-8 z-20 bg-primary text-background p-4 rounded-full shadow-lg hover:scale-110 hover:shadow-primary/40 active:scale-95 transition-all duration-300 cursor-pointer flex items-center justify-center"
@@ -189,11 +184,13 @@ export default function CultureGateway() {
         </svg>
       </Link>
 
-      {/* 🧭 Edit Modal */}
       {showEditModal && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
           <div className="bg-background text-foreground rounded-xl shadow-lg w-full max-w-md p-6 relative">
-            <button className="absolute top-3 right-3" onClick={() => setShowEditModal(false)}>
+            <button
+              className="absolute top-3 right-3"
+              onClick={() => setShowEditModal(false)}
+            >
               <svg
                 viewBox={SVGPath.close.viewBox}
                 className="size-5 fill-current text-foreground cursor-pointer hover:scale-110 hover:fill-red-400 active:scale-95 transition"
@@ -236,7 +233,6 @@ export default function CultureGateway() {
               className="w-full p-2 border border-neutral/50 rounded mb-3 bg-extra"
             />
 
-            {/* 🔘 Buttons */}
             <div className="flex justify-between items-center mt-6 border-t border-neutral/30 pt-4">
               <button
                 onClick={handleDelete}

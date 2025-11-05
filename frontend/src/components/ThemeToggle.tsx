@@ -1,6 +1,17 @@
 "use client";
+
 import { useEffect, useState } from "react";
+
 import { SVGPath } from "@/utils/path";
+
+/**
+ * Toggles between light and dark mode with localStorage persistence.
+ *
+ * Respects system preference on first load. Uses `dark` class on `<html>`.
+ *
+ * @example
+ * <ThemeToggle />
+ */
 
 export default function ThemeToggle() {
   const [dark, setDark] = useState(false);
@@ -29,10 +40,7 @@ export default function ThemeToggle() {
   };
 
   return (
-    <button 
-        onClick={toggleTheme}
-        className="text-foreground fill-foreground"
-    >
+    <button onClick={toggleTheme} className="text-foreground fill-foreground">
       <svg
         viewBox={SVGPath.theme.viewBox}
         className="fill-current size-5 ml-1 md:ml-0 hover:scale-105 transition cursor-pointer active:scale-90"

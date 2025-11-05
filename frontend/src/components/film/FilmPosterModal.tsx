@@ -1,11 +1,12 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import { useState, useEffect } from "react";
-import api from "@/lib/api"; // ✅ your axios instance
-import { getLanguageName } from "@/utils/iso"; 
+import api from "@/lib/api";
+import { getLanguageName } from "@/utils/iso";
 
 type Props = {
-  userFilmId: number; // 👈 now this refers to the UserFilm record
+  userFilmId: number;
   tmdbId: number;
   onClose: () => void;
   onUpdated: () => void;
@@ -33,7 +34,6 @@ export default function FilmPosterModal({
   const [selected, setSelected] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
 
-  // 🔹 Fetch images from TMDB through your backend
   useEffect(() => {
     const fetchImages = async () => {
       setLoading(true);
@@ -54,7 +54,6 @@ export default function FilmPosterModal({
     (img) => language === "all" || img.iso_639_1 === language
   );
 
-  // 🔹 PATCH image to UserFilm record
   const handleUpdate = async () => {
     if (!selected) return;
 
@@ -66,14 +65,13 @@ export default function FilmPosterModal({
       onUpdated();
       onClose();
     } catch (err: unknown) {
-        console.warn("Error fetching posters", err)
+      console.warn("Error fetching posters", err);
     }
   };
 
   return (
     <div className="fixed inset-0 flex items-start justify-center bg-black/70 z-50 p-4 pt-8 sm:pt-16 overflow-y-auto">
       <div className="bg-background rounded-xl shadow-lg p-4 sm:p-6 w-full max-w-md sm:max-w-2xl flex flex-col max-h-[90vh]">
-        {/* Header */}
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg sm:text-xl font-bold font-sans">
             Change {tab === "poster" ? "Poster" : "Backdrop"}
@@ -86,7 +84,6 @@ export default function FilmPosterModal({
           </button>
         </div>
 
-        {/* Tabs */}
         <div className="flex space-x-2 sm:space-x-4 mb-4 flex-wrap gap-y-2">
           <button
             className={`px-2 sm:px-3 py-1 rounded text-sm sm:text-base ${
@@ -106,7 +103,6 @@ export default function FilmPosterModal({
           </button>
         </div>
 
-        {/* Language selector */}
         <select
           className="mb-4 p-2 border border-neutral/50 rounded text-base focus:outline-none focus:ring-2 focus:ring-primary touch-action-manipulation bg-background text-foreground"
           value={language}
@@ -128,7 +124,6 @@ export default function FilmPosterModal({
           )}
         </select>
 
-        {/* Grid */}
         {loading ? (
           <div className="text-center text-sm text-muted-foreground py-8">
             Loading images...
@@ -155,18 +150,17 @@ export default function FilmPosterModal({
           </div>
         )}
 
-        {/* Buttons */}
         <div className="flex justify-end space-x-2 sm:space-x-3 mt-4 flex-wrap gap-y-2">
           <button
             onClick={handleUpdate}
             disabled={!selected || loading}
-            className="px-3 sm:px-4 py-1.5 sm:py-2 rounded bg-primary text-white hover:bg-primary/80 disabled:opacity-50 text-sm sm:text-base"
+            className="px-3 sm:px-4 py-1.5 sm:py-2 rounded bg-primary text-white hover:bg-primary/80 disabled:opacity-50 text-sm sm:text-base cursor-pointer"
           >
             Update
           </button>
           <button
             onClick={onClose}
-            className="px-3 sm:px-4 py-1.5 sm:py-2 rounded bg-neutral text-white hover:bg-danger text-sm sm:text-base"
+            className="px-3 sm:px-4 py-1.5 sm:py-2 rounded bg-foreground text-background hover:bg-danger text-sm sm:text-base cursor-pointer hover:bg-red-400 hover:text-white"
           >
             Cancel
           </button>

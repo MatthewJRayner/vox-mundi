@@ -1,9 +1,23 @@
 "use client";
+
 interface CategoryHeaderProps {
   displayName: string;
   setDisplayName: (name: string) => void;
   onSave: () => void;
 }
+
+/**
+ * Inline editor for a category's display name.
+ *
+ * Allows editing and saving the name in-place. Typically used in edit views.
+ *
+ * @example
+ * <CategoryHeader
+ *   displayName={category.display_name}
+ *   setDisplayName={setDisplayName}
+ *   onSave={handleSave}
+ * />
+ */
 
 export default function CategoryHeader({
   displayName,

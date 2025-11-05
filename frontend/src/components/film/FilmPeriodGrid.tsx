@@ -1,7 +1,8 @@
 "use client";
 
-import { Period } from "@/types/culture";
 import Link from "next/link";
+
+import { Period } from "@/types/culture";
 import { SVGPath } from "@/utils/path";
 
 export default function FilmPeriodGrid({

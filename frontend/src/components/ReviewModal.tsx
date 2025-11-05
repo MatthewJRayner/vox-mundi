@@ -9,6 +9,26 @@ type ReviewModalProps = {
   initialValue?: string;
 };
 
+/**
+ * Modal for writing and submitting a text review.
+ *
+ * Renders only when `isOpen` is `true`. Saves via async `onSave` callback.
+ * Supports pre-filled text via `initialValue`.
+ *
+ * @param isOpen - Controls modal visibility
+ * @param onClose - Closes the modal without saving
+ * @param onSave - Async handler to persist the review text
+ * @param initialValue - Pre-filled review content (optional)
+ *
+ * @example
+ * <ReviewModal
+ *   isOpen={showReviewModal}
+ *   onClose={() => setShowReviewModal(false)}
+ *   onSave={async (text) => await saveReview(text)}
+ *   initialValue="Great experience!"
+ * />
+ */
+
 export default function ReviewModal({
   isOpen,
   onClose,

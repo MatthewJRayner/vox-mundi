@@ -1,14 +1,15 @@
 "use client";
 
 import React, { useState } from "react";
+
 import api from "@/lib/api";
-import { Film, UserFilm } from "@/types/media/film";
-import FilmCard from "./FilmCard";
 import { SVGPath } from "@/utils/path";
+import { Film } from "@/types/media/film";
+
+import FilmCard from "./FilmCard";
 
 export default function RandomFilmDisplay() {
   const [film, setFilm] = useState<Film | null>(null);
-  const [userFilm, setUserFilm] = useState<UserFilm | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -18,7 +19,6 @@ export default function RandomFilmDisplay() {
       setError(null);
       const res = await api.get("/films/random/");
       setFilm(res.data.film);
-      setUserFilm(res.data.userfilm);
     } catch (err) {
       console.error("Error fetching random film:", err);
       setError("Couldn't fetch a random film.");
@@ -30,7 +30,9 @@ export default function RandomFilmDisplay() {
   return (
     <section className="flex flex-col items-center text-center">
       <div className="flex items-center space-x-2">
-        <h2 className="font-lora text-lg md:text-2xl font-bold=">Discover a Random Film</h2>
+        <h2 className="font-lora text-lg md:text-2xl font-bold=">
+          Discover a Random Film
+        </h2>
         <button onClick={fetchRandomFilm}>
           <svg
             viewBox={SVGPath.refresh.viewBox}

@@ -1,4 +1,5 @@
 "use client";
+
 import { Period } from "@/types/culture";
 import { SVGPath } from "@/utils/path";
 import { formatYears } from "@/utils/formatters/formatYears";
@@ -9,6 +10,20 @@ interface PeriodListProps {
   onAddNew: () => void;
   onEdit: (period: Period) => void;
 }
+
+/**
+ * Grid list of periods with "Add" and edit-on-click support.
+ *
+ * Highlights active period. Used in edit views.
+ *
+ * @param periods - Array of `Period` objects
+ * @param activePeriod - Currently selected period
+ * @param onAddNew - Opens form for new period
+ * @param onEdit - Opens edit form for a period
+ *
+ * @example
+ * <PeriodList periods={periods} activePeriod={active} onAddNew={add} onEdit={edit} />
+ */
 
 export default function PeriodList({
   periods,

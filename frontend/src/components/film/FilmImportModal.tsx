@@ -1,8 +1,16 @@
 "use client";
 
 import { useState, useEffect } from "react";
+
 import api from "@/lib/api";
 import { SVGPath } from "@/utils/path";
+
+/**
+ * Modal for user to import chosen films as a global film object through the TMDb API.
+ * 
+ * @param isOpen - Whether the modal is open
+ * @param onClose - Callback to close the modal
+ */
 
 interface ImportResult {
   title: string;
@@ -26,7 +34,6 @@ export default function FilmImportModal({
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<ImportResult[]>([]);
 
-  // Close on Escape key
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -39,20 +46,16 @@ export default function FilmImportModal({
     try {
       setLoading(true);
       setResults([]);
-
       const items = input
         .split("\n")
         .map((line) => line.trim())
         .filter((line) => line);
-
       if (!items.length) {
         return;
       }
-
       const { data } = await api.post<ImportResponse>("/import-films/", {
         items,
       });
-
       setResults(data.results);
     } catch (err) {
       console.error("Import Error", err);
@@ -66,7 +69,6 @@ export default function FilmImportModal({
   return (
     <div className="fixed inset-0 flex items-start justify-center bg-black/50 z-50 p-4 pt-8 sm:pt-16 overflow-y-auto">
       <div className="relative bg-background p-4 sm:p-6 rounded-lg shadow-lg w-full max-w-md sm:max-w-lg flex flex-col max-h-[90vh]">
-        {/* ---------- CLOSE BUTTON (X) ---------- */}
         <button
           onClick={onClose}
           aria-label="Close modal"

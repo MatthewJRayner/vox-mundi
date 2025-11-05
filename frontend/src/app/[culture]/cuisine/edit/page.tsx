@@ -3,12 +3,14 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+
 import api from "@/lib/api";
+import { SVGPath } from "@/utils/path";
 import { Culture, Category, PageContent } from "@/types/culture";
 import { Recipe } from "@/types/media/recipe";
+
 import CategoryHeader from "@/components/CategoryHeader";
 import SearchBar from "@/components/SearchBar";
-import { SVGPath } from "@/utils/path";
 
 export default function CuisineEditPage() {
   const { culture } = useParams();
@@ -31,14 +33,12 @@ export default function CuisineEditPage() {
         api.get(`/recipes/?code=${culture}`),
         api.get(`/cultures/?code=${culture}`),
       ]);
-
       const categoryData = catRes.data[0];
       setCategory(categoryData);
       setDisplayName(categoryData?.display_name || "");
       setCultureCurrent(cultureRes.data);
       setRecipes(recipesRes.data);
       setFilteredRecipes(recipesRes.data);
-
       if (contentRes.data[0]) {
         setPageContent(contentRes.data[0]);
         setOverviewText(contentRes.data[0].overview_text || "");

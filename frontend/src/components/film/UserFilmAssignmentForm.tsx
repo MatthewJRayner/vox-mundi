@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
+import { ParamValue } from "next/dist/server/request/params";
+
 import api from "@/lib/api";
 import { Culture, Period } from "@/types/culture";
 import { UserFilm } from "@/types/media/film";
-import { ParamValue } from "next/dist/server/request/params";
 
 type UserFilmAssignmentFormProps = {
   userFilmId: number;
@@ -33,7 +34,6 @@ export default function UserFilmAssignmentForm({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  /** Fetch culture + period data */
   const fetchData = useCallback(async () => {
     if (!currentCultureCode) return;
     try {
@@ -58,7 +58,6 @@ export default function UserFilmAssignmentForm({
     fetchData();
   }, [fetchData]);
 
-  /** Toggle culture selection */
   const toggleCulture = (culture: Culture) => {
     setFormData((prev) => {
       const exists = prev.cultures.some((c) => c.id === culture.id);
@@ -69,26 +68,21 @@ export default function UserFilmAssignmentForm({
     });
   };
 
-  /** Handle period dropdown */
   const handlePeriodChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value ? parseInt(e.target.value) : null;
     setFormData((prev) => ({ ...prev, period_id: value }));
   };
 
-  /** Submit to backend */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!userFilmId) return setError("No UserFilm ID provided.");
-
     setLoading(true);
     setError(null);
-
     try {
       const payload = {
         culture_ids: formData.cultures.map((c) => c.id),
         period_id: formData.period_id,
       };
-
       await api.patch(`/user-films/${userFilmId}/`, payload);
       onSuccess();
     } catch (err) {
@@ -101,13 +95,11 @@ export default function UserFilmAssignmentForm({
 
   if (loading && !cultures.length && !periods.length)
     return <div className="p-4 text-gray-400">Loading...</div>;
-
   if (error) return <div className="p-4 text-red-500">{error}</div>;
 
   return (
     <div className="flex flex-col w-full p-2 sm:p-4 items-center justify-center">
       <form onSubmit={handleSubmit} className="space-y-4 w-full max-w-md">
-        {/* CULTURES SELECT */}
         <div className="relative">
           <label className="text-sm sm:text-base font-semibold text-foreground">
             Cultures
@@ -152,7 +144,6 @@ export default function UserFilmAssignmentForm({
           )}
         </div>
 
-        {/* PERIOD SELECT */}
         <div>
           <label className="text-sm sm:text-base font-semibold text-foreground">
             Period

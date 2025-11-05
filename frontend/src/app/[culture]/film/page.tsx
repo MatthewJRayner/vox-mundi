@@ -1,12 +1,16 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+
 import api from "@/lib/api";
+import { SVGPath } from "@/utils/path";
 import { Period, PageContent } from "@/types/culture";
-import { Film, UserFilm, FilmPageData } from "@/types/media/film";
+import { Film, FilmPageData } from "@/types/media/film";
 import { List } from "@/types/list";
+
 import SearchBar from "@/components/SearchBar";
 import FilmCard from "@/components/film/FilmCard";
 import FilmImportModal from "@/components/film/FilmImportModal";
@@ -14,8 +18,6 @@ import FilmPeriodGrid from "@/components/film/FilmPeriodGrid";
 import RandomFilmDisplay from "@/components/film/RandomFilmDisplay";
 import FilmListCreationModal from "@/components/film/FilmListCreationModal";
 import FilmListDisplayModal from "@/components/film/FilmListDisplayModal";
-import { SVGPath } from "@/utils/path";
-import ReactMarkdown from "react-markdown";
 import ExpandableSummary from "@/components/ExpandableSummary";
 
 export default function FilmPage() {
@@ -23,16 +25,14 @@ export default function FilmPage() {
   const [films, setFilms] = useState<FilmPageData | null>(null);
   const [periods, setPeriods] = useState<Period[]>([]);
   const [pageContent, setPageContent] = useState<PageContent | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [showImportModal, setShowImportModal] = useState(false);
   const [showListDisplayModal, setShowListDisplayModal] = useState(false);
   const [editingList, setEditingList] = useState<List | null>(null);
   const [showListCreationModal, setShowListCreationModal] = useState(false);
   const [isSmallScreen, setIsSmallScreen] = useState(false);
-  const [showFullDesc, setShowFullDesc] = useState(false);
-  const [query, setQuery] = useState("");
   const [results, setResults] = useState<Film[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
     if (!culture) return;
@@ -61,6 +61,7 @@ export default function FilmPage() {
     fetchData();
   }, [fetchData]);
 
+  // Set user screen size to change displayed films and handle screen resize for responsive design
   useEffect(() => {
     const handleResize = () => setIsSmallScreen(window.innerWidth < 1024);
     handleResize();
@@ -202,7 +203,6 @@ export default function FilmPage() {
         <FilmPeriodGrid periods={periods} culture={String(culture)} />
       </section>
 
-      {/* Fallback / Featured sections */}
       {fallback && (
         <section className="mt-10 text-center">
           <h2 className="text-lg font-semibold mb-2">
@@ -263,6 +263,7 @@ export default function FilmPage() {
           </div>
         )}
 
+      {/* Modals */}
       <FilmImportModal
         isOpen={showImportModal}
         onClose={() => setShowImportModal(false)}

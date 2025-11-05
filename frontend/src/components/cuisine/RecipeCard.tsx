@@ -1,19 +1,33 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import { useState } from "react";
-import { Recipe, Ingredient } from "@/types/media/recipe";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+
 import { SVGPath } from "@/utils/path";
+import { Recipe, Ingredient } from "@/types/media/recipe";
 
 type RecipeCardProps = {
   recipe: Recipe;
   onDelete?: (id: number) => void;
 };
 
+/**
+ * Compact card displaying a single recipe with photo, name, course, and types.
+ *
+ * Supports expandable ingredients list and optional delete action.
+ * Links to full recipe detail page.
+ *
+ * @param recipe - Recipe data to display
+ * @param onDelete - Optional callback when delete is clicked (admin mode)
+ *
+ * @example
+ * <RecipeCard recipe={recipe} onDelete={handleDelete} />
+ */
+
 export default function RecipeCard({ recipe, onDelete }: RecipeCardProps) {
   const { culture } = useParams();
-  const [expanded, setExpanded] = useState(false);
   const [showIngredients, setShowIngredients] = useState(false);
 
   return (
@@ -34,7 +48,9 @@ export default function RecipeCard({ recipe, onDelete }: RecipeCardProps) {
       >
         {recipe.name}
       </h2>
-      <p className="text-xs sm:text-sm text-foreground/50">{recipe.types?.join(", ") || ""}</p>
+      <p className="text-xs sm:text-sm text-foreground/50">
+        {recipe.types?.join(", ") || ""}
+      </p>
       <p className="mt-2 text-sm md:text-base">{recipe.course}</p>
       {recipe.ingredients && recipe.ingredients.length > 0 && (
         <div className="mt-2 w-full flex flex-col">

@@ -2,15 +2,16 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useParams } from "next/navigation";
+import Link from "next/link";
+
 import api from "@/lib/api";
+import { SVGPath } from "@/utils/path";
 import { Film } from "@/types/media/film";
 import { Period } from "@/types/culture";
+
 import SearchBar from "@/components/SearchBar";
 import FilmCard from "@/components/film/FilmCard";
-import { SVGPath } from "@/utils/path";
-import ReactMarkdown from "react-markdown";
 import ExpandableSummary from "@/components/ExpandableSummary";
-import Link from "next/link";
 
 type SortOption = "date-desc" | "date-asc" | "rating-desc" | "rating-asc";
 
@@ -21,8 +22,6 @@ export default function FilmPeriodPage() {
   const [loading, setLoading] = useState(false);
   const [films, setFilms] = useState<Film[]>([]);
   const [sortBy, setSortBy] = useState<SortOption>("date-desc");
-  const [query, setQuery] = useState("");
-  const [showFullDesc, setShowFullDesc] = useState(false);
 
   const fetchData = useCallback(async () => {
     if (!id) {

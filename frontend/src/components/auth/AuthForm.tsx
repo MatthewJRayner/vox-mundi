@@ -1,8 +1,20 @@
 "use client";
 import { useState } from "react";
-import api from "../../lib/api";
 import { useRouter } from "next/navigation";
+
+import api from "../../lib/api";
 import { useUser } from "@/context/UserProvider";
+
+/**
+ * Unified login and registration form with toggle.
+ *
+ * Handles authentication via `/token/` (login) or `/register/` (signup).
+ * Stores JWT tokens in `localStorage` and updates user context.
+ * Redirects to home on success.
+ *
+ * @example
+ * <AuthForm />
+ */
 
 export default function AuthForm() {
   const [mode, setMode] = useState<"login" | "register">("login");
@@ -28,7 +40,7 @@ export default function AuthForm() {
         localStorage.setItem("refresh", res.data.refresh);
 
         const userRes = await api.get("/current-user/");
-        setUser(userRes.data)
+        setUser(userRes.data);
       } else {
         const res = await api.post("/register/", {
           username: formData.username,
@@ -59,7 +71,9 @@ export default function AuthForm() {
         <button
           onClick={() => setMode("register")}
           className={`p-2 px-4 rounded hover:bg-foreground/50 cursor-pointer font-lora text-xl ${
-            mode === "register" ? "bg-foreground text-background" : "bg-gray-200"
+            mode === "register"
+              ? "bg-foreground text-background"
+              : "bg-gray-200"
           }`}
         >
           Sign Up
@@ -111,7 +125,10 @@ export default function AuthForm() {
 
         {error && <p className="text-red-500 text-sm text-center">{error}</p>}
 
-        <button type="submit" className="bg-foreground text-background font-lora text-xl p-2 rounded cursor-pointer hover:bg-foreground/80">
+        <button
+          type="submit"
+          className="bg-foreground text-background font-lora text-xl p-2 rounded cursor-pointer hover:bg-foreground/80"
+        >
           {mode === "login" ? "Login" : "Sign Up"}
         </button>
       </form>

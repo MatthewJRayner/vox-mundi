@@ -1,202 +1,203 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { CalendarDate } from "@/types/calendar";
 import dayjs from "dayjs";
+
+import { CalendarDate } from "@/types/calendar";
 import { SVGPath } from "@/utils/path";
-import {
-  calendarSystems,
-  CalendarAdapter,
-  CalendarSystem,
-} from "./CalendarAdapter";
+
+/**
+ * Interactive monthly calendar display for Gregorian dates.
+ *
+ * Shows events per day, highlights today, supports navigation and click-to-select.
+ * Designed for admin/edit views — no calendar system switching.
+ *
+ * @param events - Array of calendar events to display
+ * @param onDateClick - Called when a day is clicked, receives `dayjs` date
+ *
+ * @example
+ * <CalendarDisplay events={events} onDateClick={openModal} />
+ */
 
 interface CalendarDisplayProps {
-  culture: string;
   events: CalendarDate[];
   onDateClick: (date: dayjs.Dayjs) => void;
 }
 
 export default function CalendarDisplay({
-  culture,
   events,
   onDateClick,
 }: CalendarDisplayProps) {
-  const [calendarType, setCalendarType] = useState<CalendarSystem>("gregorian");
   const [currentDate, setCurrentDate] = useState(dayjs());
   const [isLoading, setIsLoading] = useState(false);
 
-  const adapter: CalendarAdapter = calendarSystems[calendarType];
-  const localNow = new Date();
+  const year = currentDate.year();
+  const month = currentDate.month();
+  const today = dayjs();
 
-  // Current calendar date details
-  const { year, month, isIntercalary } = adapter.convertFromGregorian(
-    currentDate.toDate()
-  );
+  const daysInMonth = currentDate.daysInMonth();
+  const firstDayOfMonth = currentDate.startOf("month").day();
+  const monthName = currentDate.format("MMMM");
 
-  const todayCal = adapter.convertFromGregorian(localNow); // “today” in the same calendar system
-
-  const daysInMonth = adapter.getDaysInMonth(year, month);
-  const startDay = adapter.getStartDayOfMonth(year, month);
-  const monthName = adapter.getMonthName(month);
-
-  // Navigation helper
-  const changeDate = (unit: "month" | "year", amount: number) => {
+  const changeMonth = (amount: number) => {
     setIsLoading(true);
-    setCurrentDate(currentDate.add(amount, unit));
-    setTimeout(() => setIsLoading(false), 100);
+    setCurrentDate(currentDate.add(amount, "month"));
+    setTimeout(() => setIsLoading(false), 150);
   };
 
-  // --- Get events for a date ---
-  const getEventsForDate = (day: number) => {
-  const { convertToGregorian, convertFromGregorian } = adapter;
+  const changeYear = (amount: number) => {
+    setIsLoading(true);
+    setCurrentDate(currentDate.add(amount, "year"));
+    setTimeout(() => setIsLoading(false), 150);
+  };
 
-  return events.filter((e) => {
-    if (!e.calendar_date) return false;
-
-    const refSystem = e.reference_system || "gregorian";
-    const eventGregorian = new Date(e.calendar_date);
-    const eventCal = convertFromGregorian(eventGregorian);
-
-    // --- Annual handling ---
-    if (e.isAnnual) {
-      if (refSystem === calendarType) {
-        // The event recurs annually *in this same system*
-        return eventCal.month === month && eventCal.day === day;
-      } else {
-        // The event is defined in another system, so just convert its Gregorian date
-        const eventConverted = convertFromGregorian(eventGregorian);
-        return eventConverted.month === month && eventConverted.day === day;
-      }
-    }
-
-    // --- Non-annual (specific year) ---
-    return (
-      eventCal.year === year &&
-      eventCal.month === month &&
-      eventCal.day === day
-    );
-  });
-};
-
-  // --- Day cells ---
   const dayCells = useMemo(() => {
-    return Array.from({ length: daysInMonth }).map((_, idx) => {
-      const day = idx + 1;
-      const gregorianDate = adapter.convertToGregorian({ year, month, day });
-      const eventsForDay = getEventsForDate(day);
+    const getEventsForDay = (day: number): CalendarDate[] => {
+      const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(
+        day
+      ).padStart(2, "0")}`;
 
-      // Compare using calendar domain (not direct date)
-      const isToday =
-        todayCal.year === year &&
-        todayCal.month === month &&
-        todayCal.day === day;
+      return events.filter((e) => {
+        if (!e.calendar_date) return false;
 
+        const eventDate = dayjs(e.calendar_date);
+        const eventDateStr = eventDate.format("YYYY-MM-DD");
+
+        if (e.isAnnual) {
+          return eventDate.format("MM-DD") === dateStr.slice(5); // MM-DD
+        }
+
+        return eventDateStr === dateStr;
+      });
+    };
+
+    return Array.from({ length: daysInMonth }, (_, i) => {
+      const day = i + 1;
+      const date = dayjs(`${year}-${month + 1}-${day}`);
+      const eventsForDay = getEventsForDay(day);
       const hasEvents = eventsForDay.length > 0;
+      const isToday = date.isSame(today, "day");
 
-      let className =
-        "cursor-pointer md:bg-extra rounded p-2 md:shadow-lg relative min-h-[50px] md:min-h-[110px] transition-all duration-300 ";
-      if (hasEvents) className += "md:border-main md:border-2 font-semibold md:shadow text-main md:text-foreground ";
-      if (isToday) className += "md:border-main md:border-2 text-main md:text-foreground ";
-      else if (!hasEvents) className += "hover:opacity-75 ";
+      const baseClass =
+        "cursor-pointer md:bg-extra rounded p-2 md:p-3 relative min-h-[50px] md:min-h-[100px] transition-all duration-200";
+      const interactiveClass =
+        hasEvents || isToday
+          ? ""
+          : "hover:bg-extra/50";
+
+      let className = `${baseClass} ${interactiveClass}`;
+
+      if (hasEvents) className += " border-main font-semibold text-main";
+      if (isToday) className += " text-main md:text-foreground md:ring-2 md:ring-main";
 
       return (
-        <div
+        <button
           key={day}
-          onClick={() => onDateClick(dayjs(gregorianDate))}
+          onClick={() => onDateClick(date)}
           className={className}
-          role="button"
-          aria-label={`Select ${monthName} ${day}, ${year}${
-            isIntercalary ? " (Intercalary)" : ""
-          }`}
-          tabIndex={0}
+          aria-label={`Select ${monthName} ${day}, ${year}`}
         >
-          <div className="md:absolute md:top-1 md:left-2 text-sm md:text-base">
+          <div className="text-center md:absolute md:top-1 md:left-2 text-sm md:text-base font-medium">
             {day}
           </div>
+
           {hasEvents && (
-            <div className="hidden md:block absolute top-6 left-2 right-2 text-xs overflow-y-auto max-h-[70px] text-center">
+            <div className="hidden md:block absolute top-7 left-2 right-2 text-xs space-y-1 max-h-[60px] overflow-y-auto">
               {eventsForDay.map((event) => (
-                <div key={event.id} className="truncate flex flex-col">
-                  <span className="text-sm text-main">
+                <div key={event.id} className="text-left">
+                  <div className="font-medium text-sm text-main truncate">
                     {event.holiday_name}
-                  </span>
-                  {event.type && <span>{event.type}</span>}
+                  </div>
+                  {event.type && (
+                    <div className="text-foreground/70 text-xs truncate">
+                      {event.type}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
           )}
-        </div>
+        </button>
       );
     });
-  }, [daysInMonth, year, month, events, calendarType]);
+  }, [
+    year,
+    month,
+    daysInMonth,
+    today,
+    monthName,
+    onDateClick,
+    events,
+  ]);
 
   return (
-    <div className="rounded-lg p-4 w-full">
-      <div className="flex md:flex-row justify-center md:justify-between items-center mb-4">
-        <div className="flex items-center justify-center md:justify-start space-x-2 md:space-x-3">
-          <button onClick={() => changeDate("month", -1)} aria-label="Previous Month">
+    <div className="p-4 md:p-6 w-full">
+      <div className="flex justify-between items-center mb-6 gap-3">
+        <div className="flex items-center gap-1 md:gap-3">
+          <button onClick={() => changeMonth(-1)} aria-label="Previous month">
             <svg
               viewBox={SVGPath.chevron.viewBox}
-              className="size-5 md:size-7 fill-gray-400 transition hover:scale-105 active:scale-95 cursor-pointer rotate-90"
+              className="size-6 fill-foreground/60 hover:fill-foreground transition cursor-pointer rotate-90"
             >
               <path d={SVGPath.chevron.path} />
             </svg>
           </button>
-          <h2 className="text-base md:text-xl font-lora">
+
+          <h2 className="md:text-2xl font-lora font-semibold text-center min-w-[120px]">
             {monthName}
           </h2>
-          <button onClick={() => changeDate("month", 1)} aria-label="Next Month">
+
+          <button onClick={() => changeMonth(1)} aria-label="Next month">
             <svg
               viewBox={SVGPath.chevron.viewBox}
-              className="size-5 md:size-7 fill-gray-400 transition hover:scale-105 active:scale-95 cursor-pointer rotate-270"
-            >
-              <path d={SVGPath.chevron.path} />
-            </svg>
-          </button>
-          <button onClick={() => changeDate("year", -1)} aria-label="Previous Year">
-            <svg
-              viewBox={SVGPath.chevron.viewBox}
-              className="size-5 md:size-7 fill-gray-400 transition hover:scale-105 active:scale-95 cursor-pointer rotate-90"
-            >
-              <path d={SVGPath.chevron.path} />
-            </svg>
-          </button>
-          <h2 className="text-base md:text-xl font-lora">
-            {year}
-          </h2>
-          <button onClick={() => changeDate("year", 1)} aria-label="Next Year">
-            <svg
-              viewBox={SVGPath.chevron.viewBox}
-              className="size-5 md:size-7 fill-gray-400 transition hover:scale-105 active:scale-95 cursor-pointer rotate-270"
+              className="size-6 fill-foreground/60 hover:fill-foreground transition cursor-pointer -rotate-90"
             >
               <path d={SVGPath.chevron.path} />
             </svg>
           </button>
         </div>
-        <div className="flex space-x-2 text-xs md:text-sm justify-end w-full ml-4 md:ml-0">
-          <select
-            value={calendarType}
-            onChange={(e) => setCalendarType(e.target.value as CalendarSystem)}
-            className="bg-extra py-2 px-3 md:pl-3 md:pr-5 rounded shadow-sm truncate"
-            aria-label="Select calendar system"
-          >
-            <option value="gregorian">Gregorian</option>
-          </select>
+
+        <div className="flex items-center gap-1 md:gap-3">
+          <button onClick={() => changeYear(-1)} aria-label="Previous year">
+            <svg
+              viewBox={SVGPath.chevron.viewBox}
+              className="size-5 fill-foreground/60 hover:fill-foreground transition cursor-pointer rotate-90"
+            >
+              <path d={SVGPath.chevron.path} />
+            </svg>
+          </button>
+
+          <span className="text-base md:text-xl font-medium w-16 text-center">
+            {year}
+          </span>
+
+          <button onClick={() => changeYear(1)} aria-label="Next year">
+            <svg
+              viewBox={SVGPath.chevron.viewBox}
+              className="size-5 fill-foreground/60 hover:fill-foreground transition cursor-pointer -rotate-90"
+            >
+              <path d={SVGPath.chevron.path} />
+            </svg>
+          </button>
         </div>
       </div>
 
-      <div className={`grid grid-cols-7 gap-2 text-center font-medium`}>
-        {adapter.getWeekdayNames().map((d) => (
-          <div key={d} className="text-xs md:text-sm mb-2">{d}</div>
+      <div className="grid grid-cols-7 gap-2 text-center text-xs md:text-sm font-medium text-foreground/70 mb-2">
+        {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
+          <div key={day}>{day}</div>
         ))}
       </div>
 
-      <div className={`grid grid-cols-7 gap-2 text-center md:text-left`}>
-        {Array.from({ length: startDay }).map((_, i) => (
+      <div className="grid grid-cols-7 gap-2">
+        {/* Empty cells before month start */}
+        {Array.from({ length: firstDayOfMonth }, (_, i) => (
           <div key={`empty-${i}`} />
         ))}
+
         {isLoading ? (
-          <div className="col-span-7 text-center">Loading...</div>
+          <div className="col-span-7 text-center py-8 text-foreground/50">
+            Loading...
+          </div>
         ) : (
           dayCells
         )}

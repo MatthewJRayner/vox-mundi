@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+
 import { SVGPath } from "@/utils/path";
 
 interface SearchBarProps {
@@ -23,6 +24,18 @@ function useDebounce<T>(value: T, delay: number): T {
 
   return debouncedValue;
 }
+
+/**
+ * Debounced search input with immediate Enter/submit support.
+ *
+ * Triggers `onSearch` after 500ms of inactivity or on Enter/Search button.
+ *
+ * @param onSearch - Called with trimmed query string
+ * @param className - Additional Tailwind classes, default = ""
+ *
+ * @example
+ * <SearchBar onSearch={handleSearch} className="w-1/2" />
+ */
 
 export default function SearchBar({
   onSearch,

@@ -2,15 +2,17 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useParams } from "next/navigation";
+import Link from "next/link";
+
 import api from "@/lib/api";
+import { SVGPath } from "@/utils/path";
 import { Film } from "@/types/media/film";
 import { List } from "@/types/list";
+
 import FilmCard from "@/components/film/FilmCard";
 import SearchBar from "@/components/SearchBar";
 import FilmListCreationModal from "@/components/film/FilmListCreationModal";
-import { SVGPath } from "@/utils/path";
 import ExpandableSummary from "@/components/ExpandableSummary";
-import Link from "next/link";
 
 type SortOption = "date-desc" | "date-asc" | "rating-desc" | "rating-asc";
 
@@ -26,7 +28,6 @@ export default function FilmListPage() {
   const [initialListData, setInitialListData] = useState<List | undefined>(
     undefined
   );
-  const [showFullDesc, setShowFullDesc] = useState(false);
 
   const fetchList = useCallback(async () => {
     if (!id) {
@@ -34,7 +35,6 @@ export default function FilmListPage() {
       setLoading(false);
       return;
     }
-
     try {
       setLoading(true);
       setError(null);
@@ -57,9 +57,7 @@ export default function FilmListPage() {
       setLoading(false);
       return;
     }
-
     const universalItemIds = list.items.map((item) => item.id).join(",");
-
     try {
       setLoading(true);
       setError(null);
@@ -180,19 +178,27 @@ export default function FilmListPage() {
                 setShowListModal(true);
                 setInitialListData(list);
               }}
-              className="font-sans hover:text-primary transition-all duration-300 cursor-pointer text-lg"
+              className=""
             >
-              ✎
+              <svg
+                viewBox={SVGPath.edit.viewBox}
+                className="size-5 fill-current transition hover:scale-105 active:scale-95 cursor-pointer hover:fill-primary"
+              >
+                <path d={SVGPath.edit.path} />
+              </svg>
             </button>
           </div>
           <div className="w-full flex-col justify-between items-start md:space-x-4">
-            {list.description ? <ExpandableSummary
+            {list.description ? (
+              <ExpandableSummary
                 text={list.description}
                 maxHeight="max-h-52"
                 blurBottom="bottom-7"
-              /> : (
+              />
+            ) : (
               <p className="text-foreground/50">
-                There&apos;s currently no description saved for this list. Click the edit button to change this..
+                There&apos;s currently no description saved for this list. Click
+                the edit button to change this..
               </p>
             )}
             <div className="w-full md:w-1/3 mt-4 ">

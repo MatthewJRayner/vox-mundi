@@ -1,4 +1,8 @@
-import dayjs from "dayjs";
+/**
+ * BIG WORK IN PROGRESS 
+ * 
+ * BE WARNED
+ */
 
 // --- Islamic (Hijri) Calendar Adapter ---
 
@@ -53,8 +57,9 @@ const EGYPTIAN_MONTH_DAYS = 30; // Each month has exactly 30 days
 const EPAGOMENAL_DAYS = 5; // 5 extra days at year end
 
 /**
- * Converts Gregorian date to Ancient Egyptian date
- * The Egyptian calendar had:
+ * Converts Gregorian date to Ancient Egyptian date.
+ * 
+ * The calendar had:
  * - 12 months of exactly 30 days each
  * - 5 extra "epagomenal" days at the end of the year
  * - No leap years, so it drifted about 1 day every 4 years

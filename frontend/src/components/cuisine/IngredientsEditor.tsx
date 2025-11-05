@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+
 import { SVGPath } from "@/utils/path";
 
 type Ingredient = {
@@ -13,6 +14,22 @@ type Props = {
   ingredients: Ingredient[];
   setIngredients: (i: Ingredient[]) => void;
 };
+
+/**
+ * Collapsible editor for managing recipe ingredients.
+ *
+ * Supports name, quantity, and measurement (with common units).
+ * Controlled — updates parent via `setIngredients`.
+ *
+ * @param ingredients - Array of ingredient objects
+ * @param setIngredients - Callback to update ingredients in parent
+ *
+ * @example
+ * <IngredientsEditor
+ *   ingredients={ingredients}
+ *   setIngredients={setIngredients}
+ * />
+ */
 
 export default function IngredientsEditor({
   ingredients,
@@ -99,7 +116,9 @@ export default function IngredientsEditor({
               <select
                 name="measurement"
                 value={ingredient.measurement}
-                onChange={(e) => updateIngredient(index, "measurement", e.target.value)}
+                onChange={(e) =>
+                  updateIngredient(index, "measurement", e.target.value)
+                }
                 className="bg-extra border-b-2 py-2 w-full rounded-t text-sm sm:text-base"
               >
                 <option value="">-- Select Measurement --</option>

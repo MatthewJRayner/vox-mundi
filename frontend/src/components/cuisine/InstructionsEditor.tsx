@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+
 import { SVGPath } from "@/utils/path";
 
 type Instruction = {
@@ -12,6 +13,22 @@ type Props = {
   instructions: Instruction[];
   setInstructions: (i: Instruction[]) => void;
 };
+
+/**
+ * Collapsible editor for managing recipe instructions.
+ *
+ * Allows adding, editing, reordering (via step number), and removing steps.
+ * Controlled component — updates parent state via `setInstructions`.
+ *
+ * @param instructions - Array of instruction objects
+ * @param setInstructions - Callback to update instructions in parent
+ *
+ * @example
+ * <InstructionsEditor
+ *   instructions={steps}
+ *   setInstructions={setSteps}
+ * />
+ */
 
 export default function InstructionsEditor({
   instructions,

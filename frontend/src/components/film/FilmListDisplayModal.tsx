@@ -2,15 +2,36 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import api from "@/lib/api";
-import { List } from "@/types/list";
 import { ParamValue } from "next/dist/server/request/params";
+
+import api from "@/lib/api";
 import { SVGPath } from "@/utils/path";
+import { List } from "@/types/list";
+
+/**
+ * Modal displaying a user's existing film lists for a given culture.
+ *
+ * Fetches lists on open, supports viewing, editing, and creating new lists.
+ * Shows loading, empty, and error states.
+ *
+ * @param isOpen - Controls modal visibility
+ * @param onClose - Callback to close the modal
+ * @param onEditList - Called when user wants to edit/create a list (passes List or empty object)
+ * @param currentCultureCode - Culture code from URL (used for filtering lists)
+ *
+ * @example
+ * <FilmListDisplayModal
+ *   isOpen={showModal}
+ *   onClose={() => setShowModal(false)}
+ *   onEditList={openEditor}
+ *   currentCultureCode="us"
+ * />
+ */
 
 type Props = {
   isOpen: boolean;
   onClose: () => void;
-  onEditList: (list: List) => void; // Callback to open edit modal
+  onEditList: (list: List) => void;
   currentCultureCode?: ParamValue;
 };
 
@@ -31,7 +52,6 @@ export default function FilmListDisplayModal({
       try {
         setLoading(true);
         setError(null);
-        // Fetch lists filtered by type 'films' and culture
         const res = await api.get(
           `/lists/?type=films&code=${encodeURIComponent(
             String(currentCultureCode)
@@ -140,13 +160,12 @@ export default function FilmListDisplayModal({
           )}
         </div>
 
-        {/* Footer */}
         {!loading && lists.length > 0 && (
           <div className="p-4 border-t border-neutral/20">
             <button
               onClick={() => {
                 onClose();
-                onEditList({} as List); // Trigger create new list
+                onEditList({} as List);
               }}
               className="w-full px-4 py-2 bg-primary text-white rounded hover:bg-primary-dark transition cursor-pointer"
             >
