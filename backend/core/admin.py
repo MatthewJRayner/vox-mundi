@@ -1,4 +1,4 @@
-from django.contrib import admin
+from django.contrib import admin # type: ignore
 from .models import (
     Profile, Culture, Category, Period, PageContent, Recipe, LangLesson, CalendarDate,
     Person, UserMapPreferences, MapPin, LanguageTable, UniversalItem, Book, Film, UserMusicArtist,

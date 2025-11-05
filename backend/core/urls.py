@@ -1,6 +1,6 @@
-from django.urls import path, include
-from rest_framework.routers import DefaultRouter
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from django.urls import path, include # type: ignore
+from rest_framework.routers import DefaultRouter # type: ignore
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView # type: ignore
 from .views import (
     ProfileViewSet, CultureViewSet, CategoryViewSet, PeriodViewSet, PageContentViewSet,
     RecipeViewSet, LangLessonViewSet, CalendarDateViewSet, PersonViewSet,
