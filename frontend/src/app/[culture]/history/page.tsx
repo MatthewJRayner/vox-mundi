@@ -1,19 +1,20 @@
 "use client";
+
 import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+
 import api from "@/lib/api";
-import { Period, Category } from "@/types/culture";
-import { UserHistoryEvent } from "@/types/history";
+import { formatYears } from "@/utils/formatters/formatYears";
 import { SVGPath } from "@/utils/path";
+import { Period } from "@/types/culture";
+import { UserHistoryEvent } from "@/types/history";
+
 import HistoryTimeline from "@/components/history/HistoryTimeline";
 import HistoryEventDisplay from "@/components/history/HistoryEventDisplay";
 import PeriodSelector from "@/components/PeriodSelector";
 import SearchBar from "@/components/SearchBar";
-import { formatYears } from "@/utils/formatters/formatYears";
-import ReactMarkdown from "react-markdown";
 import ExpandableSummary from "@/components/ExpandableSummary";
-import { formatDateEstimate } from "@/utils/formatters/formatDateEstimate";
 
 export default function HistoryPage() {
   const { culture } = useParams();
@@ -29,7 +30,6 @@ export default function HistoryPage() {
   );
   const [results, setResults] = useState<UserHistoryEvent[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showFullDesc, setShowFullDesc] = useState(false);
 
   const handleSearch = useCallback(
     async (query: string) => {
@@ -82,6 +82,8 @@ export default function HistoryPage() {
   }, [fetchData]);
 
   if (loading) return <main className="p-4">Loading...</main>;
+  
+  // Welcome screen if no periods exist
   if (!activePeriod)
     return (
       <main className="min-h-screen flex flex-col mt-4 w-full">
@@ -116,6 +118,7 @@ export default function HistoryPage() {
       </main>
     );
 
+  // Main page
   return (
     <main className="min-h-screen flex flex-col mt-4 w-full">
       <div className="flex w-full items-center relative">

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+
 import api from "@/lib/api";
 
 interface BookDatesModalProps {
@@ -48,7 +49,9 @@ export default function BookDatesModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
       <div className="bg-background rounded-xl shadow-lg p-6 w-full max-w-sm">
-        <h2 className="text-xl font-semibold mb-4 text-center">Reading Dates</h2>
+        <h2 className="text-xl font-semibold mb-4 text-center">
+          Reading Dates
+        </h2>
         <div className="space-y-3">
           <label className="flex flex-col text-sm">
             <span className="mb-1 text-foreground/70">Date Started</span>

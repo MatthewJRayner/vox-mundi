@@ -1,11 +1,13 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
+import { ParamValue } from "next/dist/server/request/params";
+
+import api from "@/lib/api";
+import { SVGPath } from "@/utils/path";
 import { UserHistoryEvent } from "@/types/history";
 import { Culture, Period } from "@/types/culture";
-import api from "@/lib/api";
-import { ParamValue } from "next/dist/server/request/params";
-import { SVGPath } from "@/utils/path";
 
 type HistoryEventFormProps = {
   initialData?: UserHistoryEvent;
@@ -40,7 +42,6 @@ export default function HistoryEventForm({
         api.get(`/periods/?code=${currentCultureCode}&key=history`),
         api.get(`/cultures/?code=${currentCultureCode}`),
       ]);
-
       setPeriods(periodRes.data);
       setCultures(cultureRes.data);
     } catch (error) {
@@ -62,7 +63,6 @@ export default function HistoryEventForm({
     const { name, value, type } = e.target;
     const checked =
       e.target instanceof HTMLInputElement ? e.target.checked : undefined;
-
     setFormData((prev) => ({
       ...prev,
       [name]:
@@ -80,7 +80,6 @@ export default function HistoryEventForm({
     const { name, value, type } = e.target;
     const checked =
       e.target instanceof HTMLInputElement ? e.target.checked : undefined;
-
     setFormData((prev) => ({
       ...prev,
       date: {
@@ -108,7 +107,6 @@ export default function HistoryEventForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-
     try {
       const payload = {
         ...formData,
@@ -122,17 +120,14 @@ export default function HistoryEventForm({
           date_precision: formData.date?.date_precision,
         },
       };
-
       const url = initialData
         ? `/user-history-events/${initialData.id}/`
         : `/user-history-events/`;
-
       if (initialData) {
         await api.put(url, payload);
       } else {
         await api.post(url, payload);
       }
-
       onSuccess();
     } catch (error) {
       console.error("Failed to save:", error);

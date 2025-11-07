@@ -1,8 +1,9 @@
 "use client";
 
-import { Period } from "@/types/culture";
 import Link from "next/link";
+
 import { SVGPath } from "@/utils/path";
+import { Period } from "@/types/culture";
 
 export default function BookPeriodGrid({
   periods,

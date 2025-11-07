@@ -2,14 +2,16 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useParams } from "next/navigation";
+import Link from "next/link";
+
 import api from "@/lib/api";
+import { SVGPath } from "@/utils/path";
 import { Book } from "@/types/media/book";
 import { Period } from "@/types/culture";
+
 import SearchBar from "@/components/SearchBar";
 import BookCard from "@/components/literature/BookCard";
-import { SVGPath } from "@/utils/path";
 import ExpandableSummary from "@/components/ExpandableSummary";
-import Link from "next/link";
 
 type SortOption = "date-desc" | "date-asc" | "rating-desc" | "rating-asc";
 
@@ -20,8 +22,6 @@ export default function BookPeriodPage() {
   const [loading, setLoading] = useState(false);
   const [books, setBooks] = useState<Book[]>([]);
   const [sortBy, setSortBy] = useState<SortOption>("date-desc");
-  const [query, setQuery] = useState("");
-  const [showFullDesc, setShowFullDesc] = useState(false);
 
   const fetchData = useCallback(async () => {
     if (!id) {

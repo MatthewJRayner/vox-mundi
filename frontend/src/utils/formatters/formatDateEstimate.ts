@@ -1,6 +1,8 @@
 import { DateEstimate } from "@/types/date";
 
-export function formatDateEstimate(dateEstimate: DateEstimate | undefined): string {
+export function formatDateEstimate(
+  dateEstimate: DateEstimate | undefined
+): string {
   if (!dateEstimate) return "";
 
   const {
@@ -26,7 +28,9 @@ export function formatDateEstimate(dateEstimate: DateEstimate | undefined): stri
 
       case "decade":
         return date_estimate_start
-          ? `c. ${Math.abs(date_estimate_start)}0s ${getEra(date_estimate_start)}`
+          ? `c. ${Math.abs(date_estimate_start)}0s ${getEra(
+              date_estimate_start
+            )}`
           : "c. Unknown Decade";
 
       case "century":
@@ -51,14 +55,20 @@ export function formatDateEstimate(dateEstimate: DateEstimate | undefined): stri
   }
 
   if (date_estimate_start && date_estimate_end) {
-    return `c. ${formatYear(date_estimate_start)}–${formatYear(date_estimate_end)}`;
+    return `c. ${formatYear(date_estimate_start)}–${formatYear(
+      date_estimate_end
+    )}`;
   }
 
   return "Date Unknown";
 }
 
 function formatYear(year: number): string {
-  return year < 0 ? `${Math.abs(year)} BC` : year < 1000 ? `${year} AD` : `${year}`;
+  return year < 0
+    ? `${Math.abs(year)} BC`
+    : year < 1000
+    ? `${year} AD`
+    : `${year}`;
 }
 
 function getEra(year: number): string {

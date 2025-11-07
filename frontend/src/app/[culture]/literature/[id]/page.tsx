@@ -1,22 +1,26 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
-import React, { useEffect, useState, useMemo, useCallback } from "react";
-import axios, { AxiosError } from "axios";
-import api from "@/lib/api";
+import React, { useEffect, useState, useCallback } from "react";
+import ReactMarkdown from "react-markdown";
+import axios from "axios";
 import { useParams } from "next/navigation";
+import Link from "next/link";
+
+import api from "@/lib/api";
+import { formatDateEstimate } from "@/utils/formatters/formatDateEstimate";
+import { formatPhrase } from "@/utils/formatters/formatPhrase";
+import { SVGPath } from "@/utils/path";
+import { getLanguageName } from "@/utils/iso";
 import { Book, UserBook } from "@/types/media/book";
 import { Culture } from "@/types/culture";
+
 import StarRating from "@/components/StarRating";
 import ReviewModal from "@/components/ReviewModal";
 import BookDatesModal from "@/components/literature/BookDateModal";
 import BookISBNModal from "@/components/literature/BookISBNModal";
-import Link from "next/link";
-import { formatDateEstimate } from "@/utils/formatters/formatDateEstimate";
-import { formatPhrase } from "@/utils/formatters/formatPhrase";
 import UserBookAssignmentModal from "@/components/literature/UserBookAssignmentForm";
-import ReactMarkdown from "react-markdown";
-import { SVGPath } from "@/utils/path";
-import { getLanguageName } from "@/utils/iso";
+import ExpandableSummary from "@/components/ExpandableSummary";
 
 export default function BookDetailPage() {
   const { culture, id } = useParams();
@@ -29,7 +33,6 @@ export default function BookDetailPage() {
   const [showDetails, setShowDetails] = useState(false);
   const [rating, setRating] = useState(0);
   const [showReviewModal, setShowReviewModal] = useState(false);
-  const [showFullSynopsis, setShowFullSynopsis] = useState(false);
   const [showFullReview, setShowFullReview] = useState(false);
   const [showAllGenres, setShowAllGenres] = useState(false);
   const MAX_GENRES = 5;
@@ -88,7 +91,6 @@ export default function BookDetailPage() {
 
   const ensureUserBook = async () => {
     if (userBook) return userBook;
-
     try {
       const res = await api.get(`/user-books/by-book/${id}`);
       if (res.data && !res.data.detail) {
@@ -103,7 +105,6 @@ export default function BookDetailPage() {
       console.error("Cannot create UserBook — missing universal_item id.");
       return null;
     }
-
     try {
       const createRes = await api.post(`/user-books/`, {
         universal_item_id: book.universal_item.id,
@@ -123,23 +124,17 @@ export default function BookDetailPage() {
 
   const updateReview = async (newReview: string) => {
     if (!userBook?.id) return;
-
     const ub = await ensureUserBook();
-
     const res = await api.patch(`/user-books/${ub.id}/`, {
       notes: newReview,
     });
-
     setUserBook(res.data);
   };
 
   const updateRating = async (newValue: number) => {
     if (!userBook?.id) return;
-
     setRating(newValue);
-
     const ub = await ensureUserBook();
-
     const res = await api.patch(`/user-books/${ub.id}/`, {
       rating: newValue,
     });
@@ -149,9 +144,7 @@ export default function BookDetailPage() {
 
   const toggleRead = async () => {
     if (!userBook?.id) return;
-
     const ub = await ensureUserBook();
-
     const res = await api.patch(`/user-books/${ub.id}/`, {
       read: !ub.read,
     });
@@ -161,24 +154,19 @@ export default function BookDetailPage() {
 
   const toggleReadlist = async () => {
     if (!userBook?.id) return;
-
     const ub = await ensureUserBook();
-
     const res = await api.patch(`/user-books/${ub.id}/`, {
       readlist: !ub.readlist,
     });
-
     setUserBook(res.data);
   };
 
   const toggleFavourite = async () => {
     if (!userBook?.id) return;
     const uf = await ensureUserBook();
-
     const res = await api.patch(`/user-books/${uf.id}/`, {
       favourite: !uf.favourite,
     });
-
     setUserBook(res.data);
   };
 
@@ -360,42 +348,11 @@ export default function BookDetailPage() {
           </div>
           <div className="flex flex-col w-full mt-2 space-y-4">
             {book.synopsis && (
-              <div className="mb-8 relative">
-                <div
-                  className={`text-sm sm:text-md leading-relaxed font-serif font-medium transition-all duration-300 ${
-                    showFullSynopsis
-                      ? "max-h-none"
-                      : "max-h-24 sm:max-h-32 overflow-hidden"
-                  }`}
-                >
-                  <ReactMarkdown>{book.synopsis}</ReactMarkdown>
-                </div>
-                {!showFullSynopsis && book.synopsis.length > 300 && (
-                  <div className="absolute bottom-5 left-0 w-full h-10 sm:h-12 bg-gradient-to-t from-background via-background/80 to-transparent pointer-events-none" />
-                )}
-                {book.synopsis.length > 300 && (
-                  <button
-                    onClick={() => setShowFullSynopsis(!showFullSynopsis)}
-                    className="mt-1 cursor-pointer z-10 flex items-center text-sm sm:text-base"
-                  >
-                    <span className="mr-1 font-bold transition hover:text-primary">
-                      {showFullSynopsis ? "Show Less" : "Show More"}
-                    </span>
-                    <span
-                      className={`transition-transform duration-300 ${
-                        showFullSynopsis ? "rotate-180" : "rotate-0"
-                      }`}
-                    >
-                      <svg
-                        viewBox={SVGPath.chevron.viewBox}
-                        className="size-5 fill-current cursor-pointer transition-transform"
-                      >
-                        <path d={SVGPath.chevron.path} />
-                      </svg>
-                    </span>
-                  </button>
-                )}
-              </div>
+              <ExpandableSummary
+                text={book.synopsis}
+                maxHeight="max-h-50"
+                blurBottom="bottom-7"
+              />
             )}
 
             <div className="flex items-center mb-4 flex-wrap gap-x-2 gap-y-2">
@@ -405,7 +362,9 @@ export default function BookDetailPage() {
                 : book.genre?.slice(0, MAX_GENRES)
               )?.map((g, i) => (
                 <Link
-                  href={`/${culture}/literature/search/genre/${encodeURIComponent(g)}`}
+                  href={`/${culture}/literature/search/genre/${encodeURIComponent(
+                    g
+                  )}`}
                   key={i}
                   className="border-b-green-500 border-b-2 px-1 text-sm font-bold cursor-pointer hover:border-b-green-800 transition-all duration-300"
                 >
@@ -625,6 +584,8 @@ export default function BookDetailPage() {
                 </button>
               </div>
             )}
+
+            {/* Modals */}
 
             <ReviewModal
               isOpen={showReviewModal}

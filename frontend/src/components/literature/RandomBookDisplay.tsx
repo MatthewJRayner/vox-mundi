@@ -1,14 +1,15 @@
 "use client";
 
 import React, { useState } from "react";
+
 import api from "@/lib/api";
-import { Book, UserBook } from "@/types/media/book";
-import BookCard from "./BookCard";
 import { SVGPath } from "@/utils/path";
+import { Book } from "@/types/media/book";
+
+import BookCard from "./BookCard";
 
 export default function RandomBookDisplay() {
   const [book, setBook] = useState<Book | null>(null);
-  const [userBook, setUserBook] = useState<UserBook | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -18,7 +19,6 @@ export default function RandomBookDisplay() {
       setError(null);
       const res = await api.get("/books/random/");
       setBook(res.data.book);
-      setUserBook(res.data.userbook);
     } catch (err) {
       console.error("Error fetching random book:", err);
       setError("Couldn't fetch a random book.");
@@ -30,7 +30,9 @@ export default function RandomBookDisplay() {
   return (
     <section className="flex flex-col items-center text-center">
       <div className="flex items-center space-x-2">
-        <h2 className="font-lora text-lg md:text-2xl font-bold=">Discover a Random Book</h2>
+        <h2 className="font-lora text-lg md:text-2xl font-bold=">
+          Discover a Random Book
+        </h2>
         <button onClick={fetchRandomBook}>
           <svg
             viewBox={SVGPath.refresh.viewBox}

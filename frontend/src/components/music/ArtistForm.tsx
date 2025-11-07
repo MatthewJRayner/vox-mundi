@@ -1,19 +1,22 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
+import { ParamValue } from "next/dist/server/request/params";
+
+import api from "@/lib/api";
+import { SVGPath } from "@/utils/path";
 import { UserMusicArtist } from "@/types/media/music";
 import { Culture } from "@/types/culture";
-import api from "@/lib/api";
-import { ParamValue } from "next/dist/server/request/params";
+
 import AlbumEditor from "./AlbumEditor";
 import SongEditor from "./SongEditor";
-import { SVGPath } from "@/utils/path";
 
 type ArtistFormProps = {
   initialData?: UserMusicArtist;
   onSuccess: () => void;
   currentCultureCode: ParamValue;
-  onClose: () => void; // ✅ new close handler
+  onClose: () => void;
 };
 
 export default function ArtistForm({
@@ -105,11 +108,9 @@ export default function ArtistForm({
           .map((w) => w.trim())
           .filter(Boolean),
       };
-
       const url = initialData
         ? `/user-artists/${initialData.id}/`
         : `/user-artists/`;
-
       if (initialData) {
         await api.put(url, payload);
       } else {
@@ -130,7 +131,6 @@ export default function ArtistForm({
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-2 md:p-4 max-h-screen">
       <div className="relative bg-background shadow-2xl rounded-xl max-h-[90vh] overflow-y-auto w-full max-w-2xl p-4 md:p-6 border border-border">
-        {/* Close Button */}
         <button
           onClick={onClose}
           className="absolute top-3 right-3 text-foreground/70 hover:text-foreground active:scale-95 transition"
@@ -282,7 +282,6 @@ export default function ArtistForm({
             )}
           </div>
 
-          {/* Editors */}
           <AlbumEditor
             albums={formData.best_albums || []}
             setAlbums={(best_albums) =>

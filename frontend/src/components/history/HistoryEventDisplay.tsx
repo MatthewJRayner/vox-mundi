@@ -1,8 +1,10 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
-import { UserHistoryEvent } from "@/types/history";
-import ExpandableSummary from "../ExpandableSummary";
 import { formatDateEstimate } from "@/utils/formatters/formatDateEstimate";
+import { UserHistoryEvent } from "@/types/history";
+
+import ExpandableSummary from "../ExpandableSummary";
 
 interface EventDisplayProps {
   event: UserHistoryEvent | null;
@@ -22,6 +24,7 @@ export default function HistoryEventDisplay({ event }: EventDisplayProps) {
         <div className="flex mb-2 md:mb-4 justify-start space-x-2 md:space-x-4 items-center">
           <img
             src={event.photo}
+            alt={event.title}
             className="object-cover h-24 w-24 md:h-36 md:w-36 border-foreground border-1 md:border-2 shadow-lg rounded-sm"
           />
           <div className="flex flex-col text-xs md:text-sm text-foreground/50 trun">

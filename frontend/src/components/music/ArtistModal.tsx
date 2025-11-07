@@ -1,9 +1,12 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import React from "react";
-import { UserMusicArtist } from "@/types/media/music";
-import ExpandableSummary from "../ExpandableSummary";
+
 import { SVGPath } from "@/utils/path";
+import { UserMusicArtist } from "@/types/media/music";
+
+import ExpandableSummary from "../ExpandableSummary";
 
 interface ArtistModalProps {
   artist: UserMusicArtist;
@@ -19,7 +22,6 @@ const ArtistModal: React.FC<ArtistModalProps> = ({
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-2 md:p-4">
       <div className="relative bg-extra text-foreground rounded-xl shadow-2xl border border-border p-4 md:p-6 max-w-3xl w-full max-h-[85vh] overflow-y-auto flex flex-col gap-4">
-        {/* Close Button */}
         <button
           onClick={onClose}
           className="absolute top-3 right-3 text-foreground/70 hover:text-main active:scale-95 transition"
@@ -32,7 +34,6 @@ const ArtistModal: React.FC<ArtistModalProps> = ({
           </svg>
         </button>
 
-        {/* Left Info Section */}
         <div className="w-full flex flex-col justify-start">
           <div className="flex justify-between items-center mt-6 mb-4">
             <div>
@@ -52,7 +53,9 @@ const ArtistModal: React.FC<ArtistModalProps> = ({
               )}
               {artist.notable_works && (
                 <>
-                  <h3 className="font-bold text-foreground/50 text-xs md:text-sm">Famous Works:</h3>
+                  <h3 className="font-bold text-foreground/50 text-xs md:text-sm">
+                    Famous Works:
+                  </h3>
                   <p className="text-foreground/50 text-xs md:text-sm mb-2">
                     {artist.notable_works.join(", ")}
                   </p>
@@ -114,7 +117,6 @@ const ArtistModal: React.FC<ArtistModalProps> = ({
           </div>
         </div>
 
-        {/* Action Buttons */}
         <div className="flex w-full justify-end gap-3">
           <button
             onClick={onEdit}

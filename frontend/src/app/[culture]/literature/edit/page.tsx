@@ -2,13 +2,11 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
-import Link from "next/link";
+
 import api from "@/lib/api";
 import { Culture, Category, PageContent, Period } from "@/types/culture";
-import { UserBook } from "@/types/media/book";
+
 import CategoryHeader from "@/components/CategoryHeader";
-import SearchBar from "@/components/SearchBar";
-import { SVGPath } from "@/utils/path";
 import PeriodList from "@/components/PeriodList";
 import PeriodForm from "@/components/PeriodForm";
 
@@ -21,7 +19,6 @@ export default function LiteratureEditPage() {
   const [overviewText, setOverviewText] = useState("");
   const [periods, setPeriods] = useState<Period[]>([]);
   const [activePeriod, setActivePeriod] = useState<Period | null>(null);
-  const [userBooks, setUserBooks] = useState<UserBook[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [periodForm, setPeriodForm] = useState({
@@ -36,13 +33,12 @@ export default function LiteratureEditPage() {
     if (!culture) return;
     try {
       setLoading(true);
-      const [catRes, contentRes, cultureRes, periodRes, userBookRes] =
+      const [catRes, contentRes, cultureRes, periodRes] =
         await Promise.all([
           api.get(`/categories/?key=literature&code=${culture}`),
           api.get(`/page-contents/?code=${culture}&key=literature`),
           api.get(`/cultures/?code=${culture}`),
           api.get(`/periods/?code=${culture}&key=literature`),
-          api.get(`/user-books/?code=${culture}`),
         ]);
 
       const categoryData = catRes.data[0];
@@ -50,7 +46,6 @@ export default function LiteratureEditPage() {
       setDisplayName(categoryData?.display_name || "");
       setCultureCurrent(cultureRes.data[0]);
       setPeriods(periodRes.data);
-      setUserBooks(userBookRes.data);
 
       if (contentRes.data[0]) {
         setPageContent(contentRes.data[0]);

@@ -1,18 +1,19 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { UserMusicPiece } from "@/types/media/music";
-import { Culture } from "@/types/culture"; // Import Culture type from your types
-import api from "@/lib/api"; // Your API utility
 import { ParamValue } from "next/dist/server/request/params";
+
+import api from "@/lib/api";
 import { SVGPath } from "@/utils/path";
+import { UserMusicPiece } from "@/types/media/music";
+import { Culture } from "@/types/culture";
 
 interface MusicPieceModalProps {
   isOpen: boolean;
   onClose: () => void;
-  piece?: UserMusicPiece | null; // Null for new piece, UserMusicPiece for editing
-  onSave: (piece: UserMusicPiece) => void; // Callback to refresh the list
-  currentCultureCode: ParamValue; // To fetch cultures
+  piece?: UserMusicPiece | null;
+  onSave: (piece: UserMusicPiece) => void;
+  currentCultureCode: ParamValue;
 }
 
 const MusicPieceModal: React.FC<MusicPieceModalProps> = ({
@@ -22,13 +23,12 @@ const MusicPieceModal: React.FC<MusicPieceModalProps> = ({
   onSave,
   currentCultureCode,
 }) => {
-  // Initial form state
   const initialFormState: UserMusicPiece = {
     title: "",
     artist: "",
     learned: false,
     sheet_music: [],
-    cultures: [], // For display, populated from fetched cultures
+    cultures: [],
     visibility: "private",
   };
 
@@ -38,7 +38,6 @@ const MusicPieceModal: React.FC<MusicPieceModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch cultures
   const fetchCultures = useCallback(async () => {
     if (!currentCultureCode) return;
     try {
@@ -57,7 +56,6 @@ const MusicPieceModal: React.FC<MusicPieceModalProps> = ({
     fetchCultures();
   }, [fetchCultures]);
 
-  // Populate form when editing an existing piece
   useEffect(() => {
     if (piece) {
       setFormData({
@@ -70,9 +68,9 @@ const MusicPieceModal: React.FC<MusicPieceModalProps> = ({
     } else {
       setFormData(initialFormState);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [piece]);
 
-  // Handle input changes
   const handleChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
@@ -81,7 +79,6 @@ const MusicPieceModal: React.FC<MusicPieceModalProps> = ({
     const { name, value, type } = e.target;
     const checked =
       e.target instanceof HTMLInputElement ? e.target.checked : undefined;
-
     setFormData((prev) => ({
       ...prev,
       [name]:
@@ -93,13 +90,12 @@ const MusicPieceModal: React.FC<MusicPieceModalProps> = ({
     }));
   };
 
-  // Handle culture selection
   const toggleCulture = (culture: Culture) => {
     setFormData((prev) => {
       const exists = prev.cultures.some((c) => c.id === culture.id);
       const updated = exists
         ? prev.cultures.filter((c) => c.id !== culture.id)
-        : [...prev.cultures.filter((c) => c.id !== culture.id), culture]; // remove duplicates
+        : [...prev.cultures.filter((c) => c.id !== culture.id), culture];
       return { ...prev, cultures: updated };
     });
   };
@@ -108,19 +104,15 @@ const MusicPieceModal: React.FC<MusicPieceModalProps> = ({
     (formData.sheet_music || []).join(", ")
   );
 
-  // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
-
-    // Basic validation
     if (!formData.title || !formData.instrument) {
       setError("Title and instrument are required.");
       setLoading(false);
       return;
     }
-
     try {
       const payload = {
         ...formData,
@@ -130,17 +122,15 @@ const MusicPieceModal: React.FC<MusicPieceModalProps> = ({
           .map((t) => t.trim())
           .filter(Boolean),
       };
-
       const url = piece
         ? `/user-music-pieces/${piece.id}/`
         : `/user-music-pieces/`;
       const response = piece
         ? await api.put(url, payload)
         : await api.post(url, payload);
-
-      onSave(response.data); // Trigger parent refresh
-      onClose(); // Close modal
-      setFormData(initialFormState); // Reset form
+      onSave(response.data);
+      onClose();
+      setFormData(initialFormState);
     } catch (err) {
       console.error("Failed to save:", err);
       setError(`Failed to save: ${JSON.stringify(err)}`);

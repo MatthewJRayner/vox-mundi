@@ -2,15 +2,17 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useParams } from "next/navigation";
+import Link from "next/link";
+
 import api from "@/lib/api";
+import { SVGPath } from "@/utils/path";
 import { Book } from "@/types/media/book";
 import { List } from "@/types/list";
+
 import BookCard from "@/components/literature/BookCard";
 import SearchBar from "@/components/SearchBar";
 import BookListCreationModal from "@/components/literature/BookListCreationModal";
-import { SVGPath } from "@/utils/path";
 import ExpandableSummary from "@/components/ExpandableSummary";
-import Link from "next/link";
 
 type SortOption = "date-desc" | "date-asc" | "rating-desc" | "rating-asc";
 
@@ -26,7 +28,6 @@ export default function BookListPage() {
   const [initialListData, setInitialListData] = useState<List | undefined>(
     undefined
   );
-  const [showFullDesc, setShowFullDesc] = useState(false);
 
   const fetchList = useCallback(async () => {
     if (!id) {
@@ -57,9 +58,7 @@ export default function BookListPage() {
       setLoading(false);
       return;
     }
-
     const universalItemIds = list.items.map((item) => item.id).join(",");
-
     try {
       setLoading(true);
       setError(null);

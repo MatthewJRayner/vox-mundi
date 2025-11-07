@@ -1,15 +1,17 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
+import Link from "next/link";
+
 import api from "@/lib/api";
+import { SVGPath } from "@/utils/path";
 import { Culture, Period, Category } from "@/types/culture";
 import { UserHistoryEvent } from "@/types/history";
+
 import CategoryHeader from "@/components/CategoryHeader";
 import PeriodList from "@/components/PeriodList";
 import PeriodForm from "@/components/PeriodForm";
 import HistoryEventsSection from "@/components/history/HistoryEventsSection";
-import { SVGPath } from "@/utils/path";
-import Link from "next/link";
 
 export default function HistoryEditPage() {
   const { culture } = useParams();

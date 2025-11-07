@@ -1,6 +1,8 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import React from "react";
+
 import api from "@/lib/api";
 import { SVGPath } from "@/utils/path";
 
@@ -36,7 +38,6 @@ export default function ConcertEventCard({ event }: ConcertEventCardProps) {
   return (
     <div className="bg-extra rounded-lg p-4 shadow-md hover:shadow-lg transition hover:bg-extra/80">
       <div className="flex flex-col md:flex-row gap-3">
-        {/* Image */}
         {event.image && (
           <img
             src={event.image}
@@ -45,7 +46,6 @@ export default function ConcertEventCard({ event }: ConcertEventCardProps) {
           />
         )}
 
-        {/* Event content */}
         <div className="flex-1 font-inter">
           <p className="font-semibold font-garamond text-sm text-main mb-1">
             <span className="text-lg ml-1">{event.composer}</span>

@@ -1,10 +1,13 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import React, { useState } from "react";
-import { MapPin } from "@/types/map";
-import MapPinFormModal from "@/components/cultures/MapPinForm";
+
 import { SVGPath } from "@/utils/path";
 import { formatDateEstimate } from "@/utils/formatters/formatDateEstimate";
+import { MapPin } from "@/types/map";
+
+import MapPinFormModal from "@/components/cultures/MapPinForm";
 import ExpandableSummary from "../ExpandableSummary";
 
 type MapPinDetailModalProps = {
@@ -22,7 +25,6 @@ export default function MapPinDetailModal({
 }: MapPinDetailModalProps) {
   const [isEditing, setIsEditing] = useState(false);
 
-  // When editing, show the MapPinFormModal instead
   if (isEditing) {
     return (
       <MapPinFormModal
@@ -40,7 +42,6 @@ export default function MapPinDetailModal({
   return (
     <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-extra w-full max-w-lg rounded-lg shadow-lg p-6 relative">
-        {/* Close Button */}
         <button
           onClick={onClose}
           className="absolute top-3 right-4 text-gray-500 hover:text-black text-xl font-bold cursor-pointer"
@@ -53,7 +54,6 @@ export default function MapPinDetailModal({
           </svg>
         </button>
 
-        {/* Header */}
         <div className="w-full flex items-center gap-4 mb-1">
           {pin.photo && (
             <div className="">
@@ -93,7 +93,6 @@ export default function MapPinDetailModal({
           )}
         </div>
 
-        {/* Details */}
         <div className="space-y-3 text-sm">
           {pin.happened && (
             <>
@@ -122,7 +121,6 @@ export default function MapPinDetailModal({
           )}
         </div>
 
-        {/* Buttons */}
         <div className="flex justify-end mt-6 gap-3 items-center">
           <button
             onClick={onClose}

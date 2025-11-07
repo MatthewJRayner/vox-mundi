@@ -1,26 +1,26 @@
-// app/culture/[culture]/page.tsx
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { useParams } from "next/navigation";
-import api from "@/lib/api";
-import useLeafletIcons from "@/utils/useLeafletIcons";
-import { MapPin, MapPreferences } from "@/types/map";
-import { Period } from "@/types/culture";
-import CultureCalendarWeek from "@/components/cultures/CultureCalenderWeek";
-import MapPinFormModal from "@/components/cultures/MapPinForm";
-import MapPinDetailModal from "@/components/cultures/MapPinDetailModal";
-import { SVGPath } from "@/utils/path";
 import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
 import type { Map as LeafletMap, LeafletMouseEvent } from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { useParams } from "next/navigation";
+
+import api from "@/lib/api";
+import { SVGPath } from "@/utils/path";
+import useLeafletIcons from "@/utils/useLeafletIcons";
+import { MapPin, MapPreferences } from "@/types/map";
+import { Period } from "@/types/culture";
+
+import CultureCalendarWeek from "@/components/cultures/CultureCalenderWeek";
+import MapPinFormModal from "@/components/cultures/MapPinForm";
+import MapPinDetailModal from "@/components/cultures/MapPinDetailModal";
 
 export default function CulturePage() {
   const { culture } = useParams();
 
   useLeafletIcons();
 
-  // Data
   const [mapPins, setMapPins] = useState<MapPin[]>([]);
   const [mapPreferences, setMapPreferences] = useState<MapPreferences | null>(
     null
@@ -29,7 +29,6 @@ export default function CulturePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Filters
   const [selectedFilter, setSelectedFilter] = useState<string | null>(null);
   const [selectedPeriod, setSelectedPeriod] = useState<number | null>(null);
 
@@ -45,7 +44,6 @@ export default function CulturePage() {
 
   const mapRef = useRef<LeafletMap | null>(null);
 
-  // Fetch data
   const fetchData = useCallback(async () => {
     if (!culture) return;
     try {
@@ -70,7 +68,6 @@ export default function CulturePage() {
     fetchData();
   }, [fetchData]);
 
-  // Filters
   const filteredPins = mapPins.filter((pin) => {
     const filterOk = !selectedFilter || pin.filter === selectedFilter;
     const periodOk = !selectedPeriod || pin.period?.id === selectedPeriod;
@@ -87,7 +84,6 @@ export default function CulturePage() {
     setShowPinDetailModal(true);
   };
 
-  // Save map center
   const handleSetCenter = async () => {
     const map = mapRef.current;
     if (!map || !mapPreferences) return;
@@ -103,13 +99,11 @@ export default function CulturePage() {
     }
   };
 
-  // Add pin success callback
   const handleAddPinSuccess = () => {
     fetchData();
     setNewPinLocation(null);
   };
 
-  // Capture map clicks only when placingPin = true
   const MapClickHandler = () => {
     useMapEvents({
       click(e: LeafletMouseEvent) {
@@ -131,7 +125,6 @@ export default function CulturePage() {
       <CultureCalendarWeek cultureCode={culture?.toString() || "eng"} />
 
       <div className="flex flex-col lg:flex-row gap-4">
-        {/* Map */}
         <section className="flex-1 bg-white rounded-xl shadow relative">
           <MapContainer
             center={
@@ -185,7 +178,6 @@ export default function CulturePage() {
             </button>
           </div>
         </section>
-        {/* Sidebar */}
         <aside className="w-full lg:w-1/4 bg-extra rounded-xl shadow p-4">
           <h3 className="font-semibold mb-2">Filters</h3>
           <ul className="space-y-2 flex flex-col items-center lg:items-start w-full">
@@ -197,7 +189,6 @@ export default function CulturePage() {
               { value: "artwork", label: "Artwork" },
               { value: "other", label: "Other" },
             ].map(({ value, label }) => {
-              // Count how many pins have this filter value
               const count = mapPins.filter((p) => p.filter === value).length;
               const isSelected = selectedFilter === value;
               const hasNoPins = count === 0;
@@ -213,7 +204,6 @@ export default function CulturePage() {
                           : "bg-primary/20 text-primary"
                         : "hover:bg-extra/80"
                     }`}
-                    // disabled={hasNoPins && !isSelected}
                   >
                     <span>{label}</span>
                     {isSelected && hasNoPins && (
@@ -232,7 +222,6 @@ export default function CulturePage() {
         </aside>
       </div>
 
-      {/* Period Filter */}
       <div className="flex justify-center gap-2 flex-wrap">
         {periods.map((p) => (
           <button
@@ -252,7 +241,6 @@ export default function CulturePage() {
         )}
       </div>
 
-      {/* Map Pin Form Modal */}
       {showPinModal && newPinLocation && (
         <MapPinFormModal
           latPin={newPinLocation.lat}
@@ -276,7 +264,7 @@ export default function CulturePage() {
           }}
           onSuccess={() => {
             setShowPinDetailModal(false);
-            fetchData(); // Refresh pins after editing
+            fetchData();
           }}
         />
       )}

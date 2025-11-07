@@ -2,15 +2,16 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import api from "@/lib/api";
-import { List } from "@/types/list";
 import { ParamValue } from "next/dist/server/request/params";
+
+import api from "@/lib/api";
 import { SVGPath } from "@/utils/path";
+import { List } from "@/types/list";
 
 type Props = {
   isOpen: boolean;
   onClose: () => void;
-  onEditList: (list: List) => void; // Callback to open edit modal
+  onEditList: (list: List) => void;
   currentCultureCode?: ParamValue;
 };
 
@@ -54,7 +55,9 @@ export default function BookListDisplayModal({
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
       <div className="bg-background rounded-xl shadow-lg w-full max-w-md max-h-[80vh] overflow-y-auto">
         <div className="flex justify-between items-center p-4 border-b border-neutral/20">
-          <h2 className="md:text-lg font-bold text-main">Your Literature Lists</h2>
+          <h2 className="md:text-lg font-bold text-main">
+            Your Literature Lists
+          </h2>
           <button
             onClick={onClose}
             className="text-foreground hover:text-red-400 transition"

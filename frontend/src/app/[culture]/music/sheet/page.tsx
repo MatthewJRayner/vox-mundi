@@ -1,29 +1,29 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import api from "@/lib/api";
 import { useParams } from "next/navigation";
-import { UserMusicPiece } from "@/types/media/music";
-import SearchBar from "@/components/SearchBar";
+
+import api from "@/lib/api";
 import { SVGPath } from "@/utils/path";
+import { UserMusicPiece } from "@/types/media/music";
+
+import SearchBar from "@/components/SearchBar";
 import MusicPieceModal from "@/components/music/SheetMusicFormModal";
 
 export default function SheetMusicPage() {
   const { culture } = useParams();
   const [pieces, setPieces] = useState<UserMusicPiece[]>([]);
   const [filteredPieces, setFilteredPieces] = useState<UserMusicPiece[]>([]);
-  const [query, setQuery] = useState("");
   const [openInstrument, setOpenInstrument] = useState<string | null>(null);
   const [openPieceId, setOpenPieceId] = useState<number | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingPiece, setEditingPiece] = useState<UserMusicPiece | null>(null);
 
-  // Fetch all music pieces
   const fetchPieces = useCallback(async () => {
     try {
       const piecesRes = await api.get(`/user-music-pieces/?code=${culture}`);
       setPieces(piecesRes.data);
-      setFilteredPieces(piecesRes.data); // Initialize filteredPieces with all pieces
+      setFilteredPieces(piecesRes.data);
     } catch (error) {
       console.error("Error fetching pieces:", error);
     }
@@ -33,12 +33,10 @@ export default function SheetMusicPage() {
     fetchPieces();
   }, [fetchPieces]);
 
-  // Handle search (client-side filtering)
   const handleSearch = useCallback(
     (searchQuery: string) => {
-      setQuery(searchQuery);
       if (!searchQuery.trim()) {
-        setFilteredPieces(pieces); // Reset to all pieces when query is empty
+        setFilteredPieces(pieces);
         return;
       }
       const lowerQuery = searchQuery.toLowerCase().trim();
@@ -56,7 +54,6 @@ export default function SheetMusicPage() {
     [pieces]
   );
 
-  // Group pieces by instrument
   const grouped = filteredPieces.reduce<Record<string, UserMusicPiece[]>>(
     (acc, piece) => {
       const key = piece.instrument || "Unknown Instrument";
@@ -116,7 +113,6 @@ export default function SheetMusicPage() {
 
         {Object.entries(grouped).map(([instrument, list]) => (
           <div key={instrument} className="mb-4 overflow-hidden">
-            {/* Instrument Header */}
             <button
               onClick={() => toggleInstrument(instrument)}
               className="flex w-full md:w-fit justify-between items-center px-4 py-3 bg-extra rounded-lg shadow-lg hover:bg-muted/70 transition cursor-pointer"
@@ -136,7 +132,6 @@ export default function SheetMusicPage() {
               </span>
             </button>
 
-            {/* Pieces list */}
             {openInstrument === instrument && (
               <div className="bg-background transition-all duration-300 flex flex-col mt-4 md:mt-8">
                 {list.map((piece, idx) => (
@@ -189,7 +184,6 @@ export default function SheetMusicPage() {
                       </div>
                     </div>
 
-                    {/* Expanded details */}
                     {openPieceId === idx && (
                       <div className="mt-4 px-2 md:px-4 text-muted-foreground space-y-2 flex flex-col">
                         <div className="flex space-x-2 text-sm md:text-lg justify-between">
@@ -235,7 +229,6 @@ export default function SheetMusicPage() {
           </div>
         ))}
 
-        {/* Modal */}
         <MusicPieceModal
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}

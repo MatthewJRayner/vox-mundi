@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
+import { ParamValue } from "next/dist/server/request/params";
+
 import api from "@/lib/api";
+import { SVGPath } from "@/utils/path";
 import { Culture, Period } from "@/types/culture";
 import { UserBook } from "@/types/media/book";
-import { ParamValue } from "next/dist/server/request/params";
-import { SVGPath } from "@/utils/path";
 
 type UserBookAssignmentModalProps = {
   isOpen: boolean;
@@ -38,7 +39,6 @@ export default function UserBookAssignmentModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  /** Fetch available culture + period data */
   const fetchData = useCallback(async () => {
     if (!currentCultureCode) return;
     try {
@@ -59,7 +59,6 @@ export default function UserBookAssignmentModal({
     }
   }, [currentCultureCode]);
 
-  /** Initialize form with initialData when modal opens */
   useEffect(() => {
     if (isOpen && initialData) {
       setFormData({
@@ -69,12 +68,10 @@ export default function UserBookAssignmentModal({
     }
   }, [isOpen, initialData]);
 
-  /** Load dropdown data when opened */
   useEffect(() => {
     if (isOpen) fetchData();
   }, [isOpen, fetchData]);
 
-  /** Handle culture toggle */
   const toggleCulture = (culture: Culture) => {
     setFormData((prev) => {
       const exists = prev.cultures.some((c) => c.id === culture.id);
@@ -85,26 +82,21 @@ export default function UserBookAssignmentModal({
     });
   };
 
-  /** Handle period selection */
   const handlePeriodChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value ? parseInt(e.target.value) : null;
     setFormData((prev) => ({ ...prev, period_id: value }));
   };
 
-  /** Save changes */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!userBookId) return setError("No UserBook ID provided.");
-
     setLoading(true);
     setError(null);
-
     try {
       const payload = {
         culture_ids: formData.cultures.map((c) => c.id),
         period_id: formData.period_id,
       };
-
       await api.patch(`/user-books/${userBookId}/`, payload);
       onSuccess();
       onClose();
@@ -131,7 +123,6 @@ export default function UserBookAssignmentModal({
           <p className="text-center text-red-500">{error}</p>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* CULTURES SELECT */}
             <div className="relative">
               <label className="block text-sm font-medium text-foreground mb-1">
                 Cultures
@@ -182,7 +173,6 @@ export default function UserBookAssignmentModal({
               )}
             </div>
 
-            {/* PERIOD SELECT */}
             <div>
               <label className="block text-sm font-medium text-foreground mb-1">
                 Period
@@ -202,7 +192,6 @@ export default function UserBookAssignmentModal({
               </select>
             </div>
 
-            {/* BUTTONS */}
             <div className="flex justify-end space-x-3 pt-4">
               <button
                 type="button"

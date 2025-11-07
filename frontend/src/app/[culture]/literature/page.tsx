@@ -1,12 +1,16 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+
 import api from "@/lib/api";
+import { SVGPath } from "@/utils/path";
 import { Period, PageContent } from "@/types/culture";
-import { Book, UserBook, BookPageData } from "@/types/media/book";
+import { Book, BookPageData } from "@/types/media/book";
 import { List } from "@/types/list";
+
 import SearchBar from "@/components/SearchBar";
 import BookCard from "@/components/literature/BookCard";
 import BookImportModal from "@/components/literature/BookImportModal";
@@ -14,8 +18,6 @@ import BookPeriodGrid from "@/components/literature/BookPeriodGrid";
 import RandomBookDisplay from "@/components/literature/RandomBookDisplay";
 import BookListCreationModal from "@/components/literature/BookListCreationModal";
 import BookListDisplayModal from "@/components/literature/BookListDisplayModal";
-import { SVGPath } from "@/utils/path";
-import ReactMarkdown from "react-markdown";
 import ExpandableSummary from "@/components/ExpandableSummary";
 
 export default function BookPage() {
@@ -30,8 +32,6 @@ export default function BookPage() {
   const [editingList, setEditingList] = useState<List | null>(null);
   const [showListCreationModal, setShowListCreationModal] = useState(false);
   const [isSmallScreen, setIsSmallScreen] = useState(false);
-  const [showFullDesc, setShowFullDesc] = useState(false);
-  const [query, setQuery] = useState("");
   const [results, setResults] = useState<Book[]>([]);
 
   const fetchData = useCallback(async () => {
@@ -201,7 +201,6 @@ export default function BookPage() {
         <BookPeriodGrid periods={periods} culture={String(culture)} />
       </section>
 
-      {/* Fallback / Featured sections */}
       {fallback && (
         <section className="mt-10 text-center">
           <h2 className="text-lg font-semibold mb-2">
@@ -266,7 +265,7 @@ export default function BookPage() {
         isOpen={showImportModal}
         onClose={() => setShowImportModal(false)}
         onImported={() => {
-          fetchData(); // refreshes books on import
+          fetchData();
           setShowImportModal(false);
         }}
       />

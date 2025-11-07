@@ -1,10 +1,12 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { MapPin } from "@/types/map";
-import { Culture, Period } from "@/types/culture";
+
 import api from "@/lib/api";
 import { SVGPath } from "@/utils/path";
+import { MapPin } from "@/types/map";
+import { Culture, Period } from "@/types/culture";
 
 interface MapPinFormModalProps {
   initialData?: MapPin;
@@ -68,7 +70,6 @@ export default function MapPinFormModal({
     const { name, value, type } = e.target;
     const checked =
       e.target instanceof HTMLInputElement ? e.target.checked : undefined;
-
     setFormData((prev) => ({
       ...prev,
       [name]:
@@ -86,7 +87,6 @@ export default function MapPinFormModal({
     const { name, value, type } = e.target;
     const checked =
       e.target instanceof HTMLInputElement ? e.target.checked : undefined;
-
     setFormData((prev) => ({
       ...prev,
       date: {
@@ -114,7 +114,6 @@ export default function MapPinFormModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-
     try {
       const payload = {
         ...formData,
@@ -129,15 +128,12 @@ export default function MapPinFormModal({
         },
         cultures: undefined,
       };
-
       const url = initialData ? `/map-pins/${initialData.id}/` : `/map-pins/`;
-
       if (initialData) {
         await api.put(url, payload);
       } else {
         await api.post(url, payload);
       }
-
       onSuccess();
     } catch (error) {
       console.error("Failed to save:", error);
@@ -163,7 +159,6 @@ export default function MapPinFormModal({
         <h2 className="text-xl font-bold mb-4 mt-2">Add Map Pin</h2>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Title */}
           <input
             type="text"
             name="title"
@@ -173,7 +168,6 @@ export default function MapPinFormModal({
             className="bg-background shadow p-2 w-full rounded text-sm sm:text-base"
           />
 
-          {/* Type */}
           <input
             type="text"
             name="type"
@@ -206,7 +200,6 @@ export default function MapPinFormModal({
             </p>
           </div>
 
-          {/* Period */}
           <select
             name="period_id"
             value={formData.period_id || ""}
@@ -221,7 +214,6 @@ export default function MapPinFormModal({
             ))}
           </select>
 
-          {/* Cultures */}
           <div className="bg-background shadow p-2 rounded text-sm sm:text-base">
             <div
               className="flex justify-between items-center cursor-pointer"
@@ -269,7 +261,6 @@ export default function MapPinFormModal({
             )}
           </div>
 
-          {/* Location Name */}
           <input
             type="text"
             name="location"
@@ -279,7 +270,6 @@ export default function MapPinFormModal({
             className="bg-background shadow p-2 w-full rounded text-sm sm:text-base"
           />
 
-          {/* Description */}
           <textarea
             name="happened"
             placeholder="What happened?"
@@ -302,7 +292,6 @@ export default function MapPinFormModal({
             </div>
           )}
 
-          {/* Photo URL */}
           <input
             type="url"
             name="photo"
@@ -312,7 +301,6 @@ export default function MapPinFormModal({
             className="bg-background shadow p-2 w-full rounded text-sm sm:text-base"
           />
 
-          
           <input
             type="url"
             name="external_link"
@@ -371,7 +359,6 @@ export default function MapPinFormModal({
             <option value="unknown">Unknown</option>
           </select>
 
-          {/* Significance */}
           <textarea
             name="significance"
             placeholder="Significance"
@@ -381,7 +368,6 @@ export default function MapPinFormModal({
             className="bg-background shadow p-2 w-full rounded text-sm sm:text-base"
           />
 
-          {/* Visibility */}
           <div className="flex gap-4">
             <label className="flex items-center gap-2">
               <input
@@ -405,7 +391,6 @@ export default function MapPinFormModal({
             </label>
           </div>
 
-          {/* Buttons */}
           <div className="flex justify-end gap-3 pt-4">
             <button
               type="button"

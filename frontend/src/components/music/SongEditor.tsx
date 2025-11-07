@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+
 import { SVGPath } from "@/utils/path";
 
 type Song = {
@@ -16,13 +17,10 @@ type Props = {
 export default function SongEditor({ songs, setSongs }: Props) {
   const [view, setView] = useState(false);
 
-  const addSong = () => setSongs([...songs, { title: "", release_year: undefined }]);
+  const addSong = () =>
+    setSongs([...songs, { title: "", release_year: undefined }]);
 
-  const updateSong = (
-    index: number,
-    field: keyof Song,
-    value: string
-  ) => {
+  const updateSong = (index: number, field: keyof Song, value: string) => {
     const updated = [...songs];
     if (field === "release_year") {
       updated[index][field] = value ? parseFloat(value) : 0;
@@ -51,9 +49,15 @@ export default function SongEditor({ songs, setSongs }: Props) {
             xmlns="http://www.w3.org/2000/svg"
             viewBox={SVGPath.chevron.viewBox}
             fill="currentColor"
-            className={`w-4 h-4 transition-transform ${view ? "rotate-180" : ""}`}
+            className={`w-4 h-4 transition-transform ${
+              view ? "rotate-180" : ""
+            }`}
           >
-            <path fillRule="evenodd" d={SVGPath.chevron.path} clipRule="evenodd" />
+            <path
+              fillRule="evenodd"
+              d={SVGPath.chevron.path}
+              clipRule="evenodd"
+            />
           </svg>
         </span>
       </button>
@@ -73,7 +77,9 @@ export default function SongEditor({ songs, setSongs }: Props) {
                 type="number"
                 placeholder="Release Year"
                 value={song.release_year || ""}
-                onChange={(e) => updateSong(index, "release_year", e.target.value)}
+                onChange={(e) =>
+                  updateSong(index, "release_year", e.target.value)
+                }
                 className="border-b-2 p-1 w-full mb-2"
               />
               <button

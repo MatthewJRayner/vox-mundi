@@ -21,20 +21,20 @@ export default function HistoryTimeline({
         : a.date?.date_estimate_start
         ? new Date(a.date.date_estimate_start).getTime()
         : Infinity;
-
       const bDate = b.date?.date_known
         ? new Date(b.date.date || "").getTime()
         : b.date?.date_estimate_start
         ? new Date(b.date.date_estimate_start).getTime()
         : Infinity;
-
       return aDate - bDate;
     });
   }, [events]);
 
   const [isMobile, setIsMobile] = useState(false);
   const [dragPosition, setDragPosition] = useState<number | null>(null);
-  const [selectedEventIndex, setSelectedEventIndex] = useState<number | null>(null);
+  const [selectedEventIndex, setSelectedEventIndex] = useState<number | null>(
+    null
+  );
   const timelineRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -89,8 +89,8 @@ export default function HistoryTimeline({
   const handleTouchEnd = (e: React.TouchEvent) => {
     if (dragPosition === null || !sortedEvents.length) return;
     e.preventDefault();
-    const eventPositions = sortedEvents.map((_, idx) =>
-      ((idx + 1) / (sortedEvents.length + 1)) * 100
+    const eventPositions = sortedEvents.map(
+      (_, idx) => ((idx + 1) / (sortedEvents.length + 1)) * 100
     );
     const closestPositionIndex = eventPositions.reduce(
       (closestIdx, pos, idx) => {
@@ -124,17 +124,11 @@ export default function HistoryTimeline({
         onTouchEnd={handleTouchEnd}
       >
         {/* Main timeline line */}
-        <div
-          className="h-[2px] w-full bg-foreground absolute md:w-[2px] md:h-full md:left-1/6"
-        />
+        <div className="h-[2px] w-full bg-foreground absolute md:w-[2px] md:h-full md:left-1/6" />
         {/* Top/left cap */}
-        <div
-          className="h-1/3 w-[2px] bg-foreground absolute left-0 md:top-0 md:w-1/3 md:h-[2px]"
-        />
+        <div className="h-1/3 w-[2px] bg-foreground absolute left-0 md:top-0 md:w-1/3 md:h-[2px]" />
         {/* Bottom/right cap */}
-        <div
-          className="h-1/3 w-[2px] bg-foreground absolute right-0 md:bottom-0 md:left-0 md:w-1/3 md:h-[2px]"
-        />
+        <div className="h-1/3 w-[2px] bg-foreground absolute right-0 md:bottom-0 md:left-0 md:w-1/3 md:h-[2px]" />
         {sortedEvents.map((event, idx) => {
           const positionPercent = ((idx + 1) / (sortedEvents.length + 1)) * 100;
           return (

@@ -2,15 +2,17 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+
 import api from "@/lib/api";
-import { Period, Category } from "@/types/culture";
-import { UserMusicComposer } from "@/types/media/music";
 import { SVGPath } from "@/utils/path";
+import { formatYears } from "@/utils/formatters/formatYears";
+import { Period } from "@/types/culture";
+import { UserMusicComposer } from "@/types/media/music";
+
 import MusicTimeline from "@/components/music/MusicTimeline";
 import ComposerDisplay from "@/components/music/ComposerDisplay";
 import PeriodSelector from "@/components/PeriodSelector";
 import SearchBar from "@/components/SearchBar";
-import { formatYears } from "@/utils/formatters/formatYears";
 import ExpandableSummary from "@/components/ExpandableSummary";
 
 export default function MusicPage() {
@@ -29,7 +31,6 @@ export default function MusicPage() {
   );
   const [results, setResults] = useState<UserMusicComposer[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showFullDesc, setShowFullDesc] = useState(false);
 
   const handleSearch = useCallback(
     async (query: string) => {
@@ -82,6 +83,8 @@ export default function MusicPage() {
   }, [fetchData]);
 
   if (loading) return <main className="p-4">Loading...</main>;
+
+  // Welcome screen when no periods exist
   if (!activePeriod)
     return (
       <main className="min-h-screen flex flex-col mt-4 w-full">
@@ -157,6 +160,7 @@ export default function MusicPage() {
       </main>
     );
 
+  // Main page
   return (
     <main className="min-h-screen flex flex-col mt-4 w-full">
       <div className="flex w-full items-center relative">

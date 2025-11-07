@@ -234,7 +234,7 @@ class Migration(migrations.Migration):
                 ('updated_at', models.DateTimeField(auto_now=True)),
                 ('title', models.CharField(max_length=200)),
                 ('external_links', models.URLField(blank=True, null=True)),
-                ('runtime', models.PositiveIntegerField(blank=True, null=True)),
+                ('runtime', models.DurationField(blank=True, null=True)),
                 ('genre', models.CharField(blank=True, max_length=100)),
                 ('date', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='core.dateestimate')),
                 ('tags', taggit.managers.TaggableManager(blank=True, help_text='A comma-separated list of tags.', through='taggit.TaggedItem', to='taggit.Tag', verbose_name='Tags')),

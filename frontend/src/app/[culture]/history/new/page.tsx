@@ -1,9 +1,11 @@
 "use client";
 
-import HistoryEventForm from "@/components/history/HistoryEventForm";
 import { useRouter, useParams } from "next/navigation";
-import { SVGPath } from "@/utils/path";
 import Link from "next/link";
+
+import { SVGPath } from "@/utils/path";
+
+import HistoryEventForm from "@/components/history/HistoryEventForm";
 
 export default function NewHistoryPage() {
   const router = useRouter();

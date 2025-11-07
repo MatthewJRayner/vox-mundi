@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import { UserMusicComposer } from "@/types/media/music";
@@ -60,6 +61,7 @@ export default function ComposerDisplay({ event }: ComposerDisplayProps) {
             <div className="flex flex-col text-xs md:text-sm text-foreground/50 truncate"></div>
             <img
               src={event.photo}
+              alt={event.name}
               className="object-center h-24 w-24 md:h-48 md:w-48 border-foreground border-1 md:border-2 shadow-lg rounded-sm"
             />
           </div>

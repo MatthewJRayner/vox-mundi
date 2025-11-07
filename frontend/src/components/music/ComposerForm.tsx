@@ -1,11 +1,13 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
+import { ParamValue } from "next/dist/server/request/params";
+
+import api from "@/lib/api";
+import { SVGPath } from "@/utils/path";
 import { UserMusicComposer } from "@/types/media/music";
 import { Culture, Period } from "@/types/culture";
-import api from "@/lib/api";
-import { ParamValue } from "next/dist/server/request/params";
-import { SVGPath } from "@/utils/path";
 
 type ComposerFormProps = {
   initialData?: UserMusicComposer;
@@ -75,10 +77,18 @@ export default function ComposerForm({
     }));
   };
 
-  const [occupationInput, setOccupationInput] = useState((formData.occupations || []).join(", "));
-  const [instrumentsInput, setInstrumentsInput] = useState((formData.instruments || []).join(", "));
-  const [famousInput, setFamousInput] = useState((formData.famous || []).join(", "));
-  const [themesInput, setThemesInput] = useState((formData.themes || []).join(", "));
+  const [occupationInput, setOccupationInput] = useState(
+    (formData.occupations || []).join(", ")
+  );
+  const [instrumentsInput, setInstrumentsInput] = useState(
+    (formData.instruments || []).join(", ")
+  );
+  const [famousInput, setFamousInput] = useState(
+    (formData.famous || []).join(", ")
+  );
+  const [themesInput, setThemesInput] = useState(
+    (formData.themes || []).join(", ")
+  );
 
   const toggleCulture = (culture: Culture) => {
     setFormData((prev) => {
@@ -93,39 +103,33 @@ export default function ComposerForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-
     try {
       const payload = {
         ...formData,
-        occupations: occupationInput
-            .split(",")
-            .map((o) => o.trim()),
+        occupations: occupationInput.split(",").map((o) => o.trim()),
         instruments: instrumentsInput
-            .split(",")
-            .map((i) => i.trim())
-            .filter(Boolean),
+          .split(",")
+          .map((i) => i.trim())
+          .filter(Boolean),
         famous: famousInput
-            .split(",")
-            .map((w) => w.trim())
-            .filter(Boolean),
+          .split(",")
+          .map((w) => w.trim())
+          .filter(Boolean),
         themes: themesInput
-            .split(",")
-            .map((t) => t.trim())
-            .filter(Boolean),
+          .split(",")
+          .map((t) => t.trim())
+          .filter(Boolean),
         culture_ids: formData.cultures.map((c) => c.id),
         period_id: formData.period_id ?? null,
       };
-
       const url = initialData
         ? `/user-composers/${initialData.id}/`
         : `/user-composers/`;
-
       if (initialData) {
         await api.put(url, payload);
       } else {
         await api.post(url, payload);
       }
-
       onSuccess();
     } catch (error) {
       console.error("Failed to save:", error);

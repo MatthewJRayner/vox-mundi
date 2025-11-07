@@ -1,9 +1,9 @@
 "use client";
 import { useState } from "react";
-import { UserMusicComposer } from "@/types/media/music";
-import { SVGPath } from "@/utils/path";
-import { formatDateEstimate } from "@/utils/formatters/formatDateEstimate";
 import Link from "next/link";
+
+import { SVGPath } from "@/utils/path";
+import { UserMusicComposer } from "@/types/media/music";
 
 interface ComposersProps {
   groupedComposers: Record<string, UserMusicComposer[]>;
@@ -79,7 +79,10 @@ export default function ComposersSection({
                         </span>
                       )}
                       <span className="text-sm opacity-60">
-                        {formatLifespan(composer.birth_year, composer?.death_year)}
+                        {formatLifespan(
+                          composer.birth_year,
+                          composer?.death_year
+                        )}
                       </span>
                     </div>
                     <Link href={`/${culture}/music/edit/${composer.id}`}>

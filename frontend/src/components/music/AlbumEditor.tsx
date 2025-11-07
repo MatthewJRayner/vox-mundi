@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+
 import { SVGPath } from "@/utils/path";
 
 type Album = {
@@ -17,13 +18,10 @@ type Props = {
 export default function AlbumEditor({ albums, setAlbums }: Props) {
   const [view, setView] = useState(false);
 
-  const addAlbum = () => setAlbums([...albums, { title: "", release_year: 0, cover: "" }]);
+  const addAlbum = () =>
+    setAlbums([...albums, { title: "", release_year: 0, cover: "" }]);
 
-  const updateAlbum = (
-    index: number,
-    field: keyof Album,
-    value: string
-  ) => {
+  const updateAlbum = (index: number, field: keyof Album, value: string) => {
     const updated = [...albums];
     if (field === "release_year") {
       updated[index][field] = value ? parseFloat(value) : 0;
@@ -56,7 +54,11 @@ export default function AlbumEditor({ albums, setAlbums }: Props) {
               view ? "rotate-180" : ""
             }`}
           >
-            <path fillRule="evenodd" d={SVGPath.chevron.path} clipRule="evenodd" />
+            <path
+              fillRule="evenodd"
+              d={SVGPath.chevron.path}
+              clipRule="evenodd"
+            />
           </svg>
         </span>
       </button>
@@ -76,7 +78,9 @@ export default function AlbumEditor({ albums, setAlbums }: Props) {
                 type="number"
                 placeholder="Release Year"
                 value={album.release_year || ""}
-                onChange={(e) => updateAlbum(index, "release_year", e.target.value)}
+                onChange={(e) =>
+                  updateAlbum(index, "release_year", e.target.value)
+                }
                 className="border-b-2 p-1 w-full mb-2"
               />
               <input

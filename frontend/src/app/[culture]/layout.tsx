@@ -2,7 +2,9 @@
 
 import React, { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
+
 import api from "@/lib/api";
+
 import Navbar from "@/components/Navbar";
 
 interface Culture {
@@ -30,21 +32,25 @@ export default function CultureLayout({
 
   useEffect(() => {
     if (!cultureCode) return;
-
-    api.get(`/cultures/?code=${cultureCode}`)
+    api
+      .get(`/cultures/?code=${cultureCode}`)
       .then((res) => {
         const cultureData = res.data[0];
         if (cultureData) {
           setCulture(cultureData);
 
           if (cultureData.colour) {
-            document.documentElement.style.setProperty("--main", cultureData.colour);
+            document.documentElement.style.setProperty(
+              "--main",
+              cultureData.colour
+            );
           }
         }
       })
       .catch((err) => console.error("Error fetching culture:", err));
 
-    api.get(`/categories/?culture_code=${cultureCode}`)
+    api
+      .get(`/categories/?culture_code=${cultureCode}`)
       .then((res) => setCategories(res.data))
       .catch((err) => console.error("Error fetching categories:", err));
   }, [cultureCode]);

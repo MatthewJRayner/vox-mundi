@@ -1,21 +1,24 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import api from "@/lib/api";
 import { useParams } from "next/navigation";
+
+import api from "@/lib/api";
 import type { UserComposerSearch } from "@/types/media/music";
-import ConcertEventCard, { ConcertEvent } from "@/components/music/ConcertEventCard";
+
+import ConcertEventCard, {
+  ConcertEvent,
+} from "@/components/music/ConcertEventCard";
 
 export default function ComposerSearchPage() {
   const { culture } = useParams<{ culture: string }>();
   const [userData, setUserData] = useState<UserComposerSearch | null>(null);
+  const [composerList, setComposerList] = useState<string[]>([]);
+  const [composerListInput, setComposerListInput] = useState<string>("");
   const [results, setResults] = useState<ConcertEvent[]>([]);
   const [loading, setLoading] = useState(false);
   const [editing, setEditing] = useState(false);
-  const [composerList, setComposerList] = useState<string[]>([]);
-  const [composerListInput, setComposerListInput] = useState<string>("");
 
-  // --- Load user and composer list ---
   useEffect(() => {
     const fetchUser = async () => {
       try {
@@ -33,7 +36,6 @@ export default function ComposerSearchPage() {
     fetchUser();
   }, [culture]);
 
-  // --- Search (no map now) ---
   const handleSearch = async () => {
     setLoading(true);
     setResults([]);
@@ -47,7 +49,6 @@ export default function ComposerSearchPage() {
     }
   };
 
-  // --- Save composer list ---
   const handleSaveComposers = async () => {
     if (!userData) return;
     const updatedList = composerListInput
@@ -70,7 +71,6 @@ export default function ComposerSearchPage() {
     <div className="flex flex-col items-center w-full min-h-screen p-2 md:p-4 font-serif">
       <h1 className="text-3xl font-bold mb-4">Composer Event Search</h1>
 
-      {/* Composer list block */}
       <div className="bg-extra rounded-xl p-4 mb-6 w-full max-w-3xl shadow">
         <h2 className="text-lg font-semibold mb-2">Composers</h2>
 
@@ -135,9 +135,10 @@ export default function ComposerSearchPage() {
         </div>
       </div>
 
-      {/* Results */}
       <div className="w-full max-w-3xl space-y-4">
-        {loading && <p className="text-foreground/60 font-inter">Fetching results…</p>}
+        {loading && (
+          <p className="text-foreground/60 font-inter">Fetching results…</p>
+        )}
         {!loading && results.length === 0 && (
           <p className="text-foreground/60 text-center font-inter">
             No results yet. Try searching!

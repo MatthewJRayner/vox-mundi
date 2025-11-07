@@ -2,6 +2,21 @@
 
 from django.db import migrations, models
 
+def forwards_func(apps, schema_editor):
+    db_alias = schema_editor.connection.alias
+    schema_editor.execute("""
+        ALTER TABLE yourapp_yourmodel
+        ALTER COLUMN runtime TYPE interval
+        USING runtime * interval '1 second';
+    """)
+
+def reverse_func(apps, schema_editor):
+    db_alias = schema_editor.connection.alias
+    schema_editor.execute("""
+        ALTER TABLE yourapp_yourmodel
+        ALTER COLUMN runtime TYPE integer
+        USING EXTRACT(epoch FROM runtime)::integer;
+    """)
 
 class Migration(migrations.Migration):
 

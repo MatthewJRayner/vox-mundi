@@ -1,12 +1,14 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import api from "@/lib/api";
 import { useParams } from "next/navigation";
+
+import api from "@/lib/api";
+import { SVGPath } from "@/utils/path";
 import { UserMusicArtist } from "@/types/media/music";
+
 import ArtistModal from "@/components/music/ArtistModal";
 import ArtistForm from "@/components/music/ArtistForm";
-import { SVGPath } from "@/utils/path";
 
 export default function FavouriteArtistsPage() {
   const { culture } = useParams();
@@ -43,10 +45,11 @@ export default function FavouriteArtistsPage() {
 
   return (
     <div className="flex flex-col md:flex-row gap-6 p-4 md:p-6 w-full font-serif">
-      {/* Left column: All artists list */}
       <div className="md:w-1/2 rounded-xl overflow-y-auto max-h-[80vh]">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-garamond font-bold">Your Favourite Artists</h2>
+          <h2 className="text-xl font-garamond font-bold">
+            Your Favourite Artists
+          </h2>
           <button
             onClick={() => setShowFormModal(true)}
             className="px-4 py-2 bg-main rounded-lg shadow-md cursor-pointer hover:bg-main/80 hover:shadow-lg flex items-center"
@@ -57,7 +60,9 @@ export default function FavouriteArtistsPage() {
             >
               <path d={SVGPath.add.path} />
             </svg>{" "}
-            <span className="ml-1 text-xs md:text-sm font-inter">Add Artist</span>
+            <span className="ml-1 text-xs md:text-sm font-inter">
+              Add Artist
+            </span>
           </button>
         </div>
 
@@ -74,7 +79,6 @@ export default function FavouriteArtistsPage() {
         </ul>
       </div>
 
-      {/* Right column: Ranked view */}
       <div className="md:w-1/2 rounded-xl overflow-y-auto max-h-[80vh]">
         <h2 className="text-xl font-garamond font-bold mb-4">
           Artist Rankings
@@ -104,7 +108,6 @@ export default function FavouriteArtistsPage() {
         ))}
       </div>
 
-      {/* Modals */}
       {selectedArtist && (
         <ArtistModal
           artist={selectedArtist}

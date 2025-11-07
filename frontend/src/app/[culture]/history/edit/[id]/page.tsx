@@ -2,9 +2,11 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { UserHistoryEvent } from "@/types/history";
-import HistoryEventForm from "@/components/history/HistoryEventForm";
+
 import api from "@/lib/api";
+import { UserHistoryEvent } from "@/types/history";
+
+import HistoryEventForm from "@/components/history/HistoryEventForm";
 
 export default function EditHistoryEventPage() {
   const { culture, id } = useParams();

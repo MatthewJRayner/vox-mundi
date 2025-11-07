@@ -1,9 +1,11 @@
 "use client";
+
 import { useState } from "react";
-import { UserHistoryEvent } from "@/types/history";
+import Link from "next/link";
+
 import { SVGPath } from "@/utils/path";
 import { formatDateEstimate } from "@/utils/formatters/formatDateEstimate";
-import Link from "next/link";
+import { UserHistoryEvent } from "@/types/history";
 
 interface UserEventsSectionProps {
   groupedEvents: Record<string, UserHistoryEvent[]>;

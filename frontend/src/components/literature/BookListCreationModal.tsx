@@ -1,14 +1,16 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { ParamValue } from "next/dist/server/request/params";
+
+import api from "@/lib/api";
+import { SVGPath } from "@/utils/path";
+import { formatDateEstimate } from "@/utils/formatters/formatDateEstimate";
 import { Book } from "@/types/media/book";
 import { List } from "@/types/list";
 import { Culture } from "@/types/culture";
-import api from "@/lib/api";
-import { ParamValue } from "next/dist/server/request/params";
-import { SVGPath } from "@/utils/path";
-import { formatDateEstimate } from "@/utils/formatters/formatDateEstimate";
 
 type Props = {
   isOpen: boolean;
@@ -83,7 +85,7 @@ export default function BookListCreationModal({
     if (initialList?.id) {
       fetchExistingBooks();
       setName(initialList?.name);
-      setDescription(initialList?.description || "")
+      setDescription(initialList?.description || "");
     }
   }, [isOpen, fetchCultures, fetchExistingBooks, initialList]);
 
@@ -130,12 +132,10 @@ export default function BookListCreationModal({
     const itemIds = selected
       .map((b) => b.universal_item?.id)
       .filter((id): id is number => !!id);
-
     if (!itemIds.length) {
       alert("Please select at least one valid book.");
       return;
     }
-
     if (!selectedCultures.length) {
       alert("Please select at least one culture.");
       return;
