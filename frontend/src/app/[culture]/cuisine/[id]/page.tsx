@@ -146,7 +146,7 @@ export default function CuisineIDPage() {
   if (!recipe) return <main className="p-4">No recipe found.</main>;
 
   return (
-    <div className="w-full flex flex-col md:flex-row md:space-x-4 p-4 space-y-4 md:space-y-0">
+    <div className="w-full flex flex-col md:flex-row md:space-x-4 p-2 md:p-4 space-y-4 md:space-y-0">
       <Link
         href={`/${culture}/cuisine`}
         className="text-main hover:opacity-80 text-sm md:text-base"

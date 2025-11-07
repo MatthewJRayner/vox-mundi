@@ -179,7 +179,7 @@ export default function FilmSearchPage() {
   }
 
   return (
-    <div className="p-4 sm:p-6">
+    <div className="p-2 md:p-4 sm:p-6">
       {error && <div className="text-red-500 mb-4">{error}</div>}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4 sm:mb-6">
         <div className="flex flex-col">

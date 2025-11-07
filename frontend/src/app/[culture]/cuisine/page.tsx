@@ -126,7 +126,7 @@ export default function CuisinePage() {
   if (error) return <main className="p-4 text-danger">{error}</main>;
 
   return (
-    <main className="flex flex-col w-full mx-auto p-6 space-y-8">
+    <main className="flex flex-col w-full mx-auto p-2 md:p-6 space-y-8">
       <section className="flex items-center w-full">
         <SearchBar onSearch={handleSearch} />
         <Link href={`/${culture}/cuisine/new`} title="Add Recipe">

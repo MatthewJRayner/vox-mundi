@@ -58,7 +58,7 @@ export default function AuthForm() {
   };
 
   return (
-    <div className="flex flex-col items-center space-y-4">
+    <div className="flex flex-col items-center space-y-4 p-2 md:p-6">
       <div className="flex space-x-4">
         <button
           onClick={() => setMode("login")}
