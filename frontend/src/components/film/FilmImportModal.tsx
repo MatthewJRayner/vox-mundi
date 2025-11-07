@@ -7,7 +7,7 @@ import { SVGPath } from "@/utils/path";
 
 /**
  * Modal for user to import chosen films as a global film object through the TMDb API.
- * 
+ *
  * @param isOpen - Whether the modal is open
  * @param onClose - Callback to close the modal
  */
@@ -118,12 +118,13 @@ export default function FilmImportModal({
               {results.map((r, i) => (
                 <li
                   key={i}
-                  className={r.created ? "text-success" : "text-danger"}
                 >
                   {r.title}:{" "}
-                  {r.created
-                    ? "Successfully imported"
-                    : "Already exists or failed"}
+                  {r.created ? (
+                    <span className="text-green-400">{`"Successfully imported"`}</span>
+                  ) : (
+                    <span className="text-red-400">{`"Already exists or failed"`}</span>
+                  )}
                 </li>
               ))}
             </ul>
