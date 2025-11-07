@@ -26,10 +26,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Load env file
 load_dotenv(BASE_DIR.parent / '.env')
 
-# SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv('SECRET_KEY')
 
-# SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv("DEBUG")
 
 ALLOWED_HOSTS = ["vox-mundi.up.railway.app"]
@@ -111,7 +109,8 @@ DATABASES = {
     'default': dj_database_url.config(
         default=os.getenv("DATABASE_URL"),
         conn_max_age=600,
-        ssl_require=True
+        ssl_require=True,
+        conn_health_checks=True,
     )
 }
 
