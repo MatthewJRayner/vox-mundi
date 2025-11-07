@@ -485,6 +485,14 @@ class Film(AbstractMedia):
     @classmethod
     @transaction.atomic
     def create_with_universal_item(cls, tmdb_data):
+        runtime = None
+        runtime_value = tmdb_data.get("runtime")
+        if runtime_value is not None:
+            try:
+                runtime = timedelta(minutes=int(runtime_value))
+            except (ValueError, TypeError):
+                runtime = None
+        
         director_data = next(
             (c for c in tmdb_data.get("credits", {}).get("crew", []) if c["job"] == "Director"),
             None
@@ -511,7 +519,7 @@ class Film(AbstractMedia):
                 "alt_title": tmdb_data.get("original_title") if tmdb_data.get("original_title") != tmdb_data.get("title") else None,
                 "creator_string": director_name,
                 "alt_creator_name": alt_name,
-                "runtime": tmdb_data.get("runtime"),
+                "runtime": runtime,
                 "cast": [
                     {"name": c.get("name"), "role": c.get("character") or ""}
                     for c in tmdb_data.get("credits", {}).get("cast", [])
