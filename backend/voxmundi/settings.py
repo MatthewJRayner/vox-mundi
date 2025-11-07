@@ -32,7 +32,7 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv("DEBUG")
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1", ".onrender.com"]
+ALLOWED_HOSTS = ["vox-mundi.up.railway.app"]
 
 
 # Application definition
@@ -79,9 +79,7 @@ MIDDLEWARE = [
 ]
 
 CORS_ALLOWED_ORIGINS = [
-    'http://localhost:3000',
     "https://vox-mundi.vercel.app",
-    "https://yourcustomdomain.com"
 ]
 
 CORS_ALLOW_CREDENTIALS = True
