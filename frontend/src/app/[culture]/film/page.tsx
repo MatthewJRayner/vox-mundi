@@ -209,7 +209,7 @@ export default function FilmPage() {
             Start building your film culture!
           </h2>
           <p className="text-neutral-500 mb-4">
-            You haven’t added any films yet. Here are some to explore:
+            {`You haven’t added any films yet. Interact with any film on it's page to begin! Here are some to explore:`}
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
             {fallback.map((film: Film) => (
