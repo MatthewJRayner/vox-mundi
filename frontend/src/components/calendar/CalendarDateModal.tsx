@@ -40,7 +40,7 @@ export default function CalendarDateModal({
   culture,
   onClose,
 }: CalendarDateModalProps) {
-  const [showForm, setShowForm] = useState(events.length === 0);
+  const [showForm, setShowForm] = useState(false);
   const [editingEvent, setEditingEvent] = useState<CalendarDate | undefined>(
     events.length > 0 ? events[0] : undefined
   );
